@@ -99,15 +99,71 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 #pdfRenderRoot{position:fixed;left:-99999px;top:0;}
 .filter-bar{margin-bottom:12px;}
 @media(max-width:480px){.stat b{font-size:16px;}}
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;z-index:500;padding:16px;}
+.login-box{background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.login-box img{width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 10px;object-fit:cover;}
+.login-box h2{text-align:center;margin:0 0 4px;font-size:16px;color:var(--primary-dark);}
+.login-box p.sub{text-align:center;margin:0 0 18px;font-size:12px;color:var(--muted);}
+.login-error{color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;}
+.login-links{text-align:center;margin-top:12px;font-size:13px;}
+.login-links a{color:var(--secondary);cursor:pointer;text-decoration:underline;}
+body:not(.logged-in) header.app-header, body:not(.logged-in) nav.tabs, body:not(.logged-in) main{display:none;}
+body.logged-in .login-screen{display:none;}
+.user-badge{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;font-size:11.5px;display:flex;align-items:center;gap:8px;flex-shrink:0;color:#fff;}
+.user-badge .btn{padding:4px 8px;font-size:11.5px;}
+.role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.role-tag.admin{background:#fdece5;color:var(--danger);}
+.role-tag.cm{background:#e8f0fb;color:var(--secondary);}
+.role-tag.cg{background:#e7f7ee;color:#1a8a52;}
+.status-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.status-tag.approved{background:#e7f7ee;color:#1a8a52;}
+.status-tag.pending{background:#fff6df;color:#a3760a;}
 </style>
 </head>
 <body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <img id="loginLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
+    <h2>ระบบบันทึกการเยี่ยมผู้สูงอายุ</h2>
+    <p class="sub">รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
+    <div class="field"><label>ชื่อผู้ใช้ (Username)</label><input type="text" id="loginUsername" autocomplete="username"></div>
+    <div class="field" style="margin-top:8px;"><label>รหัสผ่าน</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn btn-primary" id="loginBtn" style="width:100%;margin-top:10px;justify-content:center;">เข้าสู่ระบบ</button>
+    <div class="login-links"><a id="showRegisterLink">สมัครใช้งาน (สำหรับ CM / CG)</a></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="registerModal"><div class="modal-box">
+  <h3>สมัครใช้งาน</h3>
+  <div class="field"><label>ชื่อ-สกุล</label><input type="text" id="regName"></div>
+  <div class="field" style="margin-top:8px;"><label>สิทธิ์การใช้งาน</label>
+    <select id="regRole">
+      <option value="cm">CM (ผู้จัดการดูแลระยะยาว) - ใช้งานได้ทันที</option>
+      <option value="cg">CG (ผู้ดูแลผู้สูงอายุ) - ต้องรอการอนุมัติ</option>
+    </select>
+  </div>
+  <div class="field" style="margin-top:8px;" id="regCgWrap">
+    <label>สังกัด CG (ถ้ามี)</label>
+    <select id="regCgCode"><option value="">-- ไม่ระบุ --</option></select>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>ชื่อผู้ใช้ (Username) - ตัวอักษร/ตัวเลขอังกฤษเท่านั้น</label><input type="text" id="regUsername"></div>
+  <div class="field" style="margin-top:8px;"><label>รหัสผ่าน</label><input type="password" id="regPassword"></div>
+  <div class="field" style="margin-top:8px;"><label>ยืนยันรหัสผ่าน</label><input type="password" id="regPassword2"></div>
+  <div class="login-error" id="regError"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('registerModal')">ยกเลิก</button><button class="btn btn-primary" id="regSubmitBtn">สมัครใช้งาน</button></div>
+</div></div>
 
 <header class="app-header">
   <img class="app-logo" id="appHeaderLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
   <div class="app-header-text">
     <h1>📋 ระบบบันทึกการเยี่ยมผู้สูงอายุที่มีภาวะพึ่งพิง</h1>
     <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
+  </div>
+  <div class="user-badge" id="userBadge" style="display:none;">
+    <span id="userBadgeName"></span>
+    <button class="btn btn-ghost btn-sm" id="logoutBtn">ออกจากระบบ</button>
   </div>
 </header>
 
@@ -118,6 +174,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
   <button data-tab="elderly">👴 จัดการผู้สูงอายุ</button>
   <button data-tab="equipment">🛠 การจัดการอุปกรณ์</button>
   <button data-tab="pdf">📄 ออกรายงาน</button>
+  <button data-tab="users" style="display:none;">🔐 ผู้ใช้งาน</button>
 </nav>
 
 <main>
@@ -325,6 +382,17 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
   </div>
 </section>
 
+<section id="tab-users" class="tabpanel">
+  <div class="card">
+    <h3>บัญชีผู้ใช้งานระบบ</h3>
+    <p class="muted">Admin ใช้งานได้ทุกฟังก์ชัน | CM สมัครแล้วใช้งานได้ทันทีเหมือน Admin | CG สมัครแล้วต้องรอ Admin อนุมัติก่อนจึงจะเข้าใช้งานได้ (เข้าถึงเฉพาะ ภาพรวม / บันทึกการเยี่ยม / จัดการผู้สูงอายุ)</p>
+    <table style="margin-top:10px;">
+      <thead><tr><th>ชื่อ</th><th>Username</th><th>สิทธิ์</th><th>สถานะ</th><th>สังกัด CG</th><th></th></tr></thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+  </div>
+</section>
+
 </main>
 
 <!-- ============ Modals ============ -->
@@ -339,11 +407,14 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
     <div class="field"><label>หมู่ที่</label>
       <select id="cgMoo">
         <option value="">-- เลือกหมู่ --</option>
-        <option value="1">หมู่ 1</option>
-        <option value="3">หมู่ 3</option>
-        <option value="5">หมู่ 5</option>
-        <option value="7">หมู่ 7</option>
-        <option value="10">หมู่ 10</option>
+        <option value="2">หมู่ 2 บ้านโพนสว่าง</option>
+        <option value="3">หมู่ 3 บ้านดอนเชียงบาล</option>
+        <option value="6">หมู่ 6 บ้านหนองสนม</option>
+        <option value="8">หมู่ 8 บ้านทุ่งมน</option>
+        <option value="9">หมู่ 9 บ้านโคกสว่าง</option>
+        <option value="11">หมู่ 11 บ้านโนนเบ็ญ</option>
+        <option value="13">หมู่ 13 บ้านดอนเชียงบานใหญ่</option>
+        <option value="15">หมู่ 15 บ้านทุ่งมนพัฒนา</option>
       </select>
     </div>
   </div>
@@ -370,6 +441,11 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="elderlyVisitsPerMonth" min="5" max="10" value="5"></div>
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>เบอร์โทรศัพท์ญาติ</label><input type="tel" id="elderlyRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>ชื่อ อสม. ใกล้บ้าน</label><input type="text" id="elderlyVhvName"></div>
+    <div class="field"><label>เบอร์โทรศัพท์ อสม.</label><input type="tel" id="elderlyVhvPhone" placeholder="เช่น 08xxxxxxxx"></div>
   </div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('elderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="elderlySaveBtn">บันทึก</button></div>
 </div></div>
@@ -434,6 +510,7 @@ const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUD
 
 firebase.initializeApp(FIREBASE_CONFIG);
 document.getElementById('appHeaderLogo').src = LOGO_BASE64;
+document.getElementById('loginLogo').src = LOGO_BASE64;
 const db = firebase.database();
 
 /* =============================================================
@@ -552,7 +629,17 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const VILLAGES = [
+  {moo:'2', name:'บ้านโพนสว่าง'},
+  {moo:'3', name:'บ้านดอนเชียงบาล'},
+  {moo:'6', name:'บ้านหนองสนม'},
+  {moo:'8', name:'บ้านทุ่งมน'},
+  {moo:'9', name:'บ้านโคกสว่าง'},
+  {moo:'11', name:'บ้านโนนเบ็ญ'},
+  {moo:'13', name:'บ้านดอนเชียงบานใหญ่'},
+  {moo:'15', name:'บ้านทุ่งมนพัฒนา'}
+];
 
 /* =============================================================
    FIREBASE LISTENERS
@@ -561,6 +648,22 @@ db.ref('cgs').on('value', snap=>{ STATE.cgs = snap.val()||{}; onDataChange(); })
 db.ref('elderly').on('value', snap=>{ STATE.elderly = snap.val()||{}; onDataChange(); });
 db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange(); });
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
+db.ref('users').on('value', snap=>{ STATE.users = snap.val()||{}; renderUsersTable(); renderRegisterCgSelect(); });
+
+/* Auto-create the Admin account on first run if it doesn't exist yet */
+db.ref('users/1470900013871').once('value').then(snap=>{
+  if(!snap.exists()){
+    db.ref('users/1470900013871').set({
+      username:'1470900013871',
+      password:'05449',
+      name:'นายพงศกร แป่มจำนัก',
+      role:'admin',
+      cgCode:'',
+      status:'approved',
+      createdAt: Date.now()
+    });
+  }
+});
 
 let dataLoadedOnce = false;
 function onDataChange(){
@@ -603,6 +706,174 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
   });
 });
+
+/* =============================================================
+   AUTHENTICATION & ROLE-BASED ACCESS
+   หมายเหตุ: ระบบนี้ตรวจสอบสิทธิ์ในฝั่งหน้าเว็บ (client-side) เท่านั้น
+   เนื่องจาก Firebase Rules ยังเปิด read/write เป็น public ตามสถาปัตยกรรมเดิม
+============================================================= */
+let CURRENT_USER = null;
+const CG_ALLOWED_TABS = ['dashboard','record','elderly'];
+
+function roleLabel(role){
+  return role==='admin' ? 'ผู้ดูแลระบบ' : role==='cm' ? 'CM' : 'CG';
+}
+
+function doLogin(){
+  const u = document.getElementById('loginUsername').value.trim();
+  const p = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if(!u || !p){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
+  db.ref('users/'+u).once('value').then(snap=>{
+    const user = snap.val();
+    if(!user || user.password !== p){
+      errEl.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      return;
+    }
+    if(user.status !== 'approved'){
+      errEl.textContent = 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
+      return;
+    }
+    CURRENT_USER = user;
+    document.body.classList.add('logged-in');
+    document.getElementById('userBadgeName').textContent = `${user.name} (${roleLabel(user.role)})`;
+    document.getElementById('userBadge').style.display = 'flex';
+    document.getElementById('loginPassword').value = '';
+    applyRoleUI();
+  }).catch(err=>{ errEl.textContent = 'เกิดข้อผิดพลาด: '+err.message; });
+}
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  CURRENT_USER = null;
+  document.body.classList.remove('logged-in');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('userBadge').style.display = 'none';
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('nav.tabs button[data-tab="dashboard"]').classList.add('active');
+  document.getElementById('tab-dashboard').classList.add('active');
+});
+
+function applyRoleUI(){
+  if(!CURRENT_USER) return;
+  const allButtons = document.querySelectorAll('nav.tabs button');
+  if(CURRENT_USER.role === 'cg'){
+    allButtons.forEach(btn=>{
+      btn.style.display = CG_ALLOWED_TABS.includes(btn.dataset.tab) ? '' : 'none';
+    });
+    const activeBtn = document.querySelector('nav.tabs button.active');
+    if(activeBtn && !CG_ALLOWED_TABS.includes(activeBtn.dataset.tab)){
+      activeBtn.classList.remove('active');
+      document.getElementById('tab-'+activeBtn.dataset.tab).classList.remove('active');
+      const dashBtn = document.querySelector('nav.tabs button[data-tab="dashboard"]');
+      dashBtn.classList.add('active');
+      document.getElementById('tab-dashboard').classList.add('active');
+    }
+  } else {
+    allButtons.forEach(btn=>{
+      if(btn.dataset.tab === 'users'){
+        btn.style.display = CURRENT_USER.role === 'admin' ? '' : 'none';
+      } else {
+        btn.style.display = '';
+      }
+    });
+  }
+}
+
+/* ---------- Register (สมัครใช้งาน) ---------- */
+document.getElementById('showRegisterLink').addEventListener('click', ()=>{
+  document.getElementById('regError').textContent = '';
+  document.getElementById('regName').value = '';
+  document.getElementById('regUsername').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regPassword2').value = '';
+  document.getElementById('regRole').value = 'cm';
+  toggleRegCgWrap();
+  openModal('registerModal');
+});
+document.getElementById('regRole').addEventListener('change', toggleRegCgWrap);
+function toggleRegCgWrap(){
+  document.getElementById('regCgWrap').style.display = document.getElementById('regRole').value === 'cg' ? 'flex' : 'none';
+}
+function renderRegisterCgSelect(){
+  const sel = document.getElementById('regCgCode');
+  if(!sel) return;
+  const cur = sel.value;
+  const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
+  sel.innerHTML = '<option value="">-- ไม่ระบุ --</option>' + opts;
+  sel.value = cur;
+}
+
+document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('regName').value.trim();
+  const role = document.getElementById('regRole').value;
+  const cgCode = document.getElementById('regCgCode').value;
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+  const errEl = document.getElementById('regError');
+  errEl.textContent = '';
+  if(!name || !username || !password){ errEl.textContent = 'กรุณากรอกข้อมูลให้ครบ'; return; }
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){ errEl.textContent = 'ชื่อผู้ใช้ต้องเป็นตัวอักษร/ตัวเลขภาษาอังกฤษ 3-20 ตัว (ไม่มีจุดหรืออักขระพิเศษ)'; return; }
+  if(password.length < 4){ errEl.textContent = 'รหัสผ่านอย่างน้อย 4 ตัวอักษร'; return; }
+  if(password !== password2){ errEl.textContent = 'รหัสผ่านไม่ตรงกัน'; return; }
+  db.ref('users/'+username).once('value').then(snap=>{
+    if(snap.exists()){ errEl.textContent = 'ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น'; return; }
+    const status = role === 'cg' ? 'pending' : 'approved';
+    db.ref('users/'+username).set({
+      username, password, name, role,
+      cgCode: role === 'cg' ? cgCode : '',
+      status, createdAt: Date.now()
+    }).then(()=>{
+      closeModal('registerModal');
+      if(role === 'cg'){
+        toast('สมัครสำเร็จ กรุณารอการอนุมัติจากผู้ดูแลระบบก่อนเข้าใช้งาน', 'success');
+      } else {
+        toast('สมัครสำเร็จ สามารถเข้าสู่ระบบได้ทันที', 'success');
+      }
+    });
+  });
+});
+
+/* ---------- Admin: user management table ---------- */
+function renderUsersTable(){
+  const tbody = document.getElementById('usersTableBody');
+  if(!tbody) return;
+  const ids = Object.keys(STATE.users).sort((a,b)=>(STATE.users[a].createdAt||0)-(STATE.users[b].createdAt||0));
+  if(ids.length === 0){ tbody.innerHTML = '<tr><td colspan="6" class="muted">ยังไม่มีบัญชีผู้ใช้งาน</td></tr>'; return; }
+  tbody.innerHTML = ids.map(uid=>{
+    const u = STATE.users[uid];
+    const cgName = u.cgCode && STATE.cgs[u.cgCode] ? STATE.cgs[u.cgCode].name : (u.cgCode || '-');
+    const actions = [];
+    if(u.role === 'cg' && u.status === 'pending'){
+      actions.push(`<button class="btn btn-primary btn-sm" onclick="approveUser('${uid}')">✅ อนุมัติ</button>`);
+    }
+    if(u.role !== 'admin'){
+      actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button>`);
+    }
+    return `<tr>
+      <td>${u.name}</td><td>${u.username}</td>
+      <td><span class="role-tag ${u.role}">${roleLabel(u.role)}</span></td>
+      <td><span class="status-tag ${u.status}">${u.status === 'approved' ? 'อนุมัติแล้ว' : 'รออนุมัติ'}</span></td>
+      <td>${cgName}</td>
+      <td class="row" style="gap:6px;">${actions.join('')}</td>
+    </tr>`;
+  }).join('');
+}
+function approveUser(uid){
+  db.ref('users/'+uid+'/status').set('approved').then(()=>toast('อนุมัติผู้ใช้งานสำเร็จ','success'));
+}
+function deleteUser(uid){
+  const u = STATE.users[uid];
+  showConfirm('ลบบัญชีผู้ใช้งานนี้?', (u?u.name:uid), ()=>{
+    db.ref('users/'+uid).remove().then(()=>toast('ลบบัญชีผู้ใช้งานสำเร็จ','success'));
+  });
+}
 
 /* =============================================================
    COMMON SELECT FILLERS
@@ -995,7 +1266,7 @@ function renderElderlyTable(){
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyHn','elderlyAge','elderlyHouseNo'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyAdl').value = '1';
@@ -1017,6 +1288,9 @@ function openEditElderly(id){
   document.getElementById('elderlyCg').value = e.cgCode||'';
   document.getElementById('elderlyVisitsPerMonth').value = e.visitsPerMonth||'5';
   document.getElementById('elderlyPdfMode').value = e.pdfMode||'normal';
+  document.getElementById('elderlyRelativePhone').value = e.relativePhone||'';
+  document.getElementById('elderlyVhvName').value = e.vhvName||'';
+  document.getElementById('elderlyVhvPhone').value = e.vhvPhone||'';
   openModal('elderlyModal');
 }
 document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
@@ -1038,6 +1312,9 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     cgCode,
     visitsPerMonth,
     pdfMode: document.getElementById('elderlyPdfMode').value,
+    relativePhone: document.getElementById('elderlyRelativePhone').value.trim(),
+    vhvName: document.getElementById('elderlyVhvName').value.trim(),
+    vhvPhone: document.getElementById('elderlyVhvPhone').value.trim(),
     status:'active', createdAt: Date.now()
   };
   const id = editId || nextCode(STATE.elderly, 'E', 3);
