@@ -160,30 +160,82 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 </div>
 
 <div class="login-overlay" id="registerOverlay" style="display:none;z-index:1100;">
-  <div class="login-box">
+  <div class="login-box" style="max-width:460px;">
     <div class="login-banner">
       <img class="login-logo" id="registerLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
       <h2>ลงทะเบียนผู้ใช้งานใหม่</h2>
       <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
     </div>
-    <div class="login-body">
+    <div class="login-body" style="max-height:72vh;overflow-y:auto;">
       <div class="field">
         <label>ชื่อ-สกุล</label>
         <input type="text" id="regFullName" placeholder="ชื่อ-นามสกุลจริง">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ประเภทบุคคลที่สมัคร</label>
+        <select id="regPersonType">
+          <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
+          <option value="cm">CM (ผู้จัดการการดูแลผู้สูงอายุ)</option>
+          <option value="staff">เจ้าหน้าที่ รพ.สต.</option>
+          <option value="public">บุคคลทั่วไป</option>
+        </select>
+      </div>
+      <div class="field" id="regCmPositionWrap" style="margin-top:10px;display:none;">
+        <label>ตำแหน่งงานของ CM</label>
+        <input type="text" id="regCmPosition" placeholder="ระบุตำแหน่งงาน">
+      </div>
+      <div class="field" id="regStaffPositionWrap" style="margin-top:10px;display:none;">
+        <label>ตำแหน่ง</label>
+        <select id="regStaffPosition">
+          <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+          <option value="พยาบาลวิชาชีพ">พยาบาลวิชาชีพ</option>
+          <option value="นักวิชาการสาธารณสุข">นักวิชาการสาธารณสุข</option>
+          <option value="แพทย์แผนไทย">แพทย์แผนไทย</option>
+          <option value="เจ้าหน้าที่อื่นใน รพ.สต.">เจ้าหน้าที่อื่นใน รพ.สต.</option>
+        </select>
       </div>
       <div class="field" style="margin-top:10px;">
         <label>เลขประจำตัวประชาชน 13 หลัก (ใช้เป็น Username เข้าสู่ระบบ)</label>
         <input type="text" id="regIdCard" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" maxlength="13" inputmode="numeric">
       </div>
       <div class="field" style="margin-top:10px;">
-        <label>ที่อยู่</label>
-        <input type="text" id="regAddress" placeholder="บ้านเลขที่ / หมู่ / ตำบล">
+        <label>บ้านเลขที่</label>
+        <input type="text" id="regHouseNo" placeholder="บ้านเลขที่">
       </div>
+      <div class="row" style="margin-top:10px;">
+        <div class="field"><label>จังหวัด</label><select id="regProvince"></select></div>
+        <div class="field">
+          <label>อำเภอ</label>
+          <select id="regDistrict"></select>
+          <input type="text" id="regDistrictOther" placeholder="พิมพ์ชื่ออำเภอ" style="display:none;margin-top:4px;">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div class="field">
+          <label>ตำบล</label>
+          <select id="regSubdistrict"></select>
+          <input type="text" id="regSubdistrictOther" placeholder="พิมพ์ชื่อตำบล" style="display:none;margin-top:4px;">
+        </div>
+        <div class="field">
+          <label>หมู่ที่</label>
+          <select id="regVillage"></select>
+          <input type="text" id="regVillageOther" placeholder="พิมพ์หมู่ที่" style="display:none;margin-top:4px;">
+        </div>
+      </div>
+      <p class="muted" style="text-align:left;margin-top:6px;font-size:11.5px;">* มีข้อมูลอำเภอ/ตำบล/หมู่บ้านแบบเลือกครบเฉพาะ จ.สกลนคร (อ.เมืองสกลนคร มีครบทุกตำบล ส่วนหมู่บ้านมีครบเฉพาะ ต.เชียงเครือ) พื้นที่อื่นกรุณาพิมพ์เอง</p>
       <div class="field" style="margin-top:10px;">
         <label>หมายเลขโทรศัพท์</label>
         <input type="tel" id="regPhone" placeholder="เช่น 08xxxxxxxx">
       </div>
-      <p class="muted" style="text-align:left;margin-top:12px;">* รหัสผ่านเริ่มต้นสำหรับผู้ลงทะเบียนใหม่ทุกคนคือ <b>05449</b> กรุณาจดจำไว้สำหรับเข้าสู่ระบบครั้งแรก (เปลี่ยนรหัสผ่านเองได้ภายหลังจากเข้าสู่ระบบสำเร็จ) หลังลงทะเบียนแล้ว กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งานก่อน จึงจะเข้าใช้งานฟังก์ชันต่างๆ ได้</p>
+      <div class="field" style="margin-top:10px;">
+        <label>ตั้งรหัสผ่าน</label>
+        <input type="password" id="regPassword">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ยืนยันรหัสผ่าน</label>
+        <input type="password" id="regConfirmPassword">
+      </div>
+      <p class="muted" style="text-align:left;margin-top:10px;">* หลังลงทะเบียนแล้ว กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งานก่อน จึงจะเข้าใช้งานฟังก์ชันต่างๆ ได้</p>
       <button class="btn btn-primary" id="regSubmitBtn" style="margin-top:16px;width:100%;justify-content:center;">ลงทะเบียน</button>
       <p id="regError" style="color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;"></p>
       <div class="login-forgot" id="regBackToLoginLink">มีบัญชีอยู่แล้ว? กลับไปเข้าสู่ระบบ</div>
@@ -548,9 +600,9 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <section id="tab-users" class="tabpanel">
   <div class="card">
     <h3>👤 ผู้ใช้งานที่ลงทะเบียนแล้ว</h3>
-    <p class="muted">ผู้ลงทะเบียนใหม่ทุกคนเริ่มต้นด้วยสถานะ "ยังไม่กำหนดบทบาท" (มองเห็นได้เฉพาะภาพรวม) — Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) ต้องกด "✏️ แก้ไข/กำหนดบทบาท" เพื่อกำหนดบทบาทและข้อมูลก่อน แล้วจึงกด "🔧 สิทธิ์การใช้งาน" เพื่อกำหนดว่าเข้าฟังก์ชัน (แท็บ) ใดได้บ้าง — บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ</p>
+    <p class="muted">ผู้ลงทะเบียนใหม่ทุกคนตั้งรหัสผ่านของตัวเองตอนสมัคร และเริ่มต้นด้วยสถานะ "ยังไม่กำหนดบทบาท" (มองเห็นได้เฉพาะภาพรวม) — Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) ต้องกด "✏️ แก้ไข/กำหนดบทบาท" เพื่อกำหนดบทบาทและข้อมูลก่อน แล้วจึงกด "🔧 สิทธิ์การใช้งาน" เพื่อกำหนดว่าเข้าฟังก์ชัน (แท็บ) ใดได้บ้าง — คอลัมน์ "รหัสผ่าน" มองเห็นได้เฉพาะ Admin เท่านั้น กดปุ่ม 👁 เพื่อดู/ซ่อน — บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ</p>
     <div style="overflow-x:auto;">
-    <table style="margin-top:10px;min-width:820px;"><thead><tr><th>ชื่อ-สกุล</th><th>Username (เลขบัตรฯ)</th><th>บทบาท</th><th>ที่อยู่</th><th>เบอร์โทร</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
+    <table style="margin-top:10px;min-width:820px;"><thead><tr><th>ชื่อ-สกุล</th><th>ประเภท/ตำแหน่ง</th><th>Username (เลขบัตรฯ)</th><th>รหัสผ่าน</th><th>บทบาท</th><th>ที่อยู่</th><th>เบอร์โทร</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
     <tbody id="usersTable"></tbody></table>
     </div>
   </div>
@@ -845,6 +897,28 @@ function villageLabel(moo){
   return v ? `หมู่ ${v.moo} ${v.name}` : `หมู่ ${moo}`;
 }
 
+/* ข้อมูลจังหวัด/อำเภอ/ตำบล สำหรับฟอร์มลงทะเบียน — มีข้อมูลแบบเลือกครบเฉพาะพื้นที่จริงที่ รพ.สต. ให้บริการ
+   (จ.สกลนคร ครบทุกอำเภอ, อ.เมืองสกลนคร ครบทุกตำบล, ต.เชียงเครือ ครบทุกหมู่บ้านตาม VILLAGES ด้านบน)
+   พื้นที่อื่นนอกเหนือจากนี้ ผู้ลงทะเบียนพิมพ์เองได้ */
+const TH_PROVINCES = [
+  "กรุงเทพมหานคร","กระบี่","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท",
+  "ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม",
+  "นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์",
+  "ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์",
+  "แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง",
+  "ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ",
+  "สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย",
+  "หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"
+];
+const SAKON_DISTRICTS = [
+  "เมืองสกลนคร","กุสุมาลย์","กุดบาก","พรรณานิคม","วาริชภูมิ","ส่องดาว","สว่างแดนดิน","วานรนิวาส","อากาศอำนวย","บ้านม่วง",
+  "พังโคน","คำตากล้า","นิคมน้ำอูน","เต่างอย","โคกศรีสุพรรณ","เจริญศิลป์","โพนนาแก้ว","ภูพาน"
+];
+const MUEANG_SAKON_SUBDISTRICTS = [
+  "ธาตุเชิงชุม","ขมิ้น","งิ้วด่อน","โนนหอม","เชียงเครือ","ท่าแร่","ม่วงลาย","ดงชน",
+  "ห้วยยาง","พังขว้าง","ดงมะไฟ","ธาตุนาเวง","เหล่าปอแดง","หนองลาด","ฮางโฮง","โคกก่อง"
+];
+
 /* =============================================================
    FIREBASE LISTENERS
 ============================================================= */
@@ -1092,45 +1166,128 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
   document.getElementById('loginOverlay').style.display = 'flex';
 });
 
+/* ---- ฟอร์มลงทะเบียน: ประเภทบุคคล + ที่อยู่แบบเลือกจังหวัด/อำเภอ/ตำบล/หมู่ ---- */
+document.getElementById('regProvince').innerHTML = TH_PROVINCES.map(p=>`<option value="${p}">${p}</option>`).join('');
+document.getElementById('regProvince').value = 'สกลนคร';
+
+function renderRegDistrictOptions(){
+  const prov = document.getElementById('regProvince').value;
+  const distSel = document.getElementById('regDistrict');
+  const distOther = document.getElementById('regDistrictOther');
+  if(prov === 'สกลนคร'){
+    distSel.innerHTML = SAKON_DISTRICTS.map(d=>`<option value="${d}">${d}</option>`).join('');
+    distSel.style.display = ''; distOther.style.display = 'none'; distOther.value = '';
+  } else {
+    distSel.innerHTML = '<option value="">-- ไม่มีข้อมูล กรุณาพิมพ์ด้านล่าง --</option>';
+    distSel.style.display = 'none'; distOther.style.display = 'block';
+  }
+  renderRegSubdistrictOptions();
+}
+function renderRegSubdistrictOptions(){
+  const prov = document.getElementById('regProvince').value;
+  const dist = document.getElementById('regDistrict').value;
+  const subSel = document.getElementById('regSubdistrict');
+  const subOther = document.getElementById('regSubdistrictOther');
+  if(prov === 'สกลนคร' && dist === 'เมืองสกลนคร'){
+    subSel.innerHTML = MUEANG_SAKON_SUBDISTRICTS.map(s=>`<option value="${s}">${s}</option>`).join('');
+    subSel.style.display = ''; subOther.style.display = 'none'; subOther.value = '';
+  } else {
+    subSel.innerHTML = '<option value="">-- ไม่มีข้อมูล กรุณาพิมพ์ด้านล่าง --</option>';
+    subSel.style.display = 'none'; subOther.style.display = 'block';
+  }
+  renderRegVillageOptions();
+}
+function renderRegVillageOptions(){
+  const sub = document.getElementById('regSubdistrict').value;
+  const vilSel = document.getElementById('regVillage');
+  const vilOther = document.getElementById('regVillageOther');
+  if(sub === 'เชียงเครือ'){
+    vilSel.innerHTML = VILLAGES.map(v=>`<option value="${v.moo}">หมู่ ${v.moo} ${v.name}</option>`).join('');
+    vilSel.style.display = ''; vilOther.style.display = 'none'; vilOther.value = '';
+  } else {
+    vilSel.innerHTML = '<option value="">-- ไม่มีข้อมูล กรุณาพิมพ์ด้านล่าง --</option>';
+    vilSel.style.display = 'none'; vilOther.style.display = 'block';
+  }
+}
+document.getElementById('regProvince').addEventListener('change', renderRegDistrictOptions);
+document.getElementById('regDistrict').addEventListener('change', renderRegSubdistrictOptions);
+document.getElementById('regSubdistrict').addEventListener('change', renderRegVillageOptions);
+renderRegDistrictOptions();
+
+document.getElementById('regPersonType').addEventListener('change', toggleRegPersonTypeFields);
+function toggleRegPersonTypeFields(){
+  const pt = document.getElementById('regPersonType').value;
+  document.getElementById('regCmPositionWrap').style.display = (pt==='cm') ? 'block' : 'none';
+  document.getElementById('regStaffPositionWrap').style.display = (pt==='staff') ? 'block' : 'none';
+}
+
 /* ---- สลับไปหน้าลงทะเบียน / กลับมาหน้าเข้าสู่ระบบ ---- */
 document.getElementById('loginRegisterLink').addEventListener('click', ()=>{
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('registerOverlay').style.display = 'flex';
   document.getElementById('regFullName').value = '';
+  document.getElementById('regPersonType').value = 'cg';
+  document.getElementById('regCmPosition').value = '';
   document.getElementById('regIdCard').value = '';
-  document.getElementById('regAddress').value = '';
+  document.getElementById('regHouseNo').value = '';
+  document.getElementById('regProvince').value = 'สกลนคร';
+  renderRegDistrictOptions();
   document.getElementById('regPhone').value = '';
+  document.getElementById('regPassword').value = '';
+  document.getElementById('regConfirmPassword').value = '';
   document.getElementById('regError').textContent = '';
+  toggleRegPersonTypeFields();
 });
 document.getElementById('regBackToLoginLink').addEventListener('click', ()=>{
   document.getElementById('registerOverlay').style.display = 'none';
   document.getElementById('loginOverlay').style.display = 'flex';
 });
 
-const DEFAULT_REG_PASSWORD = '05449';
 document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
   const fullName = document.getElementById('regFullName').value.trim();
+  const personType = document.getElementById('regPersonType').value;
   const idCard = document.getElementById('regIdCard').value.trim();
-  const address = document.getElementById('regAddress').value.trim();
+  const houseNo = document.getElementById('regHouseNo').value.trim();
+  const province = document.getElementById('regProvince').value;
+  const district = (document.getElementById('regDistrict').style.display !== 'none')
+    ? document.getElementById('regDistrict').value : document.getElementById('regDistrictOther').value.trim();
+  const subdistrict = (document.getElementById('regSubdistrict').style.display !== 'none')
+    ? document.getElementById('regSubdistrict').value : document.getElementById('regSubdistrictOther').value.trim();
+  const village = (document.getElementById('regVillage').style.display !== 'none')
+    ? document.getElementById('regVillage').value : document.getElementById('regVillageOther').value.trim();
   const phone = document.getElementById('regPhone').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
   const errEl = document.getElementById('regError');
 
   if(!fullName){ errEl.textContent = 'กรุณากรอกชื่อ-สกุล'; return; }
   if(!/^[0-9]{13}$/.test(idCard)){ errEl.textContent = 'กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก (ตัวเลขเท่านั้น)'; return; }
   if(Object.values(STATE.users).some(u=>u.username===idCard)){ errEl.textContent = 'เลขบัตรประชาชนนี้ลงทะเบียนไว้แล้ว กรุณาเข้าสู่ระบบแทน'; return; }
+  if(password.length < 4){ errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร'; return; }
+  if(password !== confirmPassword){ errEl.textContent = 'ยืนยันรหัสผ่านไม่ตรงกัน'; return; }
+
+  let position = '';
+  if(personType === 'cm') position = document.getElementById('regCmPosition').value.trim();
+  else if(personType === 'staff') position = document.getElementById('regStaffPosition').value;
+
+  const address = `บ้านเลขที่ ${houseNo||'-'} หมู่ ${village||'-'} ต.${subdistrict||'-'} อ.${district||'-'} จ.${province}`;
 
   const newUser = {
-    username: idCard, password: DEFAULT_REG_PASSWORD, displayName: fullName,
-    idCard, address, phone, role: 'unassigned', cgCode: '',
+    username: idCard, password, displayName: fullName,
+    idCard, personType, position,
+    houseNo, moo: village, subdistrict, district, province, address,
+    phone, role: 'unassigned', cgCode: '',
     permissions: permsFromRoleTabs('unassigned'), createdAt: Date.now()
   };
   const uid = 'U' + Date.now();
   db.ref('users/'+uid).set(newUser).then(()=>{
-    toast('ลงทะเบียนสำเร็จ! เข้าสู่ระบบด้วยเลขบัตรประชาชนและรหัสผ่าน 05449 กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งาน','success');
+    toast('ลงทะเบียนสำเร็จ! เข้าสู่ระบบด้วยเลขบัตรประชาชนและรหัสผ่านที่ตั้งไว้ กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งาน','success');
     document.getElementById('regFullName').value = '';
     document.getElementById('regIdCard').value = '';
-    document.getElementById('regAddress').value = '';
+    document.getElementById('regHouseNo').value = '';
     document.getElementById('regPhone').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
     errEl.textContent = '';
     document.getElementById('registerOverlay').style.display = 'none';
     document.getElementById('loginOverlay').style.display = 'flex';
@@ -1141,16 +1298,22 @@ document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
 function renderUsersTable(){
   const tbody = document.getElementById('usersTable');
   if(!tbody) return;
+  const PERSON_TYPE_LABELS = { cg:'CG', cm:'CM', staff:'เจ้าหน้าที่ รพ.สต.', public:'บุคคลทั่วไป' };
   const rows = Object.entries(STATE.users).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).map(([uid,u])=>{
     const cgName = (u.cgCode && STATE.cgs[u.cgCode]) ? STATE.cgs[u.cgCode].name : '-';
     const dateLabel = u.createdAt ? formatThaiDate(new Date(u.createdAt).toISOString().slice(0,10)) : '-';
     const roleLabelText = ROLE_LABELS[u.role] || u.role || 'ยังไม่กำหนดบทบาท';
+    const personTypeText = u.personType ? (PERSON_TYPE_LABELS[u.personType]||u.personType) : '-';
+    const personTypeLabel = u.position ? `${personTypeText} (${u.position})` : personTypeText;
     const permBtn = (u.role === 'admin')
       ? '<span class="muted" style="font-size:12px;">เข้าถึงได้ทุกฟังก์ชัน</span>'
       : `<button class="btn btn-ghost btn-sm" onclick="openUserPermissions('${uid}')">🔧 สิทธิ์การใช้งาน</button>`;
     return `<tr>
       <td>${u.displayName||'-'}</td>
+      <td>${personTypeLabel}</td>
       <td>${u.username||'-'}</td>
+      <td><span class="pw-mask" id="pwmask-${uid}" data-pw="${(u.password||'').replace(/"/g,'&quot;')}">••••••</span>
+        <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" onclick="togglePasswordReveal('${uid}')">👁</button></td>
       <td>${(!u.role || u.role==='unassigned') ? `<span class="status-tag pending">${roleLabelText}</span>` : roleLabelText}</td>
       <td>${u.address||'-'}</td>
       <td>${u.phone||'-'}</td>
@@ -1164,7 +1327,14 @@ function renderUsersTable(){
       </td>
     </tr>`;
   }).join('');
-  tbody.innerHTML = rows || '<tr><td colspan="8" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
+  tbody.innerHTML = rows || '<tr><td colspan="10" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
+}
+/* Admin เท่านั้นที่เห็นแท็บนี้ — กดปุ่ม 👁 เพื่อดู/ซ่อนรหัสผ่านจริงของผู้ใช้แต่ละคน */
+function togglePasswordReveal(uid){
+  const el = document.getElementById('pwmask-'+uid);
+  if(!el) return;
+  if(el.textContent === '••••••'){ el.textContent = el.dataset.pw || '(ว่าง)'; }
+  else{ el.textContent = '••••••'; }
 }
 
 /* ---- Admin แก้ไขข้อมูลผู้ใช้งานและกำหนดบทบาท ---- */
