@@ -445,7 +445,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <div class="field"><label>กรองตามโหมด PDF</label><select id="filterElderlyMode"><option value="">ทั้งหมด</option><option value="normal">ปกติ</option><option value="obt">อบต.</option></select></div>
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
-    <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
+    <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
 </section>
@@ -561,7 +561,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <h3 id="elderlyModalTitle">เพิ่มผู้สูงอายุ</h3>
   <input type="hidden" id="elderlyEditId">
   <div class="field"><label>ชื่อ-สกุล</label><input type="text" id="elderlyName"></div>
-  <div class="field" style="margin-top:8px;"><label>HN (ถ้ามี)</label><input type="text" id="elderlyHn"></div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>เลขประจำตัวประชาชน</label><input type="text" id="elderlyIdCard" placeholder="13 หลัก" maxlength="13"></div>
+    <div class="field"><label>HN (ถ้ามี)</label><input type="text" id="elderlyHn"></div>
+  </div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>อายุ</label><input type="number" id="elderlyAge" min="0" max="130"></div>
     <div class="field"><label>เพศ</label><select id="elderlyGender"><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select></div>
@@ -571,13 +574,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>หมู่ที่</label><input type="number" id="elderlyMoo" min="1" max="20"></div>
   </div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>กลุ่ม ADL</label><select id="elderlyAdl"><option value="1">1 (เขียว)</option><option value="2">2 (เหลือง)</option><option value="3">3 (ส้ม)</option><option value="4">4 (แดง)</option></select></div>
-    <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
+    <div class="field"><label>คะแนน ADL</label><input type="number" id="elderlyAdlScore" min="0" max="20" placeholder="เช่น 0-20"></div>
+    <div class="field"><label>กลุ่ม ADL</label><input type="text" id="elderlyAdl" placeholder="เช่น 1, 2, 3, 4, B3, C2, I3"></div>
   </div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="elderlyVisitsPerMonth" min="5" max="10" value="5"></div>
+    <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
+  <div class="field" style="margin-top:8px;"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="elderlyVisitsPerMonth" min="1" max="10" value="5"></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรศัพท์ญาติ</label><input type="tel" id="elderlyRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>ชื่อ อสม. ใกล้บ้าน</label><input type="text" id="elderlyVhvName"></div>
@@ -838,6 +842,7 @@ function onDataChange(){
   if(!dataLoadedOnce){
     dataLoadedOnce = true;
     maybeSeedData();
+    maybeSeedElderlyImport();
   }
 }
 
@@ -853,6 +858,78 @@ function maybeSeedData(){
   };
   db.ref('cgs').set(cgSeed);
   toast('เริ่มต้นระบบ: สร้างข้อมูล CG จำนวน 5 คนเรียบร้อยแล้ว กรุณาเพิ่มผู้สูงอายุที่แท็บ "จัดการผู้สูงอายุ"', 'success');
+}
+
+function maybeSeedElderlyImport(){
+  /* นำเข้าข้อมูลผู้สูงอายุจากไฟล์ทะเบียน LTC ปีงบประมาณ 68 (นำเข้าครั้งเดียวตอนที่ยังไม่มีข้อมูลผู้สูงอายุในระบบเลย) */
+  if(Object.keys(STATE.elderly).length>0) return;
+  const now = Date.now();
+  const elderlySeed = {
+    E001:{name:'นางทรงศรี อุ่นหล้า', idCard:'3470101116986', hn:'', age:73, gender:'หญิง', houseNo:'25', moo:'2', adlScore:8, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E002:{name:'นายบุญเลิศ หนูดา', idCard:'5470100107262', hn:'', age:64, gender:'ชาย', houseNo:'74', moo:'9', adlScore:11, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางกิ่งฟ้า ผาลาพัง', vhvPhone:'081-009-3675', status:'active', createdAt:now},
+    E003:{name:'นางทองไสว สีทิน', idCard:'3470101155884', hn:'', age:79, gender:'หญิง', houseNo:'4', moo:'11', adlScore:8, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E004:{name:'นางสว่างจิต ปัทมาศ', idCard:'3470200278305', hn:'', age:78, gender:'หญิง', houseNo:'220', moo:'11', adlScore:8, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E005:{name:'นางเตือนใจ หม่อมบ่าว', idCard:'3480100887521', hn:'', age:57, gender:'หญิง', houseNo:'154', moo:'3', adlScore:8, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E006:{name:'นางทอน ยุคะลัง', idCard:'3470101160136', hn:'', age:93, gender:'หญิง', houseNo:'68', moo:'11', adlScore:4, adlGroup:'3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E007:{name:'นายสายันต์ ม้าวเมืองคำ', idCard:'1470100117401', hn:'', age:38, gender:'ชาย', houseNo:'62', moo:'15', adlScore:4, adlGroup:'3', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางวิรัตน์ เรือระดา', vhvPhone:'095-214-4659', status:'active', createdAt:now},
+    E008:{name:'นายนิวัติ ปิ่นปัญญา', idCard:'3470101261510', hn:'', age:62, gender:'ชาย', houseNo:'193', moo:'8', adlScore:11, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E009:{name:'นางประเสริฐ ประเทพา', idCard:'3470101086092', hn:'', age:58, gender:'หญิง', houseNo:'58', moo:'9', adlScore:8, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางกิ่งฟ้า ผาลาพัง', vhvPhone:'081-009-3675', status:'active', createdAt:now},
+    E010:{name:'นางพรมมา ณ สูงเนิน', idCard:'3470100990691', hn:'', age:73, gender:'หญิง', houseNo:'155', moo:'3', adlScore:8, adlGroup:'1', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E011:{name:'นายบุญเถิง สีทิน', idCard:'3470101155876', hn:'', age:79, gender:'ชาย', houseNo:'4', moo:'11', adlScore:9, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E012:{name:'น.ส.อริยา ประเทพา', idCard:'1479900243905', hn:'', age:30, gender:'หญิง', houseNo:'245', moo:'15', adlScore:11, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางวิรัตน์ เรือระดา', vhvPhone:'095-214-4659', status:'active', createdAt:now},
+    E013:{name:'น.ส.บุษกร อุปพงษ์', idCard:'3470101179074', hn:'', age:54, gender:'หญิง', houseNo:'139', moo:'13', adlScore:8, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E014:{name:'น.ส.บุญศรี โพธิโคตร', idCard:'3470101085916', hn:'', age:68, gender:'หญิง', houseNo:'38', moo:'9', adlScore:8, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางกิ่งฟ้า ผาลาพัง', vhvPhone:'081-009-3675', status:'active', createdAt:now},
+    E015:{name:'ด.ช.อดิศักดิ์ บุญภูมิ', idCard:'1250101866743', hn:'', age:11, gender:'ชาย', houseNo:'156', moo:'8', adlScore:5, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E016:{name:'นางสำมา ชาวดา', idCard:'3470101068281', hn:'', age:85, gender:'หญิง', houseNo:'21', moo:'6', adlScore:11, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E017:{name:'น.ส.วิลา จันดา', idCard:'3470101160101', hn:'', age:87, gender:'หญิง', houseNo:'67', moo:'11', adlScore:0, adlGroup:'4', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E018:{name:'น.ส.คำปาน พลทันต์', idCard:'3470101067527', hn:'', age:74, gender:'หญิง', houseNo:'7', moo:'6', adlScore:9, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E019:{name:'นายอนงค์ เขียวแก่', idCard:'3470101115335', hn:'', age:74, gender:'ชาย', houseNo:'62', moo:'2', adlScore:2, adlGroup:'3', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E020:{name:'นายสีทัด ประเครือ', idCard:'3470101160098', hn:'', age:80, gender:'ชาย', houseNo:'67', moo:'11', adlScore:10, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E021:{name:'นางจินดา ปาละลี', idCard:'3470101130822', hn:'', age:67, gender:'หญิง', houseNo:'128', moo:'3', adlScore:11, adlGroup:'2', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E022:{name:'นางทองเลียม สุชัยราช', idCard:'3470101115424', hn:'', age:62, gender:'หญิง', houseNo:'134', moo:'2', adlScore:4, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E023:{name:'นางพุทธศิล ละครท้าว', idCard:'3470101120126', hn:'', age:58, gender:'หญิง', houseNo:'42', moo:'2', adlScore:11, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E024:{name:'นางปราณี สิงหกุล', idCard:'3470101115521', hn:'', age:86, gender:'หญิง', houseNo:'97', moo:'2', adlScore:11, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E025:{name:'น.ส.โรจนา ผุยสุ', idCard:'3470100955569', hn:'', age:49, gender:'หญิง', houseNo:'139', moo:'6', adlScore:3, adlGroup:'3', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E026:{name:'นางซ่อม กายราช', idCard:'3470101085207', hn:'', age:68, gender:'หญิง', houseNo:'98', moo:'3', adlScore:11, adlGroup:'1', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E027:{name:'นางจันเรือง นิตย์สุภาพ', idCard:'3470101071893', hn:'', age:91, gender:'หญิง', houseNo:'80', moo:'6', adlScore:11, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E028:{name:'นางสำมา ผุยสุ', idCard:'3470100953850', hn:'', age:90, gender:'หญิง', houseNo:'111', moo:'6', adlScore:11, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E029:{name:'นางประเนียร จันทร์ปาน', idCard:'3470101079894', hn:'', age:77, gender:'หญิง', houseNo:'103', moo:'8', adlScore:11, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E030:{name:'นางบุญหลิน คำศรี', idCard:'3470101130172', hn:'', age:78, gender:'หญิง', houseNo:'47', moo:'13', adlScore:5, adlGroup:'2', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E031:{name:'นายดำรงค์ ฮันวงค์', idCard:'3470100205365', hn:'', age:72, gender:'ชาย', houseNo:'46', moo:'3', adlScore:10, adlGroup:'2', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E032:{name:'นางอำพร ทีผุย', idCard:'3470100951997', hn:'', age:87, gender:'หญิง', houseNo:'86', moo:'6', adlScore:10, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E033:{name:'นางละม่อม ทีผุย', idCard:'3470100952071', hn:'', age:77, gender:'หญิง', houseNo:'87', moo:'6', adlScore:11, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E034:{name:'นายดิษฐ์ ราชพรหม', idCard:'5470101177400', hn:'', age:88, gender:'ชาย', houseNo:'29', moo:'11', adlScore:11, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E035:{name:'น.ส.บุญมี พิมพ์โยธา', idCard:'3470100952390', hn:'', age:87, gender:'หญิง', houseNo:'91', moo:'6', adlScore:9, adlGroup:'1', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E036:{name:'นายสุรพล นวนลมลี', idCard:'3470200311329', hn:'', age:56, gender:'ชาย', houseNo:'253', moo:'8', adlScore:11, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E037:{name:'นายสมานมิตร อภัยโส', idCard:'5470100099332', hn:'', age:47, gender:'ชาย', houseNo:'155', moo:'3', adlScore:10, adlGroup:'1', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E038:{name:'นางจำลอง สมสายผล', idCard:'3470101070935', hn:'', age:70, gender:'หญิง', houseNo:'98', moo:'11', adlScore:11, adlGroup:'1', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E039:{name:'นายประมูล บุญตาท้าว', idCard:'5470100078513', hn:'', age:73, gender:'ชาย', houseNo:'8', moo:'3', adlScore:8, adlGroup:'2', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E040:{name:'นายนพดล จันทลุน', idCard:'3479900098308', hn:'', age:64, gender:'ชาย', houseNo:'178', moo:'11', adlScore:0, adlGroup:'3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now},
+    E041:{name:'นางทองม้วน โพนทัน', idCard:'3470100676902', hn:'', age:73, gender:'หญิง', houseNo:'60', moo:'8', adlScore:11, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E042:{name:'นางจุมพร แสนต่างนา', idCard:'3470101504421', hn:'', age:62, gender:'หญิง', houseNo:'257', moo:'8', adlScore:2, adlGroup:'3', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E043:{name:'น.ส.เฉลียว ทองพันชั่ง', idCard:'3470101087871', hn:'', age:85, gender:'หญิง', houseNo:'41', moo:'9', adlScore:0, adlGroup:'3', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางกิ่งฟ้า ผาลาพัง', vhvPhone:'081-009-3675', status:'active', createdAt:now},
+    E044:{name:'นางหนูเลียง คำธิศรี', idCard:'3470101072814', hn:'', age:83, gender:'หญิง', houseNo:'9', moo:'15', adlScore:9, adlGroup:'1', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางวิรัตน์ เรือระดา', vhvPhone:'095-214-4659', status:'active', createdAt:now},
+    E045:{name:'ด.ญ.ภักจิรา ไชยฮาต', idCard:'1479900859540', hn:'', age:16, gender:'หญิง', houseNo:'70', moo:'2', adlScore:8, adlGroup:'2', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E046:{name:'นายเครื่อง พรมพันธ์', idCard:'3470101084634', hn:'', age:71, gender:'ชาย', houseNo:'87', moo:'3', adlScore:11, adlGroup:'1', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E047:{name:'นางจินตนา สังกฤษ', idCard:'3470100948015', hn:'', age:79, gender:'หญิง', houseNo:'5', moo:'3', adlScore:10, adlGroup:'1', cgCode:'CG004', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายเสาร์ ตะสายวา', vhvPhone:'06-1517-2753', status:'active', createdAt:now},
+    E048:{name:'นายจันทร์ดี ทีผูย', idCard:'3470100677178', hn:'', age:88, gender:'ชาย', houseNo:'8', moo:'9', adlScore:7, adlGroup:'1', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางกิ่งฟ้า ผาลาพัง', vhvPhone:'081-009-3675', status:'active', createdAt:now},
+    E049:{name:'นางสีทวน จันดา', idCard:'3470100954040', hn:'', age:75, gender:'หญิง', houseNo:'136', moo:'6', adlScore:9, adlGroup:'B3', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E050:{name:'นายทำนอง ศิลทาน', idCard:'3470100949607', hn:'', age:81, gender:'ชาย', houseNo:'147', moo:'13', adlScore:6, adlGroup:'C2', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E051:{name:'นายสวรรค์ แสนมา', idCard:'3470101128291', hn:'', age:67, gender:'ชาย', houseNo:'118', moo:'13', adlScore:9, adlGroup:'B3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E052:{name:'น.ส.สรศักดิ์ ไชยฮาต', idCard:'3470101120002', hn:'', age:55, gender:'หญิง', houseNo:'70', moo:'2', adlScore:11, adlGroup:'B3', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายสาคร ชาโยธา', vhvPhone:'088-551-6167', status:'active', createdAt:now},
+    E053:{name:'นางประนอม อุทาลุน', idCard:'3470101266597', hn:'', age:73, gender:'หญิง', houseNo:'207', moo:'15', adlScore:8, adlGroup:'B3', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางวิรัตน์ เรือระดา', vhvPhone:'095-214-4659', status:'active', createdAt:now},
+    E054:{name:'ด.ญ.สุดารัด แสนเมือง', idCard:'1478300000652', hn:'', age:12, gender:'หญิง', houseNo:'31', moo:'13', adlScore:10, adlGroup:'B3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E055:{name:'นายมงคล เกวใจ', idCard:'3470101554118', hn:'', age:71, gender:'ชาย', houseNo:'228', moo:'6', adlScore:7, adlGroup:'C3', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E056:{name:'นายสว่าง แสนต่างนา', idCard:'3470101266589', hn:'', age:72, gender:'ชาย', houseNo:'207', moo:'15', adlScore:7, adlGroup:'B3', cgCode:'CG002', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางวิรัตน์ เรือระดา', vhvPhone:'095-214-4659', status:'active', createdAt:now},
+    E057:{name:'นายบุญรอง นนรี', idCard:'3470100953574', hn:'', age:72, gender:'ชาย', houseNo:'108', moo:'6', adlScore:11, adlGroup:'B3', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E058:{name:'นางเสน่หา เกวใจ', idCard:'3470100954147', hn:'', age:76, gender:'หญิง', houseNo:'228', moo:'6', adlScore:11, adlGroup:'B3', cgCode:'CG003', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นายวีระศักดิ์ ภูละคร', vhvPhone:'086-223-3632', status:'active', createdAt:now},
+    E059:{name:'นางมาย ครุธตำคำ', idCard:'3470101537558', hn:'', age:96, gender:'หญิง', houseNo:'92', moo:'13', adlScore:8, adlGroup:'B3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:2, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E060:{name:'น.ส.ไข่ ตะสายวา', idCard:'3470101131896', hn:'', age:83, gender:'หญิง', houseNo:'80', moo:'13', adlScore:8, adlGroup:'B3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางอุไรวรรณ บุตรจันทร์', vhvPhone:'086-338-6790', status:'active', createdAt:now},
+    E061:{name:'นางจารึก เมืองปากน้อย', idCard:'3470101118610', hn:'', age:58, gender:'หญิง', houseNo:'278', moo:'8', adlScore:2, adlGroup:'I3', cgCode:'CG005', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'น.ส.นุชนาฎ ช่างประดิษฐ์', vhvPhone:'083-538-4917', status:'active', createdAt:now},
+    E062:{name:'นางนิวาส ดาตาวงค์', idCard:'3470101156562', hn:'', age:68, gender:'หญิง', houseNo:'76', moo:'11', adlScore:4, adlGroup:'I3', cgCode:'CG001', pdfMode:'normal', visitsPerMonth:4, relativePhone:'', vhvName:'นางประทีป ลาดบาศรี', vhvPhone:'081-059-5646', status:'active', createdAt:now}
+  };
+  db.ref('elderly').set(elderlySeed);
+  toast('นำเข้าข้อมูลผู้สูงอายุจากทะเบียน LTC ปีงบประมาณ 68 จำนวน 62 คนเรียบร้อยแล้ว', 'success');
 }
 
 
@@ -1574,7 +1651,9 @@ function renderElderlyTable(){
       ? `<span class="status-tag discharged" title="${e.dischargeReasonLabel||''} (${e.dischargeDate||''})">จำหน่ายแล้ว</span>`
       : `<span class="status-tag approved">ดูแลอยู่</span>`;
     return `<tr>
-      <td>${id}</td><td><span class="adl-dot adl-${e.adlGroup||''}"></span>${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td><td>${e.adlGroup||'-'}</td><td>${e.visitsPerMonth||'-'}</td>
+      <td>${id}</td><td><span class="adl-dot adl-${e.adlGroup||''}"></span>${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td>
+      <td>${(e.adlScore!==undefined && e.adlScore!==null && e.adlScore!=='') ? e.adlScore : '-'}</td>
+      <td>${e.adlGroup||'-'}</td><td>${e.visitsPerMonth||'-'}</td>
       <td><span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span></td>
       <td>${statusCell}</td>
       <td class="row" style="gap:4px;"><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
@@ -1582,12 +1661,12 @@ function renderElderlyTable(){
       <button class="btn btn-danger btn-sm" onclick="deleteElderly('${id}')">🗑</button></td>
     </tr>`;
   }).join('');
-  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="9" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="10" class="muted">ยังไม่มีข้อมูล</td></tr>';
 }
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyAdl').value = '1';
@@ -1600,11 +1679,13 @@ function openEditElderly(id){
   document.getElementById('elderlyModalTitle').textContent = 'แก้ไขผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = id;
   document.getElementById('elderlyName').value = e.name||'';
+  document.getElementById('elderlyIdCard').value = e.idCard||'';
   document.getElementById('elderlyHn').value = e.hn||'';
   document.getElementById('elderlyAge').value = e.age||'';
   document.getElementById('elderlyGender').value = e.gender||'ชาย';
   document.getElementById('elderlyHouseNo').value = e.houseNo||'';
   document.getElementById('elderlyMoo').value = e.moo||'';
+  document.getElementById('elderlyAdlScore').value = (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '';
   document.getElementById('elderlyAdl').value = e.adlGroup||'1';
   document.getElementById('elderlyCg').value = e.cgCode||'';
   document.getElementById('elderlyVisitsPerMonth').value = e.visitsPerMonth||'5';
@@ -1621,15 +1702,18 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   if(!name){ toast('กรุณากรอกชื่อ','error'); return; }
   if(!cgCode){ toast('กรุณาเลือก CG ผู้ดูแล','error'); return; }
   let visitsPerMonth = parseInt(document.getElementById('elderlyVisitsPerMonth').value,10) || 5;
-  if(visitsPerMonth<5) visitsPerMonth = 5;
+  if(visitsPerMonth<1) visitsPerMonth = 1;
   if(visitsPerMonth>10) visitsPerMonth = 10;
+  const adlScoreRaw = document.getElementById('elderlyAdlScore').value;
   const data = {
-    name, hn: document.getElementById('elderlyHn').value.trim(),
+    name, idCard: document.getElementById('elderlyIdCard').value.trim(),
+    hn: document.getElementById('elderlyHn').value.trim(),
     age: parseInt(document.getElementById('elderlyAge').value,10)||0,
     gender: document.getElementById('elderlyGender').value,
     houseNo: document.getElementById('elderlyHouseNo').value.trim(),
     moo: document.getElementById('elderlyMoo').value,
-    adlGroup: document.getElementById('elderlyAdl').value,
+    adlScore: adlScoreRaw==='' ? null : parseInt(adlScoreRaw,10),
+    adlGroup: document.getElementById('elderlyAdl').value.trim(),
     cgCode,
     visitsPerMonth,
     pdfMode: document.getElementById('elderlyPdfMode').value,
