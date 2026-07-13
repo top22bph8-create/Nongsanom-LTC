@@ -183,6 +183,13 @@ body.logged-in .login-screen{display:none;}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('permissionsModal')">ยกเลิก</button><button class="btn btn-primary" id="permSaveBtn">บันทึกสิทธิ์</button></div>
 </div></div>
 
+<div class="modal-overlay" id="cgVisitStatusModal"><div class="modal-box" style="max-width:520px;">
+  <h3 id="cgVisitStatusTitle">รายชื่อผู้สูงอายุ</h3>
+  <p class="muted">สถานะการเยี่ยมประจำเดือนที่เลือกในแท็บภาพรวม เทียบกับจำนวนครั้งที่กำหนดต่อคน (ตั้งค่าได้ที่แท็บ "จัดการผู้สูงอายุ")</p>
+  <div id="cgVisitStatusList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:60vh;overflow-y:auto;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('cgVisitStatusModal')">ปิด</button></div>
+</div></div>
+
 <header class="app-header">
   <img class="app-logo" id="appHeaderLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
   <div class="app-header-text">
@@ -230,7 +237,7 @@ body.logged-in .login-screen{display:none;}
 
   <div class="card">
     <h3>สถานะ CG รายเดือน</h3>
-    <table><thead><tr><th>CG</th><th>ผู้สูงอายุ</th><th>เยี่ยมแล้ว</th><th>ความคืบหน้า</th></tr></thead>
+    <table><thead><tr><th>CG</th><th>ผู้สูงอายุ</th><th>เยี่ยมแล้ว</th><th>ความคืบหน้า</th><th>สถานะตามเกณฑ์การเยี่ยม</th><th></th></tr></thead>
     <tbody id="cgStatusTable"></tbody></table>
   </div>
 
@@ -818,25 +825,26 @@ function doLogin(){
   const errEl = document.getElementById('loginError');
   errEl.textContent = '';
   if(!u || !p){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
-  db.ref('users/'+u).once('value').then(snap=>{
-    const user = snap.val();
-    if(!user || user.password !== p){
-      errEl.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-      return;
-    }
-    if(user.status !== 'approved'){
-      errEl.textContent = user.status === 'disabled'
-        ? 'บัญชีนี้ถูกปิดใช้งานโดยผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบ'
-        : 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
-      return;
-    }
-    CURRENT_USER = user;
-    document.body.classList.add('logged-in');
-    document.getElementById('userBadgeName').textContent = `${user.name} (${roleLabel(user.role)})`;
-    document.getElementById('userBadge').style.display = 'flex';
-    document.getElementById('loginPassword').value = '';
-    applyRoleUI();
-  }).catch(err=>{ errEl.textContent = 'เกิดข้อผิดพลาด: '+err.message; });
+  /* ค้นหาจากบัญชีที่ซิงก์ไว้แล้วในเครื่อง รองรับทั้งบัญชี Username เฉพาะตัว (Admin/CG 001-005)
+     และบัญชีที่สมัครผ่านหน้าเว็บซึ่งใช้ Username ร่วมกัน "05449" (แยกกันด้วยรหัสผ่านของแต่ละคน) */
+  const matches = Object.values(STATE.users||{}).filter(rec => rec.username === u && rec.password === p);
+  if(matches.length === 0){
+    errEl.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    return;
+  }
+  const user = matches[0];
+  if(user.status !== 'approved'){
+    errEl.textContent = user.status === 'disabled'
+      ? 'บัญชีนี้ถูกปิดใช้งานโดยผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบ'
+      : 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
+    return;
+  }
+  CURRENT_USER = user;
+  document.body.classList.add('logged-in');
+  document.getElementById('userBadgeName').textContent = `${user.name} (${roleLabel(user.role)})`;
+  document.getElementById('userBadge').style.display = 'flex';
+  document.getElementById('loginPassword').value = '';
+  applyRoleUI();
 }
 document.getElementById('loginBtn').addEventListener('click', doLogin);
 document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
@@ -1121,10 +1129,42 @@ function renderDashboard(){
     const elderlyOfCg = elderlyIds.filter(id=>STATE.elderly[id].cgCode===code);
     const visitedOfCg = elderlyOfCg.filter(id=>visitedElderlyIds.has(id));
     const pct = elderlyOfCg.length ? Math.round(visitedOfCg.length/elderlyOfCg.length*100) : 0;
+    const metCount = elderlyOfCg.filter(id=>{
+      const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      return cnt >= target;
+    }).length;
+    const quotaBadge = elderlyOfCg.length === 0
+      ? '<span class="muted">-</span>'
+      : (metCount === elderlyOfCg.length
+        ? `<span class="status-tag approved">✅ เยี่ยมครบตามเกณฑ์</span>`
+        : `<span class="status-tag disabled">⚠️ ยังไม่ครบ (${metCount}/${elderlyOfCg.length} คน)</span>`);
     return `<tr><td>${cg.name}</td><td>${elderlyOfCg.length}</td><td>${visitedOfCg.length}</td>
-      <td><div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div><span class="muted">${pct}%</span></td></tr>`;
+      <td><div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div><span class="muted">${pct}%</span></td>
+      <td>${quotaBadge}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openCgVisitStatus('${code}')">👁 ดูรายชื่อ</button></td></tr>`;
   }).join('');
-  document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="4" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
+  document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
+}
+
+function openCgVisitStatus(cgCode){
+  const m = dashMonthSel.value, y = dashYearSel.value;
+  const monthVisits = visitsInMonth(m,y);
+  const cg = STATE.cgs[cgCode];
+  document.getElementById('cgVisitStatusTitle').textContent = `รายชื่อผู้สูงอายุของ ${cg ? cg.name : cgCode}`;
+  const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cgCode && STATE.elderly[id].status!=='discharged').sort();
+  const listHtml = elderlyIds.map(id=>{
+    const e = STATE.elderly[id];
+    const target = parseInt(e.visitsPerMonth,10) || 5;
+    const count = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+    const met = count >= target;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #eee;border-radius:8px;gap:10px;">
+      <div><b>${e.name}</b><br><span class="muted" style="font-size:12px;">เยี่ยมแล้ว ${count}/${target} ครั้ง</span></div>
+      <span class="status-tag ${met ? 'approved' : 'disabled'}">${met ? 'เยี่ยมครบตามเกณฑ์' : 'ยังไม่ครบเกณฑ์'}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('cgVisitStatusList').innerHTML = listHtml || '<p class="muted">ไม่มีผู้สูงอายุในความดูแลของ CG นี้</p>';
+  openModal('cgVisitStatusModal');
 }
 
 /* ---- Drill down ---- */
