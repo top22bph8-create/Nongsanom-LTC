@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --primary:#1571BA; --primary-dark:#0F5590; --secondary:#43C1F1; --danger:#D8503A;
@@ -27,6 +28,12 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot.adl-1{background:#43A047;}
 .adl-dot.adl-2{background:#FBC02D;}
 .adl-dot.adl-3{background:#FB8C00;}
+.quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
+.quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
+.quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
+.quota-badge.quota-orange{background:#FFF3E0;color:#EF6C00;}
+.quota-badge.quota-yellow{background:#FFFDE7;color:#F9A825;}
+.quota-badge.quota-blue{background:#E3F7FF;color:#0F8FC7;}
 .adl-dot.adl-4{background:#E53935;}
 nav.tabs{display:flex;overflow-x:auto;background:#fff;position:sticky;top:64px;z-index:49;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 nav.tabs button{flex:1 0 auto;background:none;border:none;padding:12px 10px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
@@ -133,19 +140,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
     </div>
     <div class="login-body">
-      <div class="field">
-        <label>เลือกบทบาทผู้ใช้งาน</label>
-        <select id="loginRole">
-          <option value="admin">ผู้ดูแลระบบ (Admin)</option>
-          <option value="care_manager">Care Manager (CM)</option>
-          <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
-          <option value="public">บุคคลทั่วไป</option>
-        </select>
-      </div>
       <div id="loginCredFields">
-        <div class="field" style="margin-top:10px;">
-          <label>ชื่อผู้ใช้ (Username)</label>
-          <input type="text" id="loginUsername" placeholder="กรอกชื่อผู้ใช้ของคุณ" autocomplete="username">
+        <div class="field">
+          <label>ชื่อผู้ใช้ (Username) — เลขบัตรประจำตัวประชาชน 13 หลัก</label>
+          <input type="text" id="loginUsername" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" autocomplete="username">
         </div>
         <div class="field" style="margin-top:10px;">
           <label>รหัสผ่าน</label>
@@ -155,6 +153,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary" id="loginBtn" style="margin-top:16px;width:100%;justify-content:center;">เข้าสู่ระบบ</button>
       <p id="loginError" style="color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;"></p>
       <div class="login-forgot" id="loginRegisterLink">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</div>
+      <div class="login-forgot" id="loginPublicLink">เข้าดูข้อมูลทั่วไป (ไม่ต้องเข้าสู่ระบบ)</div>
       <div class="login-forgot" id="loginForgotLink">ลืมรหัสผ่าน / ติดต่อผู้ดูแลระบบ</div>
     </div>
   </div>
@@ -173,33 +172,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <input type="text" id="regFullName" placeholder="ชื่อ-นามสกุลจริง">
       </div>
       <div class="field" style="margin-top:10px;">
-        <label>บทบาทที่ต้องการลงทะเบียน</label>
-        <select id="regRole">
-          <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
-          <option value="care_manager">Care Manager (CM)</option>
-          <option value="admin">ผู้ดูแลระบบ (Admin)</option>
-        </select>
-      </div>
-      <div class="field" id="regCgFieldWrap" style="margin-top:10px;">
-        <label>คุณคือ CG คนไหนในทะเบียน</label>
-        <select id="regCgCode"></select>
-      </div>
-      <div class="field" id="regInviteFieldWrap" style="margin-top:10px;display:none;">
-        <label>รหัสเชิญลงทะเบียนสำหรับบทบาทนี้</label>
-        <input type="text" id="regInviteCode" placeholder="ขอรหัสเชิญจากผู้ดูแลระบบ">
+        <label>เลขประจำตัวประชาชน 13 หลัก (ใช้เป็น Username เข้าสู่ระบบ)</label>
+        <input type="text" id="regIdCard" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" maxlength="13" inputmode="numeric">
       </div>
       <div class="field" style="margin-top:10px;">
-        <label>ตั้งชื่อผู้ใช้ (Username)</label>
-        <input type="text" id="regUsername" placeholder="ตั้งชื่อผู้ใช้สำหรับเข้าสู่ระบบ">
+        <label>ที่อยู่</label>
+        <input type="text" id="regAddress" placeholder="บ้านเลขที่ / หมู่ / ตำบล">
       </div>
       <div class="field" style="margin-top:10px;">
-        <label>ตั้งรหัสผ่าน</label>
-        <input type="password" id="regPassword">
+        <label>หมายเลขโทรศัพท์</label>
+        <input type="tel" id="regPhone" placeholder="เช่น 08xxxxxxxx">
       </div>
-      <div class="field" style="margin-top:10px;">
-        <label>ยืนยันรหัสผ่าน</label>
-        <input type="password" id="regConfirmPassword">
-      </div>
+      <p class="muted" style="text-align:left;margin-top:12px;">* รหัสผ่านเริ่มต้นสำหรับผู้ลงทะเบียนใหม่ทุกคนคือ <b>05449</b> กรุณาจดจำไว้สำหรับเข้าสู่ระบบครั้งแรก (เปลี่ยนรหัสผ่านเองได้ภายหลังจากเข้าสู่ระบบสำเร็จ) หลังลงทะเบียนแล้ว กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งานก่อน จึงจะเข้าใช้งานฟังก์ชันต่างๆ ได้</p>
       <button class="btn btn-primary" id="regSubmitBtn" style="margin-top:16px;width:100%;justify-content:center;">ลงทะเบียน</button>
       <p id="regError" style="color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;"></p>
       <div class="login-forgot" id="regBackToLoginLink">มีบัญชีอยู่แล้ว? กลับไปเข้าสู่ระบบ</div>
@@ -254,6 +238,30 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <p class="muted" id="upUserLabel"></p>
   <div id="upCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('userPermissionsModal')">ยกเลิก</button><button class="btn btn-primary" id="upSaveBtn">บันทึกสิทธิ์</button></div>
+</div></div>
+
+<div class="modal-overlay" id="editUserModal"><div class="modal-box">
+  <h3>✏️ แก้ไขข้อมูล / กำหนดบทบาทผู้ใช้งาน</h3>
+  <input type="hidden" id="euUserId">
+  <p class="muted" id="euUsernameLabel"></p>
+  <div class="field" style="margin-top:8px;"><label>ชื่อ-สกุล</label><input type="text" id="euDisplayName"></div>
+  <div class="field" style="margin-top:8px;"><label>ที่อยู่</label><input type="text" id="euAddress"></div>
+  <div class="field" style="margin-top:8px;"><label>เบอร์โทรศัพท์</label><input type="tel" id="euPhone"></div>
+  <div class="field" style="margin-top:8px;">
+    <label>บทบาท</label>
+    <select id="euRole">
+      <option value="unassigned">-- ยังไม่กำหนดบทบาท --</option>
+      <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+      <option value="care_manager">Care Manager (CM)</option>
+      <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
+    </select>
+  </div>
+  <div class="field" id="euCgFieldWrap" style="margin-top:8px;display:none;">
+    <label>เชื่อมโยงกับ CG คนไหนในทะเบียน</label>
+    <select id="euCgCode"><option value="">-- ไม่เชื่อมโยง --</option></select>
+  </div>
+  <p id="euError" style="color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;"></p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('editUserModal')">ยกเลิก</button><button class="btn btn-primary" id="euSaveBtn">บันทึก</button></div>
 </div></div>
 
 <header class="app-header">
@@ -333,9 +341,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="row">
       <div class="field"><label>เดือน</label><select id="recMonth"></select></div>
       <div class="field"><label>ปี พ.ศ.</label><select id="recYear"></select></div>
-      <div class="field"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="recDayCount" min="5" max="10" value="5"></div>
     </div>
-    <p class="muted" style="margin-top:6px;">ตามเงื่อนไข: CG 1 คนเยี่ยมผู้สูงอายุแต่ละคนได้ 5-10 ครั้งต่อเดือน</p>
+    <div style="margin-top:10px;" id="recQuotaBadgeWrap"><span class="quota-badge" id="recQuotaBadge">กรุณาเลือก CG และผู้สูงอายุก่อน</span></div>
     <button class="btn btn-secondary" id="openCalendarBtn" style="margin-top:10px;">🗓 เลือกวันที่</button>
     <div id="selectedDatesChips" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;"></div>
   </div>
@@ -485,6 +492,35 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <button class="btn btn-primary" id="generatePdfBtn" style="margin-top:12px;">📄 ออกรายงาน</button>
     <div class="upload-progress" id="pdfProgress"></div>
   </div>
+
+  <div class="card">
+    <h3>รายงานข้อมูลผู้สูงอายุ (สถานะทั้งหมด)</h3>
+    <p class="muted">รายงานรายชื่อผู้สูงอายุพร้อมข้อมูล ADL, CG ผู้ดูแล, ความคืบหน้าการเยี่ยมเทียบเป้าหมายรายเดือน, และสถานะการดูแล (ดูแลอยู่ / จำหน่ายแล้ว) ออกได้ทั้งไฟล์ Excel และ PDF</p>
+    <div class="row">
+      <div class="field"><label>เดือนที่ใช้คำนวณความคืบหน้าการเยี่ยม</label><select id="elderlyReportMonth"></select></div>
+      <div class="field"><label>ปี พ.ศ.</label><select id="elderlyReportYear"></select></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>กรอง CG (ถ้าต้องการ)</label><select id="elderlyReportCgFilter"><option value="">ทุก CG</option></select></div>
+      <div class="field"><label>กรองหมู่บ้าน (ถ้าต้องการ)</label>
+        <select id="elderlyReportMooFilter">
+          <option value="">ทุกหมู่บ้าน</option>
+        </select>
+      </div>
+      <div class="field"><label>กรองสถานะ</label>
+        <select id="elderlyReportStatusFilter">
+          <option value="">ทั้งหมด (ดูแลอยู่ + จำหน่ายแล้ว)</option>
+          <option value="active">เฉพาะที่ดูแลอยู่</option>
+          <option value="discharged">เฉพาะที่จำหน่ายแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:8px;">
+      <button class="btn btn-secondary" id="exportElderlyExcelBtn">📊 ออกรายงาน Excel</button>
+      <button class="btn btn-primary" id="exportElderlyPdfBtn">📄 ออกรายงาน PDF</button>
+    </div>
+    <div class="upload-progress" id="elderlyReportProgress"></div>
+  </div>
 </section>
 
 <section id="tab-history" class="tabpanel">
@@ -512,20 +548,11 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <section id="tab-users" class="tabpanel">
   <div class="card">
     <h3>👤 ผู้ใช้งานที่ลงทะเบียนแล้ว</h3>
-    <p class="muted">รายชื่อผู้ใช้งานทั้งหมดที่ลงทะเบียนเข้าใช้ระบบ กด "🔧 สิทธิ์การใช้งาน" เพื่อกำหนดว่าผู้ใช้แต่ละคนเข้าฟังก์ชัน (แท็บ) ใดได้บ้าง — Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) เท่านั้นที่กำหนดสิทธิ์นี้ได้ และบัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ</p>
+    <p class="muted">ผู้ลงทะเบียนใหม่ทุกคนเริ่มต้นด้วยสถานะ "ยังไม่กำหนดบทบาท" (มองเห็นได้เฉพาะภาพรวม) — Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) ต้องกด "✏️ แก้ไข/กำหนดบทบาท" เพื่อกำหนดบทบาทและข้อมูลก่อน แล้วจึงกด "🔧 สิทธิ์การใช้งาน" เพื่อกำหนดว่าเข้าฟังก์ชัน (แท็บ) ใดได้บ้าง — บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ</p>
     <div style="overflow-x:auto;">
-    <table style="margin-top:10px;min-width:640px;"><thead><tr><th>ชื่อ-สกุล</th><th>Username</th><th>บทบาท</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
+    <table style="margin-top:10px;min-width:820px;"><thead><tr><th>ชื่อ-สกุล</th><th>Username (เลขบัตรฯ)</th><th>บทบาท</th><th>ที่อยู่</th><th>เบอร์โทร</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
     <tbody id="usersTable"></tbody></table>
     </div>
-  </div>
-  <div class="card">
-    <h3>🔐 รหัสเชิญลงทะเบียน (Invite Code)</h3>
-    <p class="muted">ผู้ที่จะลงทะเบียนเป็น Admin หรือ Care Manager ต้องกรอกรหัสเชิญนี้ให้ถูกต้อง (CG ลงทะเบียนได้เลยไม่ต้องใช้รหัสเชิญ เพียงเลือกชื่อ CG ของตัวเองจากทะเบียน) เปลี่ยนรหัสเชิญได้ตลอดเวลาเพื่อความปลอดภัย</p>
-    <div class="row">
-      <div class="field"><label>รหัสเชิญสำหรับ Admin</label><input type="text" id="inviteCodeAdmin"></div>
-      <div class="field"><label>รหัสเชิญสำหรับ Care Manager</label><input type="text" id="inviteCodeCareManager"></div>
-    </div>
-    <button class="btn btn-primary" id="saveInviteCodesBtn" style="margin-top:10px;">บันทึกรหัสเชิญ</button>
   </div>
 </section>
 
@@ -555,6 +582,20 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     </div>
   </div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('cgModal')">ยกเลิก</button><button class="btn btn-primary" id="cgSaveBtn">บันทึก</button></div>
+</div></div>
+
+<div class="modal-overlay" id="transferElderlyModal"><div class="modal-box" style="max-width:520px;">
+  <h3 id="transferElderlyTitle">ย้ายผู้สูงอายุในความรับผิดชอบ</h3>
+  <input type="hidden" id="transferFromCg">
+  <div class="field">
+    <label>ย้ายไปยัง CG</label>
+    <select id="transferToCg"></select>
+  </div>
+  <div class="field" style="margin-top:10px;">
+    <label>เลือกผู้สูงอายุที่ต้องการย้าย</label>
+    <div id="transferElderlyList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferElderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="transferElderlySaveBtn">ย้ายผู้ที่เลือก</button></div>
 </div></div>
 
 <div class="modal-overlay" id="elderlyModal"><div class="modal-box">
@@ -787,7 +828,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, inviteCodes:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -798,6 +839,11 @@ const VILLAGES = [
   {moo:'13', name:'บ้านดอนเชียงบานใหญ่'},
   {moo:'15', name:'บ้านทุ่งมนพัฒนา'}
 ];
+function villageLabel(moo){
+  if(!moo && moo!==0) return '-';
+  const v = VILLAGES.find(x=>x.moo===String(moo));
+  return v ? `หมู่ ${v.moo} ${v.name}` : `หมู่ ${moo}`;
+}
 
 /* =============================================================
    FIREBASE LISTENERS
@@ -813,21 +859,10 @@ db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
   if(Object.keys(STATE.users).length === 0){
     db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
     });
   }
   renderUsersTable();
-});
-
-/* รหัสเชิญลงทะเบียนสำหรับ Admin / Care Manager (ตั้งค่าเริ่มต้น แก้ไขได้ที่แท็บ "ผู้ใช้งาน") */
-db.ref('invite_codes').on('value', snap=>{
-  STATE.inviteCodes = snap.val() || {};
-  if(Object.keys(STATE.inviteCodes).length === 0){
-    db.ref('invite_codes').set({ admin:'05449', care_manager:'05449' });
-  }
-  const a = document.getElementById('inviteCodeAdmin'), c = document.getElementById('inviteCodeCareManager');
-  if(a && document.activeElement!==a) a.value = STATE.inviteCodes.admin || '';
-  if(c && document.activeElement!==c) c.value = STATE.inviteCodes.care_manager || '';
 });
 
 let dataLoadedOnce = false;
@@ -949,24 +984,26 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
    AUTHENTICATION & ROLE-BASED ACCESS
    หมายเหตุ: ระบบนี้ตรวจสอบสิทธิ์ในฝั่งหน้าเว็บ (client-side) เท่านั้น
    เนื่องจาก Firebase Rules ยังเปิด read/write เป็น public ตามสถาปัตยกรรมเดิม
-   - บทบาท: admin (ผู้ดูแลระบบ) / care_manager (CM) / cg (ผู้ดูแลผู้สูงอายุ) / public (บุคคลทั่วไป - ดูได้เฉพาะภาพรวม ไม่ต้องมีบัญชี)
-   - CG ลงทะเบียนได้เอง โดยเลือกชื่อ CG ของตัวเองจากทะเบียนที่มีอยู่แล้ว (ไม่ต้องใช้รหัสเชิญ)
-   - Admin / Care Manager: ต้องกรอก "รหัสเชิญ" ที่ถูกต้องตอนลงทะเบียน (Admin ตั้ง/เปลี่ยนรหัสเชิญได้ที่แท็บ "ผู้ใช้งาน")
-   - รหัสเชิญเริ่มต้นและรหัสผ่านของบัญชี Admin เริ่มต้น (username: 1470900013871) คือ 05449
-   - สิทธิ์การเข้าถึงแต่ละฟังก์ชัน (แท็บ): ตอนสมัคร ระบบจะกำหนดสิทธิ์เริ่มต้นตามบทบาทให้อัตโนมัติ
-     จากนั้น Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) เป็นผู้กำหนด/ปรับสิทธิ์รายบุคคลได้ทุกเมื่อ
-     ที่แท็บ "ผู้ใช้งาน" ปุ่ม "🔧 สิทธิ์การใช้งาน" — บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ ไม่ต้องกำหนด
+   - ผู้สมัครใหม่ทุกคนกรอก: ชื่อ-สกุล, เลขบัตรประชาชน 13 หลัก (ใช้เป็น Username),
+     ที่อยู่, เบอร์โทร — รหัสผ่านเริ่มต้นของทุกบัญชีที่สมัครผ่านหน้าเว็บคือ 05449 (เปลี่ยนเองได้ภายหลัง)
+   - บัญชีใหม่ทุกบัญชีเริ่มต้นเป็นบทบาท "unassigned" (ยังไม่กำหนดบทบาท) มองเห็นได้แค่แท็บภาพรวม
+   - Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) เป็นผู้กำหนดบทบาท/ข้อมูล/สิทธิ์การเข้าถึง
+     แต่ละฟังก์ชันให้ที่แท็บ "ผู้ใช้งาน" เท่านั้น ("✏️ แก้ไข/กำหนดบทบาท" + "🔧 สิทธิ์การใช้งาน")
+   - บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ ไม่ต้องกำหนดสิทธิ์
+   - "เข้าดูข้อมูลทั่วไป" (public/guest) ไม่ต้องมีบัญชี เห็นได้เฉพาะแท็บภาพรวม
 ============================================================= */
 const ROLE_TABS = {
   admin:        ['dashboard','record','cg','elderly','equipment','pdf','history','users'],
   care_manager: ['dashboard','record','cg','elderly','equipment','pdf','history'],
   cg:           ['dashboard','record','equipment'],
+  unassigned:   ['dashboard'],
   public:       ['dashboard']
 };
 const ROLE_LABELS = {
   admin: 'ผู้ดูแลระบบ (Admin)',
   care_manager: 'Care Manager (CM)',
   cg: 'CG (ผู้ดูแลผู้สูงอายุ)',
+  unassigned: 'ยังไม่กำหนดบทบาท',
   public: 'บุคคลทั่วไป'
 };
 const TAB_DEFS = [
@@ -990,7 +1027,7 @@ function permsFromRoleTabs(role){
 function tabsAllowedForUser(u){
   if(!u) return ROLE_TABS.public;
   if(u.role === 'admin') return ROLE_TABS.admin;
-  const perms = u.permissions || permsFromRoleTabs(u.role);
+  const perms = u.permissions || permsFromRoleTabs(u.role || 'unassigned');
   return Object.keys(perms).filter(k=>perms[k]);
 }
 
@@ -998,17 +1035,9 @@ let CURRENT_ROLE = null;
 let CURRENT_USER_ID = null;
 let CURRENT_USER = null;
 
-/* ---- เข้าสู่ระบบ ---- */
-document.getElementById('loginRole').addEventListener('change', ()=>{
-  const role = document.getElementById('loginRole').value;
-  document.getElementById('loginCredFields').style.display = (role==='public') ? 'none' : 'block';
-  document.getElementById('loginError').textContent = '';
-});
-
+/* ---- เข้าสู่ระบบ (Username + รหัสผ่านเท่านั้น ไม่ต้องเลือกบทบาท) ---- */
 document.getElementById('loginBtn').addEventListener('click', ()=>{
-  const role = document.getElementById('loginRole').value;
   const errEl = document.getElementById('loginError');
-  if(role === 'public'){ loginAsPublic(); return; }
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
   if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
@@ -1023,6 +1052,7 @@ document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.k
 document.getElementById('loginForgotLink').addEventListener('click', ()=>{
   showConfirm('ลืมรหัสผ่าน?','ระบบนี้ไม่มีการส่งรหัสผ่านผ่านอีเมลหรือ SMS จริง (ต้องใช้บริการเซิร์ฟเวอร์เพิ่มเติมซึ่งยังไม่ได้ตั้งค่าไว้) กรุณาติดต่อ "ผู้ดูแลระบบ (Admin)" ของหน่วยงานเพื่อขอรีเซ็ตรหัสผ่านให้จากแท็บ "ผู้ใช้งาน"', ()=>{});
 });
+document.getElementById('loginPublicLink').addEventListener('click', loginAsPublic);
 
 function loginAsPublic(){
   CURRENT_ROLE = 'public'; CURRENT_USER_ID = null; CURRENT_USER = null;
@@ -1038,6 +1068,9 @@ function loginAsUser(uid, u){
   document.getElementById('loginError').textContent = '';
   document.getElementById('currentUserLabel').textContent = `ผู้ใช้งาน: ${u.displayName} (${ROLE_LABELS[u.role]||u.role})`;
   applyAccessControl(u);
+  if(u.role === 'unassigned' || !u.role){
+    toast('บัญชีของคุณยังไม่ได้รับการกำหนดบทบาท กรุณารอผู้ดูแลระบบดำเนินการก่อนจึงจะใช้งานฟังก์ชันอื่นได้','error');
+  }
 }
 
 function applyAccessControl(u){
@@ -1063,88 +1096,130 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 document.getElementById('loginRegisterLink').addEventListener('click', ()=>{
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('registerOverlay').style.display = 'flex';
-  renderRegCgOptions();
-  updateRegFieldVisibility();
+  document.getElementById('regFullName').value = '';
+  document.getElementById('regIdCard').value = '';
+  document.getElementById('regAddress').value = '';
+  document.getElementById('regPhone').value = '';
+  document.getElementById('regError').textContent = '';
 });
 document.getElementById('regBackToLoginLink').addEventListener('click', ()=>{
   document.getElementById('registerOverlay').style.display = 'none';
   document.getElementById('loginOverlay').style.display = 'flex';
 });
 
-function renderRegCgOptions(){
-  document.getElementById('regCgCode').innerHTML = Object.keys(STATE.cgs).sort()
-    .map(code=>`<option value="${code}">${STATE.cgs[code].name}</option>`).join('');
-}
-document.getElementById('regRole').addEventListener('change', updateRegFieldVisibility);
-function updateRegFieldVisibility(){
-  const role = document.getElementById('regRole').value;
-  document.getElementById('regCgFieldWrap').style.display = (role==='cg') ? 'block' : 'none';
-  document.getElementById('regInviteFieldWrap').style.display = (role==='cg') ? 'none' : 'block';
-}
-
+const DEFAULT_REG_PASSWORD = '05449';
 document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
   const fullName = document.getElementById('regFullName').value.trim();
-  const role = document.getElementById('regRole').value;
-  const cgCode = document.getElementById('regCgCode').value;
-  const inviteCode = document.getElementById('regInviteCode').value.trim();
-  const username = document.getElementById('regUsername').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirmPassword').value;
+  const idCard = document.getElementById('regIdCard').value.trim();
+  const address = document.getElementById('regAddress').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
   const errEl = document.getElementById('regError');
 
   if(!fullName){ errEl.textContent = 'กรุณากรอกชื่อ-สกุล'; return; }
-  if(!username){ errEl.textContent = 'กรุณาตั้งชื่อผู้ใช้'; return; }
-  if(Object.values(STATE.users).some(u=>u.username===username)){ errEl.textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว กรุณาตั้งชื่ออื่น'; return; }
-  if(password.length < 4){ errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร'; return; }
-  if(password !== confirmPassword){ errEl.textContent = 'ยืนยันรหัสผ่านไม่ตรงกัน'; return; }
-  if(role === 'cg' && !cgCode){ errEl.textContent = 'กรุณาเลือกว่าคุณคือ CG คนไหนในทะเบียน'; return; }
-  if(role !== 'cg'){
-    const correctCode = STATE.inviteCodes[role];
-    if(!inviteCode || inviteCode !== correctCode){ errEl.textContent = 'รหัสเชิญไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ'; return; }
-  }
+  if(!/^[0-9]{13}$/.test(idCard)){ errEl.textContent = 'กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก (ตัวเลขเท่านั้น)'; return; }
+  if(Object.values(STATE.users).some(u=>u.username===idCard)){ errEl.textContent = 'เลขบัตรประชาชนนี้ลงทะเบียนไว้แล้ว กรุณาเข้าสู่ระบบแทน'; return; }
+
   const newUser = {
-    username, password, displayName: fullName, role, cgCode: role==='cg' ? cgCode : '',
-    permissions: permsFromRoleTabs(role), createdAt: Date.now()
+    username: idCard, password: DEFAULT_REG_PASSWORD, displayName: fullName,
+    idCard, address, phone, role: 'unassigned', cgCode: '',
+    permissions: permsFromRoleTabs('unassigned'), createdAt: Date.now()
   };
   const uid = 'U' + Date.now();
   db.ref('users/'+uid).set(newUser).then(()=>{
-    toast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้ที่ตั้งไว้ (Admin จะเป็นผู้กำหนดสิทธิ์การเข้าถึงฟังก์ชันให้ในภายหลัง)','success');
+    toast('ลงทะเบียนสำเร็จ! เข้าสู่ระบบด้วยเลขบัตรประชาชนและรหัสผ่าน 05449 กรุณารอผู้ดูแลระบบกำหนดบทบาทและสิทธิ์การใช้งาน','success');
     document.getElementById('regFullName').value = '';
-    document.getElementById('regUsername').value = '';
-    document.getElementById('regPassword').value = '';
-    document.getElementById('regConfirmPassword').value = '';
-    document.getElementById('regInviteCode').value = '';
+    document.getElementById('regIdCard').value = '';
+    document.getElementById('regAddress').value = '';
+    document.getElementById('regPhone').value = '';
     errEl.textContent = '';
     document.getElementById('registerOverlay').style.display = 'none';
     document.getElementById('loginOverlay').style.display = 'flex';
   });
 });
 
-/* ---- แท็บ "ผู้ใช้งาน" (admin เท่านั้น): ตาราง + รีเซ็ตรหัสผ่าน + กำหนดสิทธิ์ + ลบ + รหัสเชิญ ---- */
+/* ---- แท็บ "ผู้ใช้งาน" (admin เท่านั้น): ตาราง + แก้ไข/กำหนดบทบาท + สิทธิ์ + รีเซ็ตรหัสผ่าน + ลบ ---- */
 function renderUsersTable(){
   const tbody = document.getElementById('usersTable');
   if(!tbody) return;
   const rows = Object.entries(STATE.users).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).map(([uid,u])=>{
     const cgName = (u.cgCode && STATE.cgs[u.cgCode]) ? STATE.cgs[u.cgCode].name : '-';
     const dateLabel = u.createdAt ? formatThaiDate(new Date(u.createdAt).toISOString().slice(0,10)) : '-';
+    const roleLabelText = ROLE_LABELS[u.role] || u.role || 'ยังไม่กำหนดบทบาท';
     const permBtn = (u.role === 'admin')
       ? '<span class="muted" style="font-size:12px;">เข้าถึงได้ทุกฟังก์ชัน</span>'
       : `<button class="btn btn-ghost btn-sm" onclick="openUserPermissions('${uid}')">🔧 สิทธิ์การใช้งาน</button>`;
     return `<tr>
       <td>${u.displayName||'-'}</td>
       <td>${u.username||'-'}</td>
-      <td>${ROLE_LABELS[u.role]||u.role||'-'}</td>
+      <td>${(!u.role || u.role==='unassigned') ? `<span class="status-tag pending">${roleLabelText}</span>` : roleLabelText}</td>
+      <td>${u.address||'-'}</td>
+      <td>${u.phone||'-'}</td>
       <td>${cgName}</td>
       <td>${dateLabel}</td>
       <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openEditUser('${uid}')">✏️ แก้ไข/กำหนดบทบาท</button>
         ${permBtn}
         <button class="btn btn-ghost btn-sm" onclick="openAdminResetPw('${uid}')">🔑 ตั้งรหัสใหม่</button>
         <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button>
       </td>
     </tr>`;
   }).join('');
-  tbody.innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
+  tbody.innerHTML = rows || '<tr><td colspan="8" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
 }
+
+/* ---- Admin แก้ไขข้อมูลผู้ใช้งานและกำหนดบทบาท ---- */
+function openEditUser(uid){
+  const u = STATE.users[uid];
+  if(!u) return;
+  document.getElementById('euUserId').value = uid;
+  document.getElementById('euUsernameLabel').textContent = `Username (เลขบัตรประชาชน): ${u.username}`;
+  document.getElementById('euDisplayName').value = u.displayName||'';
+  document.getElementById('euAddress').value = u.address||'';
+  document.getElementById('euPhone').value = u.phone||'';
+  document.getElementById('euRole').value = u.role || 'unassigned';
+  document.getElementById('euError').textContent = '';
+  renderEuCgOptions();
+  document.getElementById('euCgCode').value = u.cgCode||'';
+  toggleEuCgFieldWrap();
+  openModal('editUserModal');
+}
+function renderEuCgOptions(){
+  const sel = document.getElementById('euCgCode');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- ไม่เชื่อมโยง --</option>' +
+    Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
+  sel.value = cur;
+}
+document.getElementById('euRole').addEventListener('change', toggleEuCgFieldWrap);
+function toggleEuCgFieldWrap(){
+  document.getElementById('euCgFieldWrap').style.display = (document.getElementById('euRole').value==='cg') ? 'block' : 'none';
+}
+document.getElementById('euSaveBtn').addEventListener('click', ()=>{
+  const uid = document.getElementById('euUserId').value;
+  const displayName = document.getElementById('euDisplayName').value.trim();
+  const address = document.getElementById('euAddress').value.trim();
+  const phone = document.getElementById('euPhone').value.trim();
+  const role = document.getElementById('euRole').value;
+  const cgCode = document.getElementById('euCgCode').value;
+  const errEl = document.getElementById('euError');
+  if(!displayName){ errEl.textContent = 'กรุณากรอกชื่อ-สกุล'; return; }
+  const u = STATE.users[uid];
+  const roleChanged = u && u.role !== role;
+  const updates = {
+    displayName, address, phone, role, cgCode: role==='cg' ? cgCode : ''
+  };
+  /* ถ้าเปลี่ยนบทบาท และยังไม่เคยตั้งสิทธิ์แบบละเอียดไว้ด้วยตัวเอง ให้รีเซ็ตสิทธิ์เริ่มต้นตามบทบาทใหม่ */
+  if(roleChanged){ updates.permissions = permsFromRoleTabs(role); }
+  db.ref('users/'+uid).update(updates).then(()=>{
+    toast('บันทึกข้อมูลผู้ใช้งานสำเร็จ','success');
+    closeModal('editUserModal');
+    if(uid === CURRENT_USER_ID){
+      CURRENT_USER = Object.assign({}, CURRENT_USER, updates);
+      document.getElementById('currentUserLabel').textContent = `ผู้ใช้งาน: ${CURRENT_USER.displayName} (${ROLE_LABELS[CURRENT_USER.role]||CURRENT_USER.role})`;
+      applyAccessControl(CURRENT_USER);
+    }
+  });
+});
 
 /* ---- Admin กำหนดสิทธิ์การเข้าถึงแต่ละฟังก์ชันให้ผู้ใช้แต่ละคน ---- */
 function openUserPermissions(uid){
@@ -1152,7 +1227,7 @@ function openUserPermissions(uid){
   if(!u) return;
   document.getElementById('upUserId').value = uid;
   document.getElementById('upUserLabel').textContent = `${u.displayName} (${ROLE_LABELS[u.role]||u.role} - ${u.username})`;
-  const perms = u.permissions || permsFromRoleTabs(u.role);
+  const perms = u.permissions || permsFromRoleTabs(u.role || 'unassigned');
   document.getElementById('upCheckboxes').innerHTML = TAB_DEFS.map(t=>`
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
       <input type="checkbox" data-permkey="${t.key}" ${perms[t.key] ? 'checked' : ''}> ${t.label}
@@ -1202,12 +1277,6 @@ function deleteUser(uid){
     db.ref('users/'+uid).remove().then(()=>toast('ลบบัญชีสำเร็จ','success'));
   });
 }
-document.getElementById('saveInviteCodesBtn').addEventListener('click', ()=>{
-  const adminCode = document.getElementById('inviteCodeAdmin').value.trim();
-  const cmCode = document.getElementById('inviteCodeCareManager').value.trim();
-  if(!adminCode || !cmCode){ toast('กรุณากรอกรหัสเชิญให้ครบทั้งสองช่อง','error'); return; }
-  db.ref('invite_codes').set({ admin: adminCode, care_manager: cmCode }).then(()=>toast('บันทึกรหัสเชิญสำเร็จ','success'));
-});
 
 /* ---- เปลี่ยนรหัสผ่านของตัวเอง (self-service) ---- */
 function openChangePasswordModal(){
@@ -1240,9 +1309,9 @@ document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
 ============================================================= */
 function renderCgSelects(){
   const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
-  ['recCg','elderlyCg','pdfCgFilter','filterElderlyCg'].forEach(id=>{
+  ['recCg','elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter'].forEach(id=>{
     const el = document.getElementById(id);
-    const keepFirst = (id==='pdfCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
+    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
     const prevVal = el.value;
     el.innerHTML = keepFirst + opts;
     if(prevVal) el.value = prevVal;
@@ -1265,12 +1334,40 @@ function renderRecElderlyOptions(){
 function renderRecInfoCard(){
   const id = document.getElementById('recElderly').value;
   const box = document.getElementById('recInfoCard');
-  if(!id || !STATE.elderly[id]){ box.innerHTML=''; return; }
+  if(!id || !STATE.elderly[id]){ box.innerHTML=''; renderRecQuotaBadge(); return; }
   const e = STATE.elderly[id];
   box.innerHTML = `<span class="adl-dot adl-${e.adlGroup||''}"></span>อายุ ${e.age||'-'} ปี | ADL กลุ่ม ${e.adlGroup||'-'} | เยี่ยม ${e.visitsPerMonth||'-'} ครั้ง/เดือน | โหมด PDF: <span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span>`;
+  renderRecQuotaBadge();
 }
 document.getElementById('recCg').addEventListener('change', renderRecElderlyOptions);
 document.getElementById('recElderly').addEventListener('change', renderRecInfoCard);
+
+/* ป้ายสถานะจำนวนครั้งที่ต้องเยี่ยม/เยี่ยมแล้ว/คงเหลือ ของผู้สูงอายุที่เลือก ในเดือน/ปีที่เลือก
+   เกณฑ์สี: ครบตามเป้าหมาย = เขียว | <25% = แดง | 25-49% = ส้ม | 50-74% = เหลือง | >=75% = ฟ้า */
+function renderRecQuotaBadge(){
+  const badge = document.getElementById('recQuotaBadge');
+  if(!badge) return;
+  const id = document.getElementById('recElderly').value;
+  if(!id || !STATE.elderly[id]){
+    badge.className = 'quota-badge';
+    badge.textContent = 'กรุณาเลือก CG และผู้สูงอายุก่อน';
+    return;
+  }
+  const e = STATE.elderly[id];
+  const required = parseInt(e.visitsPerMonth,10) || 5;
+  const m = parseInt(recMonthSel.value,10), yBE = parseInt(recYearSel.value,10);
+  const visited = visitsInMonth(m,yBE).filter(([vid,v])=>v.elderlyId===id).length;
+  const remaining = Math.max(required - visited, 0);
+  const percent = required>0 ? (visited/required*100) : 0;
+  let cls, icon;
+  if(visited >= required){ cls='quota-green'; icon='🟢'; }
+  else if(percent >= 75){ cls='quota-blue'; icon='🔵'; }
+  else if(percent >= 50){ cls='quota-yellow'; icon='🟡'; }
+  else if(percent >= 25){ cls='quota-orange'; icon='🟠'; }
+  else{ cls='quota-red'; icon='🔴'; }
+  badge.className = 'quota-badge ' + cls;
+  badge.textContent = `${icon} ต้องเยี่ยม ${required} ครั้ง/เดือน | เยี่ยมแล้ว ${visited} ครั้ง | คงเหลือ ${remaining} ครั้ง`;
+}
 
 /* =============================================================
    DASHBOARD
@@ -1442,16 +1539,23 @@ function deleteVisit(vid){
 const recMonthSel = document.getElementById('recMonth');
 const recYearSel = document.getElementById('recYear');
 fillMonthYearSelects(recMonthSel, recYearSel);
+recMonthSel.addEventListener('change', renderRecQuotaBadge);
+recYearSel.addEventListener('change', renderRecQuotaBadge);
 
 document.getElementById('openCalendarBtn').addEventListener('click', ()=>{
+  const elderlyId = document.getElementById('recElderly').value;
+  if(!elderlyId || !STATE.elderly[elderlyId]){ toast('กรุณาเลือก CG และผู้สูงอายุก่อน','error'); return; }
+  const e = STATE.elderly[elderlyId];
   const m = parseInt(recMonthSel.value,10), yBE = parseInt(recYearSel.value,10);
   const y = yBE - 543;
   const daysInMonth = new Date(y, m, 0).getDate();
   const firstDow = new Date(y, m-1, 1).getDay();
-  let need = parseInt(document.getElementById('recDayCount').value,10) || 5;
-  if(need<5){ need=5; document.getElementById('recDayCount').value=5; }
-  if(need>10){ need=10; document.getElementById('recDayCount').value=10; }
-  document.getElementById('calendarHint').textContent = `เลือกวันที่ให้ตรงกับจำนวนครั้ง (${need} ครั้ง) - ${TH_MONTHS_FULL[m-1]} ${yBE}`;
+  const required = parseInt(e.visitsPerMonth,10) || 5;
+  const visited = visitsInMonth(m,yBE).filter(([vid,v])=>v.elderlyId===elderlyId).length;
+  const remaining = Math.max(required - visited, 0);
+  document.getElementById('calendarHint').textContent = remaining>0
+    ? `แนะนำให้เลือก ${remaining} วัน (คงเหลือจากเป้าหมาย ${required} ครั้ง/เดือน) - ${TH_MONTHS_FULL[m-1]} ${yBE}`
+    : `เยี่ยมครบตามเป้าหมาย ${required} ครั้ง/เดือนแล้ว แต่ยังเลือกวันที่เพิ่มได้หากต้องการ - ${TH_MONTHS_FULL[m-1]} ${yBE}`;
   const grid = document.getElementById('calendarGrid');
   let html = TH_DOW.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html += `<div class="day empty"></div>`;
@@ -1491,9 +1595,6 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   if(!cgCode || !elderlyId){ toast('กรุณาเลือก CG และผู้สูงอายุ','error'); return; }
   if(files.length===0){ toast('กรุณาเลือกรูปภาพ','error'); return; }
   if(STATE.selectedDates.length===0){ toast('กรุณาเลือกวันที่เยี่ยม','error'); return; }
-  if(STATE.selectedDates.length<5 || STATE.selectedDates.length>10){
-    toast('ตามเงื่อนไข CG 1 คนต้องเยี่ยมผู้สูงอายุ 5-10 ครั้งต่อเดือน กรุณาเลือกวันที่ให้อยู่ในช่วงนี้','error'); return;
-  }
   if(files.length !== STATE.selectedDates.length){
     toast(`จำนวนรูป (${files.length}) ต้องเท่ากับจำนวนวันที่เลือก (${STATE.selectedDates.length})`,'error'); return;
   }
@@ -1580,12 +1681,63 @@ function renderCgTable(){
     const count = Object.values(STATE.elderly).filter(e=>e.cgCode===code).length;
     return `<tr>
       <td>${code}</td><td>${cg.name}</td><td>${cg.idCard||'-'}</td><td>${cg.phone||'-'}</td><td>${cg.moo||'-'}</td><td>${count}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openEditCg('${code}')">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteCg('${code}')">🗑</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openEditCg('${code}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="openTransferElderly('${code}')">🔄 ย้ายผู้สูงอายุ</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCg('${code}')">🗑</button>
+      </td>
     </tr>`;
   }).join('');
   document.getElementById('cgTable').innerHTML = rows || '<tr><td colspan="7" class="muted">ยังไม่มีข้อมูล</td></tr>';
 }
+
+/* ---- ย้ายผู้สูงอายุในความรับผิดชอบจาก CG หนึ่งไปอีก CG หนึ่ง ---- */
+function openTransferElderly(fromCode){
+  const cg = STATE.cgs[fromCode];
+  if(!cg) return;
+  document.getElementById('transferFromCg').value = fromCode;
+  document.getElementById('transferElderlyTitle').textContent = `ย้ายผู้สูงอายุจาก "${cg.name}"`;
+  const toSel = document.getElementById('transferToCg');
+  const otherCodes = Object.keys(STATE.cgs).filter(c=>c!==fromCode).sort();
+  toSel.innerHTML = otherCodes.map(c=>`<option value="${c}">${STATE.cgs[c].name}</option>`).join('') || '<option value="">-- ไม่มี CG อื่น --</option>';
+  const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===fromCode && STATE.elderly[id].status!=='discharged').sort();
+  const listEl = document.getElementById('transferElderlyList');
+  if(elderlyIds.length===0){
+    listEl.innerHTML = '<p class="muted" style="margin:0;">CG นี้ไม่มีผู้สูงอายุในความรับผิดชอบอยู่ในขณะนี้</p>';
+  } else {
+    listEl.innerHTML =
+      `<label style="display:flex;align-items:center;gap:8px;font-size:13px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:2px;">
+        <input type="checkbox" id="transferSelectAll"> <b>เลือกทั้งหมด (${elderlyIds.length} คน)</b>
+      </label>` +
+      elderlyIds.map(id=>{
+        const e = STATE.elderly[id];
+        return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+          <input type="checkbox" class="transfer-elderly-cb" value="${id}"> ${e.name} <span class="muted">(อายุ ${e.age||'-'} ปี, ADL กลุ่ม ${e.adlGroup||'-'})</span>
+        </label>`;
+      }).join('');
+    document.getElementById('transferSelectAll').addEventListener('change', function(){
+      document.querySelectorAll('.transfer-elderly-cb').forEach(cb=>cb.checked = this.checked);
+    });
+  }
+  openModal('transferElderlyModal');
+}
+document.getElementById('transferElderlySaveBtn').addEventListener('click', ()=>{
+  const fromCode = document.getElementById('transferFromCg').value;
+  const toCode = document.getElementById('transferToCg').value;
+  if(!toCode){ toast('ไม่มี CG ปลายทางให้ย้ายไป','error'); return; }
+  const selected = Array.from(document.querySelectorAll('.transfer-elderly-cb:checked')).map(cb=>cb.value);
+  if(selected.length===0){ toast('กรุณาเลือกผู้สูงอายุที่ต้องการย้ายอย่างน้อย 1 คน','error'); return; }
+  const toName = STATE.cgs[toCode].name;
+  showConfirm('ยืนยันการย้ายผู้สูงอายุ?', `ย้ายผู้สูงอายุ ${selected.length} คน ไปอยู่ในความรับผิดชอบของ "${toName}"`, ()=>{
+    const updates = {};
+    selected.forEach(id=>{ updates['elderly/'+id+'/cgCode'] = toCode; });
+    db.ref().update(updates).then(()=>{
+      toast(`ย้ายผู้สูงอายุ ${selected.length} คน สำเร็จ`,'success');
+      closeModal('transferElderlyModal');
+    });
+  });
+});
+
 document.getElementById('addCgBtn').addEventListener('click', ()=>{
   document.getElementById('cgModalTitle').textContent = 'เพิ่ม CG';
   document.getElementById('cgEditId').value = '';
@@ -2075,8 +2227,181 @@ document.getElementById('generatePdfBtn').addEventListener('click', async ()=>{
 });
 
 /* =============================================================
-   EQUIPMENT MANAGEMENT (การจัดการอุปกรณ์)
+   รายงานข้อมูลผู้สูงอายุ (สถานะทั้งหมด) — ออกเป็น Excel และ PDF
 ============================================================= */
+const elderlyReportMonthSel = document.getElementById('elderlyReportMonth');
+const elderlyReportYearSel = document.getElementById('elderlyReportYear');
+fillMonthYearSelects(elderlyReportMonthSel, elderlyReportYearSel);
+document.getElementById('elderlyReportMooFilter').innerHTML = '<option value="">ทุกหมู่บ้าน</option>' +
+  VILLAGES.map(v=>`<option value="${v.moo}">หมู่ ${v.moo} ${v.name}</option>`).join('');
+
+function buildElderlyReportRows(){
+  const m = parseInt(elderlyReportMonthSel.value,10);
+  const yBE = parseInt(elderlyReportYearSel.value,10);
+  const monthLabel = TH_MONTHS_FULL[m-1];
+  const cgFilter = document.getElementById('elderlyReportCgFilter').value;
+  const mooFilter = document.getElementById('elderlyReportMooFilter').value;
+  const statusFilter = document.getElementById('elderlyReportStatusFilter').value;
+  const monthVisits = visitsInMonth(m, yBE);
+
+  const activeIds = Object.keys(STATE.elderly).filter(id=>{
+    const e = STATE.elderly[id];
+    if(cgFilter && e.cgCode!==cgFilter) return false;
+    if(mooFilter && String(e.moo)!==mooFilter) return false;
+    if(statusFilter==='active' && e.status==='discharged') return false;
+    if(statusFilter==='discharged' && e.status!=='discharged') return false;
+    return true;
+  }).sort();
+
+  const historyIds = (statusFilter==='active') ? [] : Object.keys(STATE_ELDERLY_HISTORY).filter(id=>{
+    const e = STATE_ELDERLY_HISTORY[id];
+    if(cgFilter && e.cgCode!==cgFilter) return false;
+    if(mooFilter && String(e.moo)!==mooFilter) return false;
+    return true;
+  }).sort();
+
+  const rows = [];
+  let no = 1;
+  activeIds.forEach(id=>{
+    const e = STATE.elderly[id];
+    const cgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
+    const isDischarged = e.status==='discharged';
+    const visitedCount = isDischarged ? null : monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+    const target = parseInt(e.visitsPerMonth,10) || 5;
+    const quotaMet = (!isDischarged && visitedCount!==null) ? (visitedCount>=target) : null;
+    rows.push({
+      no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
+      houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
+      adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
+      adlGroup: e.adlGroup||'',
+      target, visitedCount: visitedCount===null ? '-' : visitedCount,
+      quotaLabel: quotaMet===null ? '-' : (quotaMet ? 'ครบตามเกณฑ์' : 'ยังไม่ครบ'),
+      pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
+      statusLabel: isDischarged ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})` : 'ดูแลอยู่',
+      statusDate: isDischarged ? (e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-') : '-',
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+    });
+  });
+  historyIds.forEach(id=>{
+    const e = STATE_ELDERLY_HISTORY[id];
+    const cgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
+    rows.push({
+      no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
+      houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
+      adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
+      adlGroup: e.adlGroup||'',
+      target: e.visitsPerMonth||'', visitedCount: '-', quotaLabel: '-',
+      pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
+      statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
+      statusDate: e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-',
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+    });
+  });
+  return { rows, monthLabel, yBE };
+}
+
+document.getElementById('exportElderlyExcelBtn').addEventListener('click', ()=>{
+  const { rows, monthLabel, yBE } = buildElderlyReportRows();
+  if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
+  const sheetData = rows.map(r=>({
+    'ลำดับ': r.no, 'รหัส': r.id, 'ชื่อ-สกุล': r.name, 'เลขประจำตัวประชาชน': r.idCard,
+    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'หมู่บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
+    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup,
+    [`เป้าหมายเยี่ยม/เดือน`]: r.target, [`เยี่ยมแล้วเดือน ${monthLabel} ${yBE}`]: r.visitedCount,
+    'สถานะเกณฑ์การเยี่ยม': r.quotaLabel, 'โหมด PDF': r.pdfMode,
+    'สถานะการดูแล': r.statusLabel, 'วันที่จำหน่าย/เหตุผล': r.statusDate,
+    'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
+  }));
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 14) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ข้อมูลผู้สูงอายุ');
+  XLSX.writeFile(wb, `รายงานข้อมูลผู้สูงอายุ_${monthLabel}${yBE}.xlsx`);
+  toast('ออกรายงาน Excel สำเร็จ','success');
+});
+
+function buildElderlyReportPdfPageHTML(rowsChunk, monthLabel, yBE, pageNo, totalPages){
+  const rowsHtml = rowsChunk.map(r=>`
+    <tr>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.no}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.name}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.age}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.cgName}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlGroup}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.visitedCount}/${r.target}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.quotaLabel}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.statusLabel}</td>
+    </tr>`).join('');
+  return `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายงานข้อมูลผู้สูงอายุ (สถานะทั้งหมด)</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร — เยี่ยมประจำเดือน ${monthLabel} ${yBE}</div>
+      </div>
+      <div style="width:52px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="background:#EAF6FC;color:#0F5590;">
+            <th style="padding:5px 6px;border:1px solid #ddd;">ลำดับ</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">อายุ</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">CG ผู้ดูแล</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">คะแนน ADL</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">กลุ่ม ADL</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">เยี่ยมแล้ว/เป้าหมาย</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">สถานะเกณฑ์เยี่ยม</th>
+            <th style="padding:5px 6px;border:1px solid #ddd;">สถานะการดูแล</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      หน้า ${pageNo}/${totalPages} | ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+
+document.getElementById('exportElderlyPdfBtn').addEventListener('click', async ()=>{
+  const { rows, monthLabel, yBE } = buildElderlyReportRows();
+  if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
+  const progressEl = document.getElementById('elderlyReportProgress');
+  const btn = document.getElementById('exportElderlyPdfBtn');
+  const ROWS_PER_PAGE = 16;
+  const pages = [];
+  for(let i=0;i<rows.length;i+=ROWS_PER_PAGE) pages.push(rows.slice(i,i+ROWS_PER_PAGE));
+
+  btn.disabled = true;
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  try{
+    for(let i=0;i<pages.length;i++){
+      progressEl.textContent = `กำลังสร้างหน้า ${i+1}/${pages.length}`;
+      root.innerHTML = buildElderlyReportPdfPageHTML(pages[i], monthLabel, yBE, i+1, pages.length);
+      await new Promise(r=>setTimeout(r,300));
+      const target = root.firstElementChild;
+      const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,0,297,210);
+    }
+    pdf.save(`รายงานข้อมูลผู้สูงอายุ_${monthLabel}${yBE}.pdf`);
+    progressEl.textContent = '';
+    toast('ออกรายงาน PDF สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาดขณะสร้าง PDF: '+err.message,'error');
+  }finally{
+    root.innerHTML = '';
+    btn.disabled = false;
+  }
+});
 function renderEquipmentElderlySelect(){
   const sel = document.getElementById('eqElderlyFilter');
   const modalSel = document.getElementById('eqElderly');
