@@ -118,6 +118,8 @@ body.logged-in .login-screen{display:none;}
 .status-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 .status-tag.approved{background:#e7f7ee;color:#1a8a52;}
 .status-tag.pending{background:#fff6df;color:#a3760a;}
+.status-tag.disabled{background:#fdece5;color:#D85A30;}
+.status-tag.discharged{background:#eef0f2;color:#5B6B79;}
 </style>
 </head>
 <body>
@@ -144,9 +146,25 @@ body.logged-in .login-screen{display:none;}
       <option value="cg">CG (ผู้ดูแลผู้สูงอายุ) - ต้องรอการอนุมัติ</option>
     </select>
   </div>
-  <div class="field" style="margin-top:8px;" id="regCgWrap">
-    <label>สังกัด CG (ถ้ามี)</label>
-    <select id="regCgCode"><option value="">-- ไม่ระบุ --</option></select>
+  <div id="regCgFieldsWrap" style="margin-top:8px;display:none;">
+    <div class="field"><label>เบอร์โทรศัพท์ (สำหรับข้อมูล CG)</label><input type="tel" id="regCgPhone" placeholder="เช่น 08xxxxxxxx"></div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>บ้านเลขที่</label><input type="text" id="regCgHouseNo"></div>
+      <div class="field"><label>หมู่ที่</label>
+        <select id="regCgMoo">
+          <option value="">-- เลือกหมู่ --</option>
+          <option value="2">หมู่ 2 บ้านโพนสว่าง</option>
+          <option value="3">หมู่ 3 บ้านดอนเชียงบาล</option>
+          <option value="6">หมู่ 6 บ้านหนองสนม</option>
+          <option value="8">หมู่ 8 บ้านทุ่งมน</option>
+          <option value="9">หมู่ 9 บ้านโคกสว่าง</option>
+          <option value="11">หมู่ 11 บ้านโนนเบ็ญ</option>
+          <option value="13">หมู่ 13 บ้านดอนเชียงบานใหญ่</option>
+          <option value="15">หมู่ 15 บ้านทุ่งมนพัฒนา</option>
+        </select>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:4px;">* ข้อมูลนี้จะถูกสร้างเป็นรายการ CG ใหม่ในหน้า "จัดการ CG" โดยอัตโนมัติ</p>
   </div>
   <div class="field" style="margin-top:8px;"><label>ชื่อผู้ใช้ (Username) - ตัวอักษร/ตัวเลขอังกฤษเท่านั้น</label><input type="text" id="regUsername"></div>
   <div class="field" style="margin-top:8px;"><label>รหัสผ่าน</label><input type="password" id="regPassword"></div>
@@ -174,6 +192,7 @@ body.logged-in .login-screen{display:none;}
   <button data-tab="elderly">👴 จัดการผู้สูงอายุ</button>
   <button data-tab="equipment">🛠 การจัดการอุปกรณ์</button>
   <button data-tab="pdf">📄 ออกรายงาน</button>
+  <button data-tab="history" style="display:none;">📜 ประวัติผู้สูงอายุ</button>
   <button data-tab="users" style="display:none;">🔐 ผู้ใช้งาน</button>
 </nav>
 
@@ -340,7 +359,7 @@ body.logged-in .login-screen{display:none;}
       <div class="field"><label>กรองตามโหมด PDF</label><select id="filterElderlyMode"><option value="">ทั้งหมด</option><option value="normal">ปกติ</option><option value="obt">อบต.</option></select></div>
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
-    <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th></th></tr></thead>
+    <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
 </section>
@@ -379,6 +398,28 @@ body.logged-in .login-screen{display:none;}
     <p class="muted" style="margin-top:6px;">1 หน้ากระดาษ A4 จะรวมการเยี่ยมของผู้สูงอายุคนเดียวกันสูงสุด 4 ครั้ง พร้อมสรุปรายงาน และช่องลงชื่อรับรองท้ายหน้า</p>
     <button class="btn btn-primary" id="generatePdfBtn" style="margin-top:12px;">📄 ออกรายงาน</button>
     <div class="upload-progress" id="pdfProgress"></div>
+  </div>
+</section>
+
+<section id="tab-history" class="tabpanel">
+  <div class="card">
+    <h3>ประวัติผู้สูงอายุและผู้มีภาวะพึ่งพิงที่เคยได้รับการดูแล</h3>
+    <p class="muted">รายชื่อผู้ที่จำหน่ายออกจากระบบเนื่องจากเสียชีวิตหรือย้ายที่อยู่ พร้อมประวัติการเยี่ยมทั้งหมด — มองเห็นและจัดการได้เฉพาะ Admin และ CM</p>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>กรองตามเหตุผล</label>
+        <select id="filterHistoryReason">
+          <option value="">ทั้งหมด</option>
+          <option value="death">เสียชีวิต</option>
+          <option value="moved">ย้ายที่อยู่</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="historyReportBtn" style="align-self:flex-end;">📄 ออกรายงาน</button>
+    </div>
+    <table style="margin-top:10px;">
+      <thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG เดิม</th><th>เหตุผล</th><th>วันที่จำหน่าย</th><th>หมายเหตุ</th><th></th></tr></thead>
+      <tbody id="historyTableBody"></tbody>
+    </table>
+    <div class="upload-progress" id="historyReportProgress"></div>
   </div>
 </section>
 
@@ -448,6 +489,23 @@ body.logged-in .login-screen{display:none;}
     <div class="field"><label>เบอร์โทรศัพท์ อสม.</label><input type="tel" id="elderlyVhvPhone" placeholder="เช่น 08xxxxxxxx"></div>
   </div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('elderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="elderlySaveBtn">บันทึก</button></div>
+</div></div>
+
+<div class="modal-overlay" id="dischargeModal"><div class="modal-box">
+  <h3>จำหน่ายผู้สูงอายุออกจากระบบ</h3>
+  <input type="hidden" id="dischargeElderlyId">
+  <div class="field"><label>เหตุผลการจำหน่าย</label>
+    <select id="dischargeReason">
+      <option value="recovered">หายป่วย</option>
+      <option value="improved">อาการดีขึ้น ไม่เข้าเกณฑ์การดูแล</option>
+      <option value="death">เสียชีวิต</option>
+      <option value="moved">ย้ายที่อยู่</option>
+    </select>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>วันที่จำหน่าย</label><input type="date" id="dischargeDate"></div>
+  <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><textarea id="dischargeNote"></textarea></div>
+  <p class="muted" style="margin-top:8px;">* กรณีเสียชีวิตหรือย้ายที่อยู่ ระบบจะย้ายชื่อและประวัติการดูแลทั้งหมดไปเก็บไว้ที่แท็บ "ประวัติผู้สูงอายุ" โดยอัตโนมัติ (มองเห็นได้เฉพาะ Admin และ CM)</p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('dischargeModal')">ยกเลิก</button><button class="btn btn-danger" id="dischargeSubmitBtn">ยืนยันการจำหน่าย</button></div>
 </div></div>
 
 <div class="modal-overlay" id="calendarModal"><div class="modal-box">
@@ -648,7 +706,7 @@ db.ref('cgs').on('value', snap=>{ STATE.cgs = snap.val()||{}; onDataChange(); })
 db.ref('elderly').on('value', snap=>{ STATE.elderly = snap.val()||{}; onDataChange(); });
 db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange(); });
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
-db.ref('users').on('value', snap=>{ STATE.users = snap.val()||{}; renderUsersTable(); renderRegisterCgSelect(); });
+db.ref('users').on('value', snap=>{ STATE.users = snap.val()||{}; renderUsersTable(); });
 
 /* Auto-create the Admin account on first run if it doesn't exist yet */
 db.ref('users/1470900013871').once('value').then(snap=>{
@@ -732,7 +790,9 @@ function doLogin(){
       return;
     }
     if(user.status !== 'approved'){
-      errEl.textContent = 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
+      errEl.textContent = user.status === 'disabled'
+        ? 'บัญชีนี้ถูกปิดใช้งานโดยผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบ'
+        : 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
       return;
     }
     CURRENT_USER = user;
@@ -792,27 +852,21 @@ document.getElementById('showRegisterLink').addEventListener('click', ()=>{
   document.getElementById('regUsername').value = '';
   document.getElementById('regPassword').value = '';
   document.getElementById('regPassword2').value = '';
+  document.getElementById('regCgPhone').value = '';
+  document.getElementById('regCgHouseNo').value = '';
+  document.getElementById('regCgMoo').value = '';
   document.getElementById('regRole').value = 'cm';
   toggleRegCgWrap();
   openModal('registerModal');
 });
 document.getElementById('regRole').addEventListener('change', toggleRegCgWrap);
 function toggleRegCgWrap(){
-  document.getElementById('regCgWrap').style.display = document.getElementById('regRole').value === 'cg' ? 'flex' : 'none';
-}
-function renderRegisterCgSelect(){
-  const sel = document.getElementById('regCgCode');
-  if(!sel) return;
-  const cur = sel.value;
-  const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
-  sel.innerHTML = '<option value="">-- ไม่ระบุ --</option>' + opts;
-  sel.value = cur;
+  document.getElementById('regCgFieldsWrap').style.display = document.getElementById('regRole').value === 'cg' ? 'block' : 'none';
 }
 
 document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
   const name = document.getElementById('regName').value.trim();
   const role = document.getElementById('regRole').value;
-  const cgCode = document.getElementById('regCgCode').value;
   const username = document.getElementById('regUsername').value.trim();
   const password = document.getElementById('regPassword').value;
   const password2 = document.getElementById('regPassword2').value;
@@ -822,25 +876,41 @@ document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
   if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){ errEl.textContent = 'ชื่อผู้ใช้ต้องเป็นตัวอักษร/ตัวเลขภาษาอังกฤษ 3-20 ตัว (ไม่มีจุดหรืออักขระพิเศษ)'; return; }
   if(password.length < 4){ errEl.textContent = 'รหัสผ่านอย่างน้อย 4 ตัวอักษร'; return; }
   if(password !== password2){ errEl.textContent = 'รหัสผ่านไม่ตรงกัน'; return; }
+
+  let cgPhone = '', cgHouseNo = '', cgMoo = '';
+  if(role === 'cg'){
+    cgMoo = document.getElementById('regCgMoo').value;
+    if(!cgMoo){ errEl.textContent = 'กรุณาเลือกหมู่ที่ (สำหรับข้อมูล CG)'; return; }
+    cgPhone = document.getElementById('regCgPhone').value.trim();
+    cgHouseNo = document.getElementById('regCgHouseNo').value.trim();
+  }
+
   db.ref('users/'+username).once('value').then(snap=>{
     if(snap.exists()){ errEl.textContent = 'ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น'; return; }
     const status = role === 'cg' ? 'pending' : 'approved';
-    db.ref('users/'+username).set({
-      username, password, name, role,
-      cgCode: role === 'cg' ? cgCode : '',
-      status, createdAt: Date.now()
-    }).then(()=>{
-      closeModal('registerModal');
-      if(role === 'cg'){
-        toast('สมัครสำเร็จ กรุณารอการอนุมัติจากผู้ดูแลระบบก่อนเข้าใช้งาน', 'success');
-      } else {
+
+    if(role === 'cg'){
+      const newCgCode = nextCode(STATE.cgs, 'CG', 3);
+      const updates = {};
+      updates['users/'+username] = { username, password, name, role, cgCode:newCgCode, status, createdAt: Date.now() };
+      updates['cgs/'+newCgCode] = { name, phone:cgPhone, houseNo:cgHouseNo, moo:cgMoo, idCard:'', status:'active', createdAt: Date.now() };
+      db.ref().update(updates).then(()=>{
+        closeModal('registerModal');
+        toast('สมัครสำเร็จ ข้อมูล CG ถูกสร้างในหน้า "จัดการ CG" แล้ว กรุณารอการอนุมัติจากผู้ดูแลระบบก่อนเข้าใช้งาน', 'success');
+      });
+    } else {
+      db.ref('users/'+username).set({ username, password, name, role, cgCode:'', status, createdAt: Date.now() }).then(()=>{
+        closeModal('registerModal');
         toast('สมัครสำเร็จ สามารถเข้าสู่ระบบได้ทันที', 'success');
-      }
-    });
+      });
+    }
   });
 });
 
 /* ---------- Admin: user management table ---------- */
+function statusLabel(status){
+  return status === 'approved' ? 'อนุมัติแล้ว' : status === 'disabled' ? 'ปิดใช้งาน' : 'รออนุมัติ';
+}
 function renderUsersTable(){
   const tbody = document.getElementById('usersTableBody');
   if(!tbody) return;
@@ -850,8 +920,14 @@ function renderUsersTable(){
     const u = STATE.users[uid];
     const cgName = u.cgCode && STATE.cgs[u.cgCode] ? STATE.cgs[u.cgCode].name : (u.cgCode || '-');
     const actions = [];
-    if(u.role === 'cg' && u.status === 'pending'){
+    if(u.status === 'pending'){
       actions.push(`<button class="btn btn-primary btn-sm" onclick="approveUser('${uid}')">✅ อนุมัติ</button>`);
+    }
+    if(u.status === 'approved' && u.role !== 'admin'){
+      actions.push(`<button class="btn btn-ghost btn-sm" onclick="disableUser('${uid}')">⛔ ปิดใช้งาน</button>`);
+    }
+    if(u.status === 'disabled'){
+      actions.push(`<button class="btn btn-primary btn-sm" onclick="enableUser('${uid}')">▶️ เปิดใช้งาน</button>`);
     }
     if(u.role !== 'admin'){
       actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button>`);
@@ -859,7 +935,7 @@ function renderUsersTable(){
     return `<tr>
       <td>${u.name}</td><td>${u.username}</td>
       <td><span class="role-tag ${u.role}">${roleLabel(u.role)}</span></td>
-      <td><span class="status-tag ${u.status}">${u.status === 'approved' ? 'อนุมัติแล้ว' : 'รออนุมัติ'}</span></td>
+      <td><span class="status-tag ${u.status}">${statusLabel(u.status)}</span></td>
       <td>${cgName}</td>
       <td class="row" style="gap:6px;">${actions.join('')}</td>
     </tr>`;
@@ -867,6 +943,15 @@ function renderUsersTable(){
 }
 function approveUser(uid){
   db.ref('users/'+uid+'/status').set('approved').then(()=>toast('อนุมัติผู้ใช้งานสำเร็จ','success'));
+}
+function disableUser(uid){
+  const u = STATE.users[uid];
+  showConfirm('ปิดใช้งานบัญชีนี้?', (u?u.name:uid), ()=>{
+    db.ref('users/'+uid+'/status').set('disabled').then(()=>toast('ปิดใช้งานบัญชีสำเร็จ','success'));
+  });
+}
+function enableUser(uid){
+  db.ref('users/'+uid+'/status').set('approved').then(()=>toast('เปิดใช้งานบัญชีสำเร็จ','success'));
 }
 function deleteUser(uid){
   const u = STATE.users[uid];
@@ -893,7 +978,7 @@ function renderCgSelects(){
 function renderRecElderlyOptions(){
   const cg = document.getElementById('recCg').value;
   const sel = document.getElementById('recElderly');
-  const list = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cg).sort();
+  const list = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cg && STATE.elderly[id].status!=='discharged').sort();
   sel.innerHTML = list.map(id=>{
     const e = STATE.elderly[id];
     const dot = ADL_EMOJI[e.adlGroup] || '';
@@ -933,7 +1018,7 @@ function visitsInMonth(m,y){
 function renderDashboard(){
   const m = dashMonthSel.value, y = dashYearSel.value;
   const monthVisits = visitsInMonth(m,y);
-  const elderlyIds = Object.keys(STATE.elderly);
+  const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].status!=='discharged');
   const visitedElderlyIds = new Set(monthVisits.map(([id,v])=>v.elderlyId));
   document.getElementById('statMonth').innerHTML = `
     <div class="stat"><b>${Object.keys(STATE.cgs).length}</b><span>CG ทั้งหมด</span></div>
@@ -1254,14 +1339,20 @@ function renderElderlyTable(){
   }).map(id=>{
     const e = STATE.elderly[id];
     const cgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
+    const isDischarged = e.status === 'discharged';
+    const statusCell = isDischarged
+      ? `<span class="status-tag discharged" title="${e.dischargeReasonLabel||''} (${e.dischargeDate||''})">จำหน่ายแล้ว</span>`
+      : `<span class="status-tag approved">ดูแลอยู่</span>`;
     return `<tr>
       <td>${id}</td><td><span class="adl-dot adl-${e.adlGroup||''}"></span>${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td><td>${e.adlGroup||'-'}</td><td>${e.visitsPerMonth||'-'}</td>
       <td><span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
+      <td>${statusCell}</td>
+      <td class="row" style="gap:4px;"><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
+      ${!isDischarged ? `<button class="btn btn-ghost btn-sm" onclick="openDischarge('${id}')">📤 จำหน่าย</button>` : ''}
       <button class="btn btn-danger btn-sm" onclick="deleteElderly('${id}')">🗑</button></td>
     </tr>`;
   }).join('');
-  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="8" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="9" class="muted">ยังไม่มีข้อมูล</td></tr>';
 }
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
@@ -1315,7 +1406,8 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     relativePhone: document.getElementById('elderlyRelativePhone').value.trim(),
     vhvName: document.getElementById('elderlyVhvName').value.trim(),
     vhvPhone: document.getElementById('elderlyVhvPhone').value.trim(),
-    status:'active', createdAt: Date.now()
+    status: (editId && STATE.elderly[editId]) ? STATE.elderly[editId].status : 'active',
+    createdAt: (editId && STATE.elderly[editId]) ? STATE.elderly[editId].createdAt : Date.now()
   };
   const id = editId || nextCode(STATE.elderly, 'E', 3);
   db.ref('elderly/'+id).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('elderlyModal'); });
@@ -1326,6 +1418,195 @@ function deleteElderly(id){
     updates['elderly/'+id] = null;
     Object.entries(STATE.visits||{}).forEach(([vid,v])=>{ if(v.elderlyId===id) updates['visits/'+vid]=null; });
     db.ref().update(updates).then(()=>toast('ลบสำเร็จ','success'));
+  });
+}
+
+/* =============================================================
+   DISCHARGE (จำหน่ายผู้สูงอายุออกจากระบบ)
+============================================================= */
+const DISCHARGE_REASON_LABELS = {
+  recovered: 'หายป่วย',
+  improved: 'อาการดีขึ้น ไม่เข้าเกณฑ์การดูแล',
+  death: 'เสียชีวิต',
+  moved: 'ย้ายที่อยู่'
+};
+function openDischarge(id){
+  document.getElementById('dischargeElderlyId').value = id;
+  document.getElementById('dischargeReason').value = 'recovered';
+  document.getElementById('dischargeDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('dischargeNote').value = '';
+  openModal('dischargeModal');
+}
+document.getElementById('dischargeSubmitBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('dischargeElderlyId').value;
+  const reason = document.getElementById('dischargeReason').value;
+  const date = document.getElementById('dischargeDate').value;
+  const note = document.getElementById('dischargeNote').value.trim();
+  const e = STATE.elderly[id];
+  if(!e){ toast('ไม่พบข้อมูลผู้สูงอายุ','error'); return; }
+  if(!date){ toast('กรุณาเลือกวันที่จำหน่าย','error'); return; }
+  const reasonLabel = DISCHARGE_REASON_LABELS[reason];
+
+  showConfirm('ยืนยันการจำหน่ายผู้สูงอายุนี้?', `${e.name} — เหตุผล: ${reasonLabel}`, ()=>{
+    if(reason === 'death' || reason === 'moved'){
+      const updates = {};
+      const historyRecord = Object.assign({}, e, {
+        dischargeReason: reason,
+        dischargeReasonLabel: reasonLabel,
+        dischargeDate: date,
+        dischargeNote: note,
+        dischargedAt: Date.now()
+      });
+      updates['elderlyHistory/'+id] = historyRecord;
+      updates['elderly/'+id] = null;
+      Object.entries(STATE.visits||{}).forEach(([vid,v])=>{
+        if(v.elderlyId === id){
+          updates['visitHistory/'+vid] = v;
+          updates['visits/'+vid] = null;
+        }
+      });
+      db.ref().update(updates).then(()=>{
+        closeModal('dischargeModal');
+        toast(`ย้ายข้อมูล "${e.name}" ไปยังแท็บ "ประวัติผู้สูงอายุ" เรียบร้อยแล้ว`, 'success');
+      });
+    } else {
+      db.ref('elderly/'+id).update({
+        status: 'discharged',
+        dischargeReason: reason,
+        dischargeReasonLabel: reasonLabel,
+        dischargeDate: date,
+        dischargeNote: note,
+        dischargedAt: Date.now()
+      }).then(()=>{
+        closeModal('dischargeModal');
+        toast(`จำหน่าย "${e.name}" ออกจากระบบ (${reasonLabel}) เรียบร้อยแล้ว`, 'success');
+      });
+    }
+  });
+});
+
+/* =============================================================
+   ประวัติผู้สูงอายุและผู้มีภาวะพึ่งพิงที่เคยได้รับการดูแล
+   (มองเห็น/จัดการได้เฉพาะ Admin และ CM — ดู applyRoleUI)
+============================================================= */
+let STATE_ELDERLY_HISTORY = {};
+let STATE_VISIT_HISTORY = {};
+db.ref('elderlyHistory').on('value', snap=>{ STATE_ELDERLY_HISTORY = snap.val()||{}; renderHistoryTable(); });
+db.ref('visitHistory').on('value', snap=>{ STATE_VISIT_HISTORY = snap.val()||{}; });
+
+const filterHistoryReasonSel = document.getElementById('filterHistoryReason');
+if(filterHistoryReasonSel){ filterHistoryReasonSel.addEventListener('change', renderHistoryTable); }
+
+function renderHistoryTable(){
+  const tbody = document.getElementById('historyTableBody');
+  if(!tbody) return;
+  const fReason = filterHistoryReasonSel ? filterHistoryReasonSel.value : '';
+  const ids = Object.keys(STATE_ELDERLY_HISTORY).filter(id=>{
+    if(fReason && STATE_ELDERLY_HISTORY[id].dischargeReason !== fReason) return false;
+    return true;
+  }).sort((a,b)=>(STATE_ELDERLY_HISTORY[b].dischargedAt||0)-(STATE_ELDERLY_HISTORY[a].dischargedAt||0));
+  if(ids.length === 0){ tbody.innerHTML = '<tr><td colspan="8" class="muted">ยังไม่มีประวัติ</td></tr>'; return; }
+  tbody.innerHTML = ids.map(id=>{
+    const e = STATE_ELDERLY_HISTORY[id];
+    const cgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
+    return `<tr>
+      <td>${id}</td><td>${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td>
+      <td>${e.dischargeReasonLabel||'-'}</td><td>${e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-'}</td>
+      <td>${e.dischargeNote||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteHistoryRecord('${id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+function deleteHistoryRecord(id){
+  const e = STATE_ELDERLY_HISTORY[id];
+  showConfirm('ลบประวัตินี้ถาวร?', (e?e.name:id)+' (การลบนี้ไม่สามารถย้อนกลับได้)', ()=>{
+    const updates = {};
+    updates['elderlyHistory/'+id] = null;
+    Object.entries(STATE_VISIT_HISTORY||{}).forEach(([vid,v])=>{ if(v.elderlyId===id) updates['visitHistory/'+vid]=null; });
+    db.ref().update(updates).then(()=>toast('ลบประวัติสำเร็จ','success'));
+  });
+}
+
+function buildHistoryReportPageHTML(rowsChunk, pageNo, totalPages){
+  const rowsHtml = rowsChunk.map((e,i)=>`
+    <tr>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${i+1}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;">${e.name}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${e.age||'-'}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;">${STATE.cgs[e.cgCode]?.name || e.cgCode || '-'}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;">${e.dischargeReasonLabel||'-'}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-'}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;">${e.dischargeNote||'-'}</td>
+    </tr>`).join('');
+  return `
+  <div style="width:754px;height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:18px;font-weight:700;">รายงานประวัติผู้สูงอายุและผู้มีภาวะพึ่งพิงที่เคยได้รับการดูแล</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:58px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:16px 24px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+        <thead>
+          <tr style="background:#EAF6FC;color:#0F5590;">
+            <th style="padding:6px 8px;border:1px solid #ddd;">ลำดับ</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">อายุ</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">CG เดิม</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">เหตุผล</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">วันที่จำหน่าย</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10.5px;color:#777;border-top:1px solid #eee;padding:8px 0;margin-top:10px;">
+      หน้า ${pageNo}/${totalPages} | ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+
+const historyReportBtn = document.getElementById('historyReportBtn');
+if(historyReportBtn){
+  historyReportBtn.addEventListener('click', async ()=>{
+    const fReason = filterHistoryReasonSel ? filterHistoryReasonSel.value : '';
+    const list = Object.values(STATE_ELDERLY_HISTORY).filter(e=>!fReason || e.dischargeReason===fReason)
+      .sort((a,b)=>(b.dischargedAt||0)-(a.dischargedAt||0));
+    if(list.length === 0){ toast('ไม่พบข้อมูลประวัติสำหรับออกรายงาน','error'); return; }
+    const progressEl = document.getElementById('historyReportProgress');
+    const ROWS_PER_PAGE = 14;
+    const pages = [];
+    for(let i=0;i<list.length;i+=ROWS_PER_PAGE) pages.push(list.slice(i,i+ROWS_PER_PAGE));
+
+    historyReportBtn.disabled = true;
+    const root = document.getElementById('pdfRenderRoot');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    try{
+      for(let i=0;i<pages.length;i++){
+        progressEl.textContent = `กำลังสร้างหน้า ${i+1}/${pages.length}`;
+        root.innerHTML = buildHistoryReportPageHTML(pages[i], i+1, pages.length);
+        await new Promise(r=>setTimeout(r,300));
+        const target = root.firstElementChild;
+        const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+        const imgData = canvas.toDataURL('image/jpeg',0.92);
+        if(i>0) pdf.addPage();
+        pdf.addImage(imgData,'JPEG',0,0,210,297);
+      }
+      pdf.save(`ประวัติผู้สูงอายุที่เคยได้รับการดูแล.pdf`);
+      progressEl.textContent = '';
+      toast('สร้างรายงานสำเร็จ','success');
+    }catch(err){
+      console.error(err);
+      toast('เกิดข้อผิดพลาดขณะสร้างรายงาน: '+err.message,'error');
+    }finally{
+      root.innerHTML = '';
+      historyReportBtn.disabled = false;
+    }
   });
 }
 
