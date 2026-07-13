@@ -99,18 +99,19 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 #pdfRenderRoot{position:fixed;left:-99999px;top:0;}
 .filter-bar{margin-bottom:12px;}
 @media(max-width:480px){.stat b{font-size:16px;}}
-.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;z-index:500;padding:16px;}
-.login-box{background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
-.login-box img{width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 10px;object-fit:cover;}
-.login-box h2{text-align:center;margin:0 0 4px;font-size:16px;color:var(--primary-dark);}
-.login-box p.sub{text-align:center;margin:0 0 18px;font-size:12px;color:var(--muted);}
-.login-error{color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;}
-.login-links{text-align:center;margin-top:12px;font-size:13px;}
-.login-links a{color:var(--secondary);cursor:pointer;text-decoration:underline;}
-body:not(.logged-in) header.app-header, body:not(.logged-in) nav.tabs, body:not(.logged-in) main{display:none;}
-body.logged-in .login-screen{display:none;}
-.user-badge{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;font-size:11.5px;display:flex;align-items:center;gap:8px;flex-shrink:0;color:#fff;}
-.user-badge .btn{padding:4px 8px;font-size:11.5px;}
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#EAF6FC,#D6ECF7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
+.login-box{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(21,113,186,.2);max-width:380px;width:100%;}
+.login-banner{background:linear-gradient(135deg,var(--primary),var(--secondary));padding:26px 20px 20px;text-align:center;color:#fff;}
+.login-banner .login-logo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #fff;margin-bottom:10px;}
+.login-banner h2{font-size:16px;margin:0 0 4px;color:#fff;}
+.login-banner p{font-size:11.5px;opacity:.92;margin:0;}
+.login-body{padding:22px 26px 26px;text-align:center;}
+.login-body .field{text-align:left;}
+.login-forgot{font-size:12px;color:var(--secondary);text-align:center;margin-top:12px;cursor:pointer;text-decoration:underline;}
+header.app-header .app-header-user{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+header.app-header .app-header-user span{font-size:11.5px;opacity:.95;white-space:nowrap;}
+header.app-header .app-header-user .btn{background:rgba(255,255,255,.18);color:#fff;padding:5px 10px;}
+header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 .role-tag.admin{background:#fdece5;color:var(--danger);}
 .role-tag.cm{background:#e8f0fb;color:var(--secondary);}
@@ -124,64 +125,87 @@ body.logged-in .login-screen{display:none;}
 </head>
 <body>
 
-<div class="login-screen" id="loginScreen">
+<div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <img id="loginLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
-    <h2>ระบบบันทึกการเยี่ยมผู้สูงอายุ</h2>
-    <p class="sub">รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
-    <div class="field"><label>ชื่อผู้ใช้ (Username)</label><input type="text" id="loginUsername" autocomplete="username"></div>
-    <div class="field" style="margin-top:8px;"><label>รหัสผ่าน</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
-    <div class="login-error" id="loginError"></div>
-    <button class="btn btn-primary" id="loginBtn" style="width:100%;margin-top:10px;justify-content:center;">เข้าสู่ระบบ</button>
-    <div class="login-links"><a id="showRegisterLink">สมัครใช้งาน (สำหรับเจ้าหน้าที่ รพ.สต. / CM/CG)</a></div>
+    <div class="login-banner">
+      <img class="login-logo" id="loginLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
+      <h2>ระบบบันทึกการเยี่ยมผู้สูงอายุที่มีภาวะพึ่งพิง</h2>
+      <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
+    </div>
+    <div class="login-body">
+      <div class="field">
+        <label>เลือกบทบาทผู้ใช้งาน</label>
+        <select id="loginRole">
+          <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+          <option value="care_manager">Care Manager (CM)</option>
+          <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
+          <option value="public">บุคคลทั่วไป</option>
+        </select>
+      </div>
+      <div id="loginCredFields">
+        <div class="field" style="margin-top:10px;">
+          <label>ชื่อผู้ใช้ (Username)</label>
+          <input type="text" id="loginUsername" placeholder="กรอกชื่อผู้ใช้ของคุณ" autocomplete="username">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>รหัสผ่าน</label>
+          <input type="password" id="loginPassword" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" style="margin-top:16px;width:100%;justify-content:center;">เข้าสู่ระบบ</button>
+      <p id="loginError" style="color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;"></p>
+      <div class="login-forgot" id="loginRegisterLink">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</div>
+      <div class="login-forgot" id="loginForgotLink">ลืมรหัสผ่าน / ติดต่อผู้ดูแลระบบ</div>
+    </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="registerModal"><div class="modal-box">
-  <h3>สมัครใช้งาน</h3>
-  <p class="muted">สำหรับเจ้าหน้าที่ รพ.สต. / CM / CG ที่ยังไม่มีบัญชี — Username ของบัญชีที่สมัครผ่านช่องทางนี้ถูกกำหนดเป็น <b>05449</b> เหมือนกันทุกคน ท่านกำหนดเฉพาะรหัสผ่านของตัวเอง</p>
-  <div class="field" style="margin-top:8px;"><label>สมัครในฐานะ</label>
-    <select id="regRoleChoice">
-      <option value="cm">เจ้าหน้าที่ รพ.สต. / CM</option>
-      <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
-    </select>
-  </div>
-  <div class="field" style="margin-top:8px;"><label>ชื่อ-สกุล</label><input type="text" id="regName"></div>
-  <div class="field" style="margin-top:8px;" id="regPositionWrap"><label>ตำแหน่ง</label><input type="text" id="regPosition" placeholder="เช่น CM, พยาบาลวิชาชีพ, เจ้าหน้าที่สาธารณสุข"></div>
-  <div id="regCgFieldsWrap" style="margin-top:8px;display:none;">
-    <div class="field"><label>เบอร์โทรศัพท์ (สำหรับข้อมูล CG)</label><input type="tel" id="regCgPhone" placeholder="เช่น 08xxxxxxxx"></div>
-    <div class="row" style="margin-top:8px;">
-      <div class="field"><label>บ้านเลขที่</label><input type="text" id="regCgHouseNo"></div>
-      <div class="field"><label>หมู่ที่</label>
-        <select id="regCgMoo">
-          <option value="">-- เลือกหมู่ --</option>
-          <option value="2">หมู่ 2 บ้านโพนสว่าง</option>
-          <option value="3">หมู่ 3 บ้านดอนเชียงบาล</option>
-          <option value="6">หมู่ 6 บ้านหนองสนม</option>
-          <option value="8">หมู่ 8 บ้านทุ่งมน</option>
-          <option value="9">หมู่ 9 บ้านโคกสว่าง</option>
-          <option value="11">หมู่ 11 บ้านโนนเบ็ญ</option>
-          <option value="13">หมู่ 13 บ้านดอนเชียงบานใหญ่</option>
-          <option value="15">หมู่ 15 บ้านทุ่งมนพัฒนา</option>
+<div class="login-overlay" id="registerOverlay" style="display:none;z-index:1100;">
+  <div class="login-box">
+    <div class="login-banner">
+      <img class="login-logo" id="registerLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
+      <h2>ลงทะเบียนผู้ใช้งานใหม่</h2>
+      <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
+    </div>
+    <div class="login-body">
+      <div class="field">
+        <label>ชื่อ-สกุล</label>
+        <input type="text" id="regFullName" placeholder="ชื่อ-นามสกุลจริง">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>บทบาทที่ต้องการลงทะเบียน</label>
+        <select id="regRole">
+          <option value="cg">CG (ผู้ดูแลผู้สูงอายุ)</option>
+          <option value="care_manager">Care Manager (CM)</option>
+          <option value="admin">ผู้ดูแลระบบ (Admin)</option>
         </select>
       </div>
+      <div class="field" id="regCgFieldWrap" style="margin-top:10px;">
+        <label>คุณคือ CG คนไหนในทะเบียน</label>
+        <select id="regCgCode"></select>
+      </div>
+      <div class="field" id="regInviteFieldWrap" style="margin-top:10px;display:none;">
+        <label>รหัสเชิญลงทะเบียนสำหรับบทบาทนี้</label>
+        <input type="text" id="regInviteCode" placeholder="ขอรหัสเชิญจากผู้ดูแลระบบ">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ตั้งชื่อผู้ใช้ (Username)</label>
+        <input type="text" id="regUsername" placeholder="ตั้งชื่อผู้ใช้สำหรับเข้าสู่ระบบ">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ตั้งรหัสผ่าน</label>
+        <input type="password" id="regPassword">
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ยืนยันรหัสผ่าน</label>
+        <input type="password" id="regConfirmPassword">
+      </div>
+      <button class="btn btn-primary" id="regSubmitBtn" style="margin-top:16px;width:100%;justify-content:center;">ลงทะเบียน</button>
+      <p id="regError" style="color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;"></p>
+      <div class="login-forgot" id="regBackToLoginLink">มีบัญชีอยู่แล้ว? กลับไปเข้าสู่ระบบ</div>
     </div>
-    <p class="muted" style="margin-top:4px;">* ข้อมูลนี้จะถูกสร้างเป็นรายการ CG ใหม่ในหน้า "จัดการ CG" โดยอัตโนมัติ</p>
   </div>
-  <div class="field" style="margin-top:8px;"><label>Username</label><input type="text" id="regUsernameDisplay" value="05449" disabled></div>
-  <div class="field" style="margin-top:8px;"><label>รหัสผ่าน (กำหนดเอง)</label><input type="password" id="regPassword"></div>
-  <div class="field" style="margin-top:8px;"><label>ยืนยันรหัสผ่าน</label><input type="password" id="regPassword2"></div>
-  <div class="login-error" id="regError"></div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('registerModal')">ยกเลิก</button><button class="btn btn-primary" id="regSubmitBtn">สมัครใช้งาน</button></div>
-</div></div>
-
-<div class="modal-overlay" id="permissionsModal"><div class="modal-box">
-  <h3>กำหนดสิทธิ์การใช้งาน</h3>
-  <input type="hidden" id="permUserId">
-  <p class="muted" id="permUserName"></p>
-  <div id="permCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('permissionsModal')">ยกเลิก</button><button class="btn btn-primary" id="permSaveBtn">บันทึกสิทธิ์</button></div>
-</div></div>
+</div>
 
 <div class="modal-overlay" id="cgVisitStatusModal"><div class="modal-box" style="max-width:520px;">
   <h3 id="cgVisitStatusTitle">รายชื่อผู้สูงอายุ</h3>
@@ -190,15 +214,52 @@ body.logged-in .login-screen{display:none;}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('cgVisitStatusModal')">ปิด</button></div>
 </div></div>
 
+<div class="modal-overlay" id="changePasswordModal"><div class="modal-box">
+  <h3>🔑 เปลี่ยนรหัสผ่านของฉัน</h3>
+  <div class="field">
+    <label>รหัสผ่านเดิม</label>
+    <input type="password" id="cpOldPassword">
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>รหัสผ่านใหม่</label>
+    <input type="password" id="cpNewPassword">
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>ยืนยันรหัสผ่านใหม่</label>
+    <input type="password" id="cpConfirmPassword">
+  </div>
+  <p id="cpError" style="color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;"></p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('changePasswordModal')">ยกเลิก</button><button class="btn btn-primary" id="cpSaveBtn">บันทึกรหัสผ่านใหม่</button></div>
+</div></div>
+
+<div class="modal-overlay" id="adminResetPwModal"><div class="modal-box">
+  <h3>🔑 รีเซ็ตรหัสผ่านผู้ใช้งาน</h3>
+  <input type="hidden" id="arpUserId">
+  <p class="muted" id="arpUserLabel"></p>
+  <div class="field" style="margin-top:8px;">
+    <label>รหัสผ่านใหม่</label>
+    <input type="password" id="arpNewPassword">
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>ยืนยันรหัสผ่านใหม่</label>
+    <input type="password" id="arpConfirmPassword">
+  </div>
+  <p id="arpError" style="color:var(--danger);font-size:12.5px;margin-top:6px;min-height:16px;"></p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('adminResetPwModal')">ยกเลิก</button><button class="btn btn-primary" id="arpSaveBtn">บันทึก</button></div>
+</div></div>
+
 <header class="app-header">
   <img class="app-logo" id="appHeaderLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
   <div class="app-header-text">
     <h1>📋 ระบบบันทึกการเยี่ยมผู้สูงอายุที่มีภาวะพึ่งพิง</h1>
     <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
   </div>
-  <div class="user-badge" id="userBadge" style="display:none;">
-    <span id="userBadgeName"></span>
-    <button class="btn btn-ghost btn-sm" id="logoutBtn">ออกจากระบบ</button>
+  <div class="app-header-user">
+    <span id="currentUserLabel"></span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-ghost btn-sm" id="changePasswordBtn" style="display:none;">🔑 เปลี่ยนรหัสผ่าน</button>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">ออกจากระบบ</button>
+    </div>
   </div>
 </header>
 
@@ -442,12 +503,21 @@ body.logged-in .login-screen{display:none;}
 
 <section id="tab-users" class="tabpanel">
   <div class="card">
-    <h3>บัญชีผู้ใช้งานระบบ</h3>
-    <p class="muted">Admin ใช้งานได้ทุกฟังก์ชันเสมอ | บัญชี CG ทั้ง 5 บัญชี (Username 001-005) ถูกสร้างไว้ล่วงหน้าแล้ว | เจ้าหน้าที่/CM สมัครผ่านลิงก์ "สมัครใช้งาน" หน้า Login (ต้องมีรหัสยืนยันสิทธิ์) แล้วรอ Admin อนุมัติ | กดปุ่ม "🔧 สิทธิ์" เพื่อกำหนดว่าผู้ใช้แต่ละคนเข้าฟังก์ชันใดได้บ้าง</p>
-    <table style="margin-top:10px;">
-      <thead><tr><th>ชื่อ</th><th>Username</th><th>บทบาท</th><th>สถานะ</th><th>สังกัด CG</th><th></th></tr></thead>
-      <tbody id="usersTableBody"></tbody>
-    </table>
+    <h3>👤 ผู้ใช้งานที่ลงทะเบียนแล้ว</h3>
+    <p class="muted">รายชื่อผู้ใช้งานทั้งหมดที่ลงทะเบียนเข้าใช้ระบบ Admin สามารถรีเซ็ตรหัสผ่านหรือลบบัญชีได้จากที่นี่</p>
+    <div style="overflow-x:auto;">
+    <table style="margin-top:10px;min-width:640px;"><thead><tr><th>ชื่อ-สกุล</th><th>Username</th><th>บทบาท</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
+    <tbody id="usersTable"></tbody></table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🔐 รหัสเชิญลงทะเบียน (Invite Code)</h3>
+    <p class="muted">ผู้ที่จะลงทะเบียนเป็น Admin หรือ Care Manager ต้องกรอกรหัสเชิญนี้ให้ถูกต้อง (CG ลงทะเบียนได้เลยไม่ต้องใช้รหัสเชิญ เพียงเลือกชื่อ CG ของตัวเองจากทะเบียน) เปลี่ยนรหัสเชิญได้ตลอดเวลาเพื่อความปลอดภัย</p>
+    <div class="row">
+      <div class="field"><label>รหัสเชิญสำหรับ Admin</label><input type="text" id="inviteCodeAdmin"></div>
+      <div class="field"><label>รหัสเชิญสำหรับ Care Manager</label><input type="text" id="inviteCodeCareManager"></div>
+    </div>
+    <button class="btn btn-primary" id="saveInviteCodesBtn" style="margin-top:10px;">บันทึกรหัสเชิญ</button>
   </div>
 </section>
 
@@ -586,6 +656,7 @@ const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUD
 firebase.initializeApp(FIREBASE_CONFIG);
 document.getElementById('appHeaderLogo').src = LOGO_BASE64;
 document.getElementById('loginLogo').src = LOGO_BASE64;
+document.getElementById('registerLogo').src = LOGO_BASE64;
 const db = firebase.database();
 
 /* =============================================================
@@ -704,7 +775,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, inviteCodes:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -723,47 +794,28 @@ db.ref('cgs').on('value', snap=>{ STATE.cgs = snap.val()||{}; onDataChange(); })
 db.ref('elderly').on('value', snap=>{ STATE.elderly = snap.val()||{}; onDataChange(); });
 db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange(); });
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
-db.ref('users').on('value', snap=>{ STATE.users = snap.val()||{}; renderUsersTable(); });
 
-/* Auto-create the Admin account on first run if it doesn't exist yet */
-db.ref('users/1470900013871').once('value').then(snap=>{
-  if(!snap.exists()){
-    db.ref('users/1470900013871').set({
-      username:'1470900013871',
-      password:'05449',
-      name:'นายพงศกร แป่มจำนัก',
-      role:'admin',
-      cgCode:'',
-      status:'approved',
-      createdAt: Date.now()
+/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
+db.ref('users').on('value', snap=>{
+  STATE.users = snap.val() || {};
+  if(Object.keys(STATE.users).length === 0){
+    db.ref('users').set({
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก', role:'admin', cgCode:'', createdAt: Date.now() }
     });
   }
+  renderUsersTable();
 });
 
-/* Auto-create the 5 preset CG login accounts on first run (linked to CG001-CG005) */
-const CG_LOGIN_SEED = {
-  '001': { name:'นางสาวทัศวรรณ์ แสงสา', cgCode:'CG001' },
-  '002': { name:'นางสาววิรัตน์ เรือระดา', cgCode:'CG002' },
-  '003': { name:'นางนาวัน โสบุญ',        cgCode:'CG003' },
-  '004': { name:'นางสาวพิสมัย คำพรมมา',  cgCode:'CG004' },
-  '005': { name:'นางสาวณิฌา สมบัติพล',   cgCode:'CG005' }
-};
-Object.keys(CG_LOGIN_SEED).forEach(username=>{
-  db.ref('users/'+username).once('value').then(snap=>{
-    if(!snap.exists()){
-      const info = CG_LOGIN_SEED[username];
-      db.ref('users/'+username).set({
-        username,
-        password:'05449',
-        name: info.name,
-        role:'cg',
-        cgCode: info.cgCode,
-        status:'approved',
-        permissions: DEFAULT_CG_PERMISSIONS(),
-        createdAt: Date.now()
-      });
-    }
-  });
+/* รหัสเชิญลงทะเบียนสำหรับ Admin / Care Manager (ตั้งค่าเริ่มต้น แก้ไขได้ที่แท็บ "ผู้ใช้งาน") */
+db.ref('invite_codes').on('value', snap=>{
+  STATE.inviteCodes = snap.val() || {};
+  if(Object.keys(STATE.inviteCodes).length === 0){
+    db.ref('invite_codes').set({ admin:'05449', care_manager:'05449' });
+  }
+  const a = document.getElementById('inviteCodeAdmin'), c = document.getElementById('inviteCodeCareManager');
+  if(a && document.activeElement!==a) a.value = STATE.inviteCodes.admin || '';
+  if(c && document.activeElement!==c) c.value = STATE.inviteCodes.care_manager || '';
 });
 
 let dataLoadedOnce = false;
@@ -812,242 +864,227 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
    AUTHENTICATION & ROLE-BASED ACCESS
    หมายเหตุ: ระบบนี้ตรวจสอบสิทธิ์ในฝั่งหน้าเว็บ (client-side) เท่านั้น
    เนื่องจาก Firebase Rules ยังเปิด read/write เป็น public ตามสถาปัตยกรรมเดิม
+   - บทบาท: admin (ผู้ดูแลระบบ) / care_manager (CM) / cg (ผู้ดูแลผู้สูงอายุ) / public (บุคคลทั่วไป - ดูได้เฉพาะภาพรวม ไม่ต้องมีบัญชี)
+   - CG ลงทะเบียนได้เอง โดยเลือกชื่อ CG ของตัวเองจากทะเบียนที่มีอยู่แล้ว (ไม่ต้องใช้รหัสเชิญ)
+   - Admin / Care Manager: ต้องกรอก "รหัสเชิญ" ที่ถูกต้องตอนลงทะเบียน (Admin ตั้ง/เปลี่ยนรหัสเชิญได้ที่แท็บ "ผู้ใช้งาน")
+   - รหัสเชิญเริ่มต้นและรหัสผ่านของบัญชี Admin เริ่มต้น (username: 1470900013871) คือ 05449
 ============================================================= */
+const ROLE_TABS = {
+  admin:        ['dashboard','record','cg','elderly','equipment','pdf','history','users'],
+  care_manager: ['dashboard','record','cg','elderly','equipment','pdf','history'],
+  cg:           ['dashboard','record','equipment'],
+  public:       ['dashboard']
+};
+const ROLE_LABELS = {
+  admin: 'ผู้ดูแลระบบ (Admin)',
+  care_manager: 'Care Manager (CM)',
+  cg: 'CG (ผู้ดูแลผู้สูงอายุ)',
+  public: 'บุคคลทั่วไป'
+};
+
+let CURRENT_ROLE = null;
+let CURRENT_USER_ID = null;
 let CURRENT_USER = null;
 
-function roleLabel(role){
-  return role==='admin' ? 'ผู้ดูแลระบบ' : role==='cm' ? 'CM' : 'CG';
-}
+/* ---- เข้าสู่ระบบ ---- */
+document.getElementById('loginRole').addEventListener('change', ()=>{
+  const role = document.getElementById('loginRole').value;
+  document.getElementById('loginCredFields').style.display = (role==='public') ? 'none' : 'block';
+  document.getElementById('loginError').textContent = '';
+});
 
-function doLogin(){
-  const u = document.getElementById('loginUsername').value.trim();
-  const p = document.getElementById('loginPassword').value;
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  const role = document.getElementById('loginRole').value;
   const errEl = document.getElementById('loginError');
-  errEl.textContent = '';
-  if(!u || !p){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
-  /* ค้นหาจากบัญชีที่ซิงก์ไว้แล้วในเครื่อง รองรับทั้งบัญชี Username เฉพาะตัว (Admin/CG 001-005)
-     และบัญชีที่สมัครผ่านหน้าเว็บซึ่งใช้ Username ร่วมกัน "05449" (แยกกันด้วยรหัสผ่านของแต่ละคน) */
-  const matches = Object.values(STATE.users||{}).filter(rec => rec.username === u && rec.password === p);
-  if(matches.length === 0){
-    errEl.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-    return;
-  }
-  const user = matches[0];
-  if(user.status !== 'approved'){
-    errEl.textContent = user.status === 'disabled'
-      ? 'บัญชีนี้ถูกปิดใช้งานโดยผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบ'
-      : 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ กรุณารอการอนุมัติ';
-    return;
-  }
-  CURRENT_USER = user;
-  document.body.classList.add('logged-in');
-  document.getElementById('userBadgeName').textContent = `${user.name} (${roleLabel(user.role)})`;
-  document.getElementById('userBadge').style.display = 'flex';
-  document.getElementById('loginPassword').value = '';
-  applyRoleUI();
-}
-document.getElementById('loginBtn').addEventListener('click', doLogin);
-document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  if(role === 'public'){ loginAsPublic(); return; }
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
+  const entry = Object.entries(STATE.users).find(([id,u])=>u.username===username);
+  if(!entry){ errEl.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ'; return; }
+  const [uid, u] = entry;
+  if(u.password !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
+  loginAsUser(uid, u);
+});
+document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+document.getElementById('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPassword').focus(); });
+document.getElementById('loginForgotLink').addEventListener('click', ()=>{
+  showConfirm('ลืมรหัสผ่าน?','ระบบนี้ไม่มีการส่งรหัสผ่านผ่านอีเมลหรือ SMS จริง (ต้องใช้บริการเซิร์ฟเวอร์เพิ่มเติมซึ่งยังไม่ได้ตั้งค่าไว้) กรุณาติดต่อ "ผู้ดูแลระบบ (Admin)" ของหน่วยงานเพื่อขอรีเซ็ตรหัสผ่านให้จากแท็บ "ผู้ใช้งาน"', ()=>{});
+});
 
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  CURRENT_USER = null;
-  document.body.classList.remove('logged-in');
+function loginAsPublic(){
+  CURRENT_ROLE = 'public'; CURRENT_USER_ID = null; CURRENT_USER = null;
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('currentUserLabel').textContent = 'ผู้ใช้งาน: บุคคลทั่วไป';
+  applyRolePermissions('public');
+}
+function loginAsUser(uid, u){
+  CURRENT_ROLE = u.role; CURRENT_USER_ID = uid; CURRENT_USER = u;
+  document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
-  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('currentUserLabel').textContent = `ผู้ใช้งาน: ${u.displayName} (${ROLE_LABELS[u.role]||u.role})`;
+  applyRolePermissions(u.role);
+}
+
+function applyRolePermissions(role){
+  const allowed = ROLE_TABS[role] || ['dashboard'];
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.style.display = allowed.includes(btn.dataset.tab) ? '' : 'none';
+  });
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
   document.querySelector('nav.tabs button[data-tab="dashboard"]').classList.add('active');
   document.getElementById('tab-dashboard').classList.add('active');
-});
-
-function applyRoleUI(){
-  if(!CURRENT_USER) return;
-  const allButtons = document.querySelectorAll('nav.tabs button');
-  if(CURRENT_USER.role === 'admin'){
-    allButtons.forEach(btn=>{ btn.style.display = ''; });
-    return;
-  }
-  const perms = CURRENT_USER.permissions || {};
-  allButtons.forEach(btn=>{
-    btn.style.display = perms[btn.dataset.tab] ? '' : 'none';
-  });
-  const activeBtn = document.querySelector('nav.tabs button.active');
-  if(activeBtn && !perms[activeBtn.dataset.tab]){
-    activeBtn.classList.remove('active');
-    document.getElementById('tab-'+activeBtn.dataset.tab).classList.remove('active');
-    const firstVisible = Array.from(allButtons).find(b=>b.style.display !== 'none');
-    const fallbackTab = firstVisible ? firstVisible.dataset.tab : 'dashboard';
-    const fallbackBtn = document.querySelector(`nav.tabs button[data-tab="${fallbackTab}"]`);
-    if(fallbackBtn) fallbackBtn.classList.add('active');
-    const fallbackPanel = document.getElementById('tab-'+fallbackTab);
-    if(fallbackPanel) fallbackPanel.classList.add('active');
-  }
+  document.getElementById('changePasswordBtn').style.display = (role==='public') ? 'none' : 'inline-flex';
+  renderDrill();
+  renderUsersTable();
 }
 
-/* ---------- Register (สมัครใช้งานสำหรับเจ้าหน้าที่ รพ.สต. / CM / CG) ---------- */
-const SHARED_REG_USERNAME = '05449';
-
-document.getElementById('regRoleChoice').addEventListener('change', toggleRegFieldsByRole);
-function toggleRegFieldsByRole(){
-  const role = document.getElementById('regRoleChoice').value;
-  document.getElementById('regCgFieldsWrap').style.display = role === 'cg' ? 'block' : 'none';
-  document.getElementById('regPositionWrap').style.display = role === 'cg' ? 'none' : 'block';
-}
-
-document.getElementById('showRegisterLink').addEventListener('click', ()=>{
-  document.getElementById('regError').textContent = '';
-  document.getElementById('regRoleChoice').value = 'cm';
-  document.getElementById('regName').value = '';
-  document.getElementById('regPosition').value = '';
-  document.getElementById('regCgPhone').value = '';
-  document.getElementById('regCgHouseNo').value = '';
-  document.getElementById('regCgMoo').value = '';
-  document.getElementById('regPassword').value = '';
-  document.getElementById('regPassword2').value = '';
-  toggleRegFieldsByRole();
-  openModal('registerModal');
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  CURRENT_ROLE = null; CURRENT_USER_ID = null; CURRENT_USER = null;
+  document.getElementById('loginOverlay').style.display = 'flex';
 });
+
+/* ---- สลับไปหน้าลงทะเบียน / กลับมาหน้าเข้าสู่ระบบ ---- */
+document.getElementById('loginRegisterLink').addEventListener('click', ()=>{
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('registerOverlay').style.display = 'flex';
+  renderRegCgOptions();
+  updateRegFieldVisibility();
+});
+document.getElementById('regBackToLoginLink').addEventListener('click', ()=>{
+  document.getElementById('registerOverlay').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+});
+
+function renderRegCgOptions(){
+  document.getElementById('regCgCode').innerHTML = Object.keys(STATE.cgs).sort()
+    .map(code=>`<option value="${code}">${STATE.cgs[code].name}</option>`).join('');
+}
+document.getElementById('regRole').addEventListener('change', updateRegFieldVisibility);
+function updateRegFieldVisibility(){
+  const role = document.getElementById('regRole').value;
+  document.getElementById('regCgFieldWrap').style.display = (role==='cg') ? 'block' : 'none';
+  document.getElementById('regInviteFieldWrap').style.display = (role==='cg') ? 'none' : 'block';
+}
 
 document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
-  const role = document.getElementById('regRoleChoice').value;
-  const name = document.getElementById('regName').value.trim();
-  const position = document.getElementById('regPosition').value.trim();
+  const fullName = document.getElementById('regFullName').value.trim();
+  const role = document.getElementById('regRole').value;
+  const cgCode = document.getElementById('regCgCode').value;
+  const inviteCode = document.getElementById('regInviteCode').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
   const password = document.getElementById('regPassword').value;
-  const password2 = document.getElementById('regPassword2').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
   const errEl = document.getElementById('regError');
-  errEl.textContent = '';
-  if(!name || !password){ errEl.textContent = 'กรุณากรอกข้อมูลให้ครบ'; return; }
-  if(password.length < 4){ errEl.textContent = 'รหัสผ่านอย่างน้อย 4 ตัวอักษร'; return; }
-  if(password !== password2){ errEl.textContent = 'รหัสผ่านไม่ตรงกัน'; return; }
 
-  let cgPhone = '', cgHouseNo = '', cgMoo = '';
-  if(role === 'cg'){
-    cgMoo = document.getElementById('regCgMoo').value;
-    if(!cgMoo){ errEl.textContent = 'กรุณาเลือกหมู่ที่ (สำหรับข้อมูล CG)'; return; }
-    cgPhone = document.getElementById('regCgPhone').value.trim();
-    cgHouseNo = document.getElementById('regCgHouseNo').value.trim();
+  if(!fullName){ errEl.textContent = 'กรุณากรอกชื่อ-สกุล'; return; }
+  if(!username){ errEl.textContent = 'กรุณาตั้งชื่อผู้ใช้'; return; }
+  if(Object.values(STATE.users).some(u=>u.username===username)){ errEl.textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว กรุณาตั้งชื่ออื่น'; return; }
+  if(password.length < 4){ errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร'; return; }
+  if(password !== confirmPassword){ errEl.textContent = 'ยืนยันรหัสผ่านไม่ตรงกัน'; return; }
+  if(role === 'cg' && !cgCode){ errEl.textContent = 'กรุณาเลือกว่าคุณคือ CG คนไหนในทะเบียน'; return; }
+  if(role !== 'cg'){
+    const correctCode = STATE.inviteCodes[role];
+    if(!inviteCode || inviteCode !== correctCode){ errEl.textContent = 'รหัสเชิญไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ'; return; }
   }
-
-  /* ป้องกันรหัสผ่านซ้ำกันภายใต้ Username ร่วม 05449 มิเช่นนั้นระบบจะแยกไม่ออกว่าเป็นใครตอนล็อกอิน */
-  const dup = Object.values(STATE.users||{}).some(rec => rec.username === SHARED_REG_USERNAME && rec.password === password);
-  if(dup){ errEl.textContent = 'รหัสผ่านนี้ถูกใช้โดยผู้สมัครท่านอื่นแล้ว กรุณาตั้งรหัสผ่านอื่นที่ไม่ซ้ำกัน'; return; }
-
-  const uid = 'reg_' + Date.now();
-  if(role === 'cg'){
-    const newCgCode = nextCode(STATE.cgs, 'CG', 3);
-    const updates = {};
-    updates['users/'+uid] = { username:SHARED_REG_USERNAME, password, name, role:'cg', cgCode:newCgCode, status:'pending', permissions: DEFAULT_CG_PERMISSIONS(), createdAt: Date.now() };
-    updates['cgs/'+newCgCode] = { name, phone:cgPhone, houseNo:cgHouseNo, moo:cgMoo, idCard:'', status:'active', createdAt: Date.now() };
-    db.ref().update(updates).then(()=>{
-      closeModal('registerModal');
-      toast('สมัครสำเร็จ ข้อมูล CG ถูกสร้างในหน้า "จัดการ CG" แล้ว กรุณารอผู้ดูแลระบบอนุมัติและกำหนดสิทธิ์การใช้งานก่อนเข้าใช้งาน', 'success');
-    });
-  } else {
-    db.ref('users/'+uid).set({
-      username:SHARED_REG_USERNAME, password, name, position, role:'cm', cgCode:'',
-      status:'pending', permissions: DEFAULT_EMPTY_PERMISSIONS(), createdAt: Date.now()
-    }).then(()=>{
-      closeModal('registerModal');
-      toast('สมัครสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติและกำหนดสิทธิ์การใช้งานก่อนเข้าใช้งาน', 'success');
-    });
-  }
-});
-
-/* ---------- Permission system (Admin grants access per tab per user) ---------- */
-const TAB_DEFS = [
-  {key:'dashboard', label:'📊 ภาพรวม'},
-  {key:'record',    label:'📷 บันทึกการเยี่ยม'},
-  {key:'cg',        label:'👥 จัดการ CG'},
-  {key:'elderly',   label:'👴 จัดการผู้สูงอายุ'},
-  {key:'equipment', label:'🛠 การจัดการอุปกรณ์'},
-  {key:'pdf',       label:'📄 ออกรายงาน'},
-  {key:'history',   label:'📜 ประวัติผู้สูงอายุ'},
-  {key:'users',     label:'🔐 ผู้ใช้งาน'}
-];
-function DEFAULT_EMPTY_PERMISSIONS(){
-  const p = {}; TAB_DEFS.forEach(t=>p[t.key]=false); return p;
-}
-function DEFAULT_CG_PERMISSIONS(){
-  return Object.assign(DEFAULT_EMPTY_PERMISSIONS(), { dashboard:true, record:true, elderly:true });
-}
-function openPermissions(uid){
-  const u = STATE.users[uid];
-  if(!u) return;
-  document.getElementById('permUserId').value = uid;
-  document.getElementById('permUserName').textContent = `${u.name} (${roleLabel(u.role)} - ${u.username})`;
-  const perms = u.permissions || {};
-  document.getElementById('permCheckboxes').innerHTML = TAB_DEFS.map(t=>`
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-      <input type="checkbox" data-permkey="${t.key}" ${perms[t.key] ? 'checked' : ''}> ${t.label}
-    </label>`).join('');
-  openModal('permissionsModal');
-}
-document.getElementById('permSaveBtn').addEventListener('click', ()=>{
-  const uid = document.getElementById('permUserId').value;
-  const boxes = document.querySelectorAll('#permCheckboxes input[type=checkbox]');
-  const perms = {};
-  boxes.forEach(b=>{ perms[b.dataset.permkey] = b.checked; });
-  db.ref('users/'+uid+'/permissions').set(perms).then(()=>{
-    toast('บันทึกสิทธิ์การใช้งานสำเร็จ','success');
-    closeModal('permissionsModal');
+  const newUser = { username, password, displayName: fullName, role, cgCode: role==='cg' ? cgCode : '', createdAt: Date.now() };
+  const uid = 'U' + Date.now();
+  db.ref('users/'+uid).set(newUser).then(()=>{
+    toast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้ที่ตั้งไว้','success');
+    document.getElementById('regFullName').value = '';
+    document.getElementById('regUsername').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
+    document.getElementById('regInviteCode').value = '';
+    errEl.textContent = '';
+    document.getElementById('registerOverlay').style.display = 'none';
+    document.getElementById('loginOverlay').style.display = 'flex';
   });
 });
 
-/* ---------- Admin: user management table ---------- */
-function statusLabel(status){
-  return status === 'approved' ? 'อนุมัติแล้ว' : status === 'disabled' ? 'ปิดใช้งาน' : 'รออนุมัติ';
-}
+/* ---- แท็บ "ผู้ใช้งาน" (admin เท่านั้น): ตาราง + รีเซ็ตรหัสผ่าน + ลบ + รหัสเชิญ ---- */
 function renderUsersTable(){
-  const tbody = document.getElementById('usersTableBody');
+  const tbody = document.getElementById('usersTable');
   if(!tbody) return;
-  const ids = Object.keys(STATE.users).sort((a,b)=>(STATE.users[a].createdAt||0)-(STATE.users[b].createdAt||0));
-  if(ids.length === 0){ tbody.innerHTML = '<tr><td colspan="6" class="muted">ยังไม่มีบัญชีผู้ใช้งาน</td></tr>'; return; }
-  tbody.innerHTML = ids.map(uid=>{
-    const u = STATE.users[uid];
-    const cgName = u.cgCode && STATE.cgs[u.cgCode] ? STATE.cgs[u.cgCode].name : (u.cgCode || '-');
-    const actions = [];
-    if(u.status === 'pending'){
-      actions.push(`<button class="btn btn-primary btn-sm" onclick="approveUser('${uid}')">✅ อนุมัติ</button>`);
-    }
-    if(u.status === 'approved' && u.role !== 'admin'){
-      actions.push(`<button class="btn btn-ghost btn-sm" onclick="disableUser('${uid}')">⛔ ปิดใช้งาน</button>`);
-    }
-    if(u.status === 'disabled'){
-      actions.push(`<button class="btn btn-primary btn-sm" onclick="enableUser('${uid}')">▶️ เปิดใช้งาน</button>`);
-    }
-    if(u.role !== 'admin'){
-      actions.push(`<button class="btn btn-ghost btn-sm" onclick="openPermissions('${uid}')">🔧 สิทธิ์</button>`);
-      actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button>`);
-    }
+  const rows = Object.entries(STATE.users).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).map(([uid,u])=>{
+    const cgName = (u.cgCode && STATE.cgs[u.cgCode]) ? STATE.cgs[u.cgCode].name : '-';
+    const dateLabel = u.createdAt ? formatThaiDate(new Date(u.createdAt).toISOString().slice(0,10)) : '-';
     return `<tr>
-      <td>${u.name}</td><td>${u.username}</td>
-      <td><span class="role-tag ${u.role}">${roleLabel(u.role)}</span></td>
-      <td><span class="status-tag ${u.status}">${statusLabel(u.status)}</span></td>
+      <td>${u.displayName||'-'}</td>
+      <td>${u.username||'-'}</td>
+      <td>${ROLE_LABELS[u.role]||u.role||'-'}</td>
       <td>${cgName}</td>
-      <td class="row" style="gap:6px;flex-wrap:wrap;">${actions.join('')}</td>
+      <td>${dateLabel}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openAdminResetPw('${uid}')">🔑 ตั้งรหัสใหม่</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button></td>
     </tr>`;
   }).join('');
+  tbody.innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
 }
-function approveUser(uid){
-  db.ref('users/'+uid+'/status').set('approved').then(()=>toast('อนุมัติผู้ใช้งานสำเร็จ','success'));
-}
-function disableUser(uid){
+
+function openAdminResetPw(uid){
   const u = STATE.users[uid];
-  showConfirm('ปิดใช้งานบัญชีนี้?', (u?u.name:uid), ()=>{
-    db.ref('users/'+uid+'/status').set('disabled').then(()=>toast('ปิดใช้งานบัญชีสำเร็จ','success'));
+  document.getElementById('arpUserId').value = uid;
+  document.getElementById('arpUserLabel').textContent = `ตั้งรหัสผ่านใหม่ให้ "${u.displayName}" (${u.username})`;
+  document.getElementById('arpNewPassword').value = '';
+  document.getElementById('arpConfirmPassword').value = '';
+  document.getElementById('arpError').textContent = '';
+  openModal('adminResetPwModal');
+}
+document.getElementById('arpSaveBtn').addEventListener('click', ()=>{
+  const uid = document.getElementById('arpUserId').value;
+  const newPwd = document.getElementById('arpNewPassword').value;
+  const confirmPwd = document.getElementById('arpConfirmPassword').value;
+  const errEl = document.getElementById('arpError');
+  if(newPwd.length < 4){ errEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร'; return; }
+  if(newPwd !== confirmPwd){ errEl.textContent = 'ยืนยันรหัสผ่านใหม่ไม่ตรงกัน'; return; }
+  db.ref('users/'+uid+'/password').set(newPwd).then(()=>{
+    toast('ตั้งรหัสผ่านใหม่สำเร็จ','success');
+    closeModal('adminResetPwModal');
   });
-}
-function enableUser(uid){
-  db.ref('users/'+uid+'/status').set('approved').then(()=>toast('เปิดใช้งานบัญชีสำเร็จ','success'));
-}
+});
 function deleteUser(uid){
   const u = STATE.users[uid];
-  showConfirm('ลบบัญชีผู้ใช้งานนี้?', (u?u.name:uid), ()=>{
-    db.ref('users/'+uid).remove().then(()=>toast('ลบบัญชีผู้ใช้งานสำเร็จ','success'));
+  if(uid === CURRENT_USER_ID){ toast('ไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้','error'); return; }
+  showConfirm('ลบบัญชีผู้ใช้นี้?', `ลบบัญชีของ "${u.displayName}" (${u.username}) ออกจากระบบ`, ()=>{
+    db.ref('users/'+uid).remove().then(()=>toast('ลบบัญชีสำเร็จ','success'));
   });
 }
+document.getElementById('saveInviteCodesBtn').addEventListener('click', ()=>{
+  const adminCode = document.getElementById('inviteCodeAdmin').value.trim();
+  const cmCode = document.getElementById('inviteCodeCareManager').value.trim();
+  if(!adminCode || !cmCode){ toast('กรุณากรอกรหัสเชิญให้ครบทั้งสองช่อง','error'); return; }
+  db.ref('invite_codes').set({ admin: adminCode, care_manager: cmCode }).then(()=>toast('บันทึกรหัสเชิญสำเร็จ','success'));
+});
+
+/* ---- เปลี่ยนรหัสผ่านของตัวเอง (self-service) ---- */
+function openChangePasswordModal(){
+  document.getElementById('cpOldPassword').value = '';
+  document.getElementById('cpNewPassword').value = '';
+  document.getElementById('cpConfirmPassword').value = '';
+  document.getElementById('cpError').textContent = '';
+  openModal('changePasswordModal');
+}
+document.getElementById('changePasswordBtn').addEventListener('click', openChangePasswordModal);
+
+document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
+  const errEl = document.getElementById('cpError');
+  if(!CURRENT_USER){ errEl.textContent = 'บุคคลทั่วไปไม่มีบัญชีให้เปลี่ยนรหัสผ่าน'; return; }
+  const oldPwd = document.getElementById('cpOldPassword').value;
+  const newPwd = document.getElementById('cpNewPassword').value;
+  const confirmPwd = document.getElementById('cpConfirmPassword').value;
+  if(oldPwd !== CURRENT_USER.password){ errEl.textContent = 'รหัสผ่านเดิมไม่ถูกต้อง'; return; }
+  if(newPwd.length < 4){ errEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร'; return; }
+  if(newPwd !== confirmPwd){ errEl.textContent = 'ยืนยันรหัสผ่านใหม่ไม่ตรงกัน'; return; }
+  db.ref('users/'+CURRENT_USER_ID+'/password').set(newPwd).then(()=>{
+    CURRENT_USER.password = newPwd;
+    toast('เปลี่ยนรหัสผ่านสำเร็จ','success');
+    closeModal('changePasswordModal');
+  });
+});
 
 /* =============================================================
    COMMON SELECT FILLERS
