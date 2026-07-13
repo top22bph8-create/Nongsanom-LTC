@@ -248,6 +248,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('adminResetPwModal')">ยกเลิก</button><button class="btn btn-primary" id="arpSaveBtn">บันทึก</button></div>
 </div></div>
 
+<div class="modal-overlay" id="userPermissionsModal"><div class="modal-box">
+  <h3>🔧 กำหนดสิทธิ์การเข้าถึงฟังก์ชัน</h3>
+  <input type="hidden" id="upUserId">
+  <p class="muted" id="upUserLabel"></p>
+  <div id="upCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('userPermissionsModal')">ยกเลิก</button><button class="btn btn-primary" id="upSaveBtn">บันทึกสิทธิ์</button></div>
+</div></div>
+
 <header class="app-header">
   <img class="app-logo" id="appHeaderLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
   <div class="app-header-text">
@@ -504,7 +512,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <section id="tab-users" class="tabpanel">
   <div class="card">
     <h3>👤 ผู้ใช้งานที่ลงทะเบียนแล้ว</h3>
-    <p class="muted">รายชื่อผู้ใช้งานทั้งหมดที่ลงทะเบียนเข้าใช้ระบบ Admin สามารถรีเซ็ตรหัสผ่านหรือลบบัญชีได้จากที่นี่</p>
+    <p class="muted">รายชื่อผู้ใช้งานทั้งหมดที่ลงทะเบียนเข้าใช้ระบบ กด "🔧 สิทธิ์การใช้งาน" เพื่อกำหนดว่าผู้ใช้แต่ละคนเข้าฟังก์ชัน (แท็บ) ใดได้บ้าง — Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) เท่านั้นที่กำหนดสิทธิ์นี้ได้ และบัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ</p>
     <div style="overflow-x:auto;">
     <table style="margin-top:10px;min-width:640px;"><thead><tr><th>ชื่อ-สกุล</th><th>Username</th><th>บทบาท</th><th>เชื่อมโยง CG</th><th>ลงทะเบียนเมื่อ</th><th></th></tr></thead>
     <tbody id="usersTable"></tbody></table>
@@ -801,7 +809,7 @@ db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
   if(Object.keys(STATE.users).length === 0){
     db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก', role:'admin', cgCode:'', createdAt: Date.now() }
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
     });
   }
   renderUsersTable();
@@ -868,6 +876,9 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
    - CG ลงทะเบียนได้เอง โดยเลือกชื่อ CG ของตัวเองจากทะเบียนที่มีอยู่แล้ว (ไม่ต้องใช้รหัสเชิญ)
    - Admin / Care Manager: ต้องกรอก "รหัสเชิญ" ที่ถูกต้องตอนลงทะเบียน (Admin ตั้ง/เปลี่ยนรหัสเชิญได้ที่แท็บ "ผู้ใช้งาน")
    - รหัสเชิญเริ่มต้นและรหัสผ่านของบัญชี Admin เริ่มต้น (username: 1470900013871) คือ 05449
+   - สิทธิ์การเข้าถึงแต่ละฟังก์ชัน (แท็บ): ตอนสมัคร ระบบจะกำหนดสิทธิ์เริ่มต้นตามบทบาทให้อัตโนมัติ
+     จากนั้น Admin (นายพงศกร แป่มจำนัก ผู้อำนวยการ รพ.สต.บ้านหนองสนม) เป็นผู้กำหนด/ปรับสิทธิ์รายบุคคลได้ทุกเมื่อ
+     ที่แท็บ "ผู้ใช้งาน" ปุ่ม "🔧 สิทธิ์การใช้งาน" — บัญชี Admin เข้าถึงได้ทุกฟังก์ชันเสมอ ไม่ต้องกำหนด
 ============================================================= */
 const ROLE_TABS = {
   admin:        ['dashboard','record','cg','elderly','equipment','pdf','history','users'],
@@ -881,6 +892,30 @@ const ROLE_LABELS = {
   cg: 'CG (ผู้ดูแลผู้สูงอายุ)',
   public: 'บุคคลทั่วไป'
 };
+const TAB_DEFS = [
+  {key:'dashboard', label:'📊 ภาพรวม'},
+  {key:'record',    label:'📷 บันทึกการเยี่ยม'},
+  {key:'cg',        label:'👥 จัดการ CG'},
+  {key:'elderly',   label:'👴 จัดการผู้สูงอายุ'},
+  {key:'equipment', label:'🛠 การจัดการอุปกรณ์'},
+  {key:'pdf',       label:'📄 ออกรายงาน'},
+  {key:'history',   label:'📜 ประวัติผู้สูงอายุ'},
+  {key:'users',     label:'🔐 ผู้ใช้งาน'}
+];
+function permsFromRoleTabs(role){
+  const allowed = ROLE_TABS[role] || ['dashboard'];
+  const p = {};
+  TAB_DEFS.forEach(t=>{ p[t.key] = allowed.includes(t.key); });
+  return p;
+}
+/* คืนรายชื่อแท็บที่ผู้ใช้คนนี้เข้าถึงได้ — Admin เข้าถึงได้ทุกแท็บเสมอ,
+   ผู้ใช้อื่นใช้สิทธิ์ที่ Admin กำหนดไว้ (permissions) ถ้ายังไม่เคยตั้งไว้ ใช้ค่าเริ่มต้นตามบทบาท */
+function tabsAllowedForUser(u){
+  if(!u) return ROLE_TABS.public;
+  if(u.role === 'admin') return ROLE_TABS.admin;
+  const perms = u.permissions || permsFromRoleTabs(u.role);
+  return Object.keys(perms).filter(k=>perms[k]);
+}
 
 let CURRENT_ROLE = null;
 let CURRENT_USER_ID = null;
@@ -916,7 +951,7 @@ function loginAsPublic(){
   CURRENT_ROLE = 'public'; CURRENT_USER_ID = null; CURRENT_USER = null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('currentUserLabel').textContent = 'ผู้ใช้งาน: บุคคลทั่วไป';
-  applyRolePermissions('public');
+  applyAccessControl(null);
 }
 function loginAsUser(uid, u){
   CURRENT_ROLE = u.role; CURRENT_USER_ID = uid; CURRENT_USER = u;
@@ -925,11 +960,11 @@ function loginAsUser(uid, u){
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').textContent = '';
   document.getElementById('currentUserLabel').textContent = `ผู้ใช้งาน: ${u.displayName} (${ROLE_LABELS[u.role]||u.role})`;
-  applyRolePermissions(u.role);
+  applyAccessControl(u);
 }
 
-function applyRolePermissions(role){
-  const allowed = ROLE_TABS[role] || ['dashboard'];
+function applyAccessControl(u){
+  const allowed = tabsAllowedForUser(u);
   document.querySelectorAll('nav.tabs button').forEach(btn=>{
     btn.style.display = allowed.includes(btn.dataset.tab) ? '' : 'none';
   });
@@ -937,7 +972,7 @@ function applyRolePermissions(role){
   document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
   document.querySelector('nav.tabs button[data-tab="dashboard"]').classList.add('active');
   document.getElementById('tab-dashboard').classList.add('active');
-  document.getElementById('changePasswordBtn').style.display = (role==='public') ? 'none' : 'inline-flex';
+  document.getElementById('changePasswordBtn').style.display = u ? 'inline-flex' : 'none';
   renderDrill();
   renderUsersTable();
 }
@@ -990,10 +1025,13 @@ document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
     const correctCode = STATE.inviteCodes[role];
     if(!inviteCode || inviteCode !== correctCode){ errEl.textContent = 'รหัสเชิญไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ'; return; }
   }
-  const newUser = { username, password, displayName: fullName, role, cgCode: role==='cg' ? cgCode : '', createdAt: Date.now() };
+  const newUser = {
+    username, password, displayName: fullName, role, cgCode: role==='cg' ? cgCode : '',
+    permissions: permsFromRoleTabs(role), createdAt: Date.now()
+  };
   const uid = 'U' + Date.now();
   db.ref('users/'+uid).set(newUser).then(()=>{
-    toast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้ที่ตั้งไว้','success');
+    toast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบด้วยชื่อผู้ใช้ที่ตั้งไว้ (Admin จะเป็นผู้กำหนดสิทธิ์การเข้าถึงฟังก์ชันให้ในภายหลัง)','success');
     document.getElementById('regFullName').value = '';
     document.getElementById('regUsername').value = '';
     document.getElementById('regPassword').value = '';
@@ -1005,25 +1043,59 @@ document.getElementById('regSubmitBtn').addEventListener('click', ()=>{
   });
 });
 
-/* ---- แท็บ "ผู้ใช้งาน" (admin เท่านั้น): ตาราง + รีเซ็ตรหัสผ่าน + ลบ + รหัสเชิญ ---- */
+/* ---- แท็บ "ผู้ใช้งาน" (admin เท่านั้น): ตาราง + รีเซ็ตรหัสผ่าน + กำหนดสิทธิ์ + ลบ + รหัสเชิญ ---- */
 function renderUsersTable(){
   const tbody = document.getElementById('usersTable');
   if(!tbody) return;
   const rows = Object.entries(STATE.users).sort((a,b)=>(a[1].createdAt||0)-(b[1].createdAt||0)).map(([uid,u])=>{
     const cgName = (u.cgCode && STATE.cgs[u.cgCode]) ? STATE.cgs[u.cgCode].name : '-';
     const dateLabel = u.createdAt ? formatThaiDate(new Date(u.createdAt).toISOString().slice(0,10)) : '-';
+    const permBtn = (u.role === 'admin')
+      ? '<span class="muted" style="font-size:12px;">เข้าถึงได้ทุกฟังก์ชัน</span>'
+      : `<button class="btn btn-ghost btn-sm" onclick="openUserPermissions('${uid}')">🔧 สิทธิ์การใช้งาน</button>`;
     return `<tr>
       <td>${u.displayName||'-'}</td>
       <td>${u.username||'-'}</td>
       <td>${ROLE_LABELS[u.role]||u.role||'-'}</td>
       <td>${cgName}</td>
       <td>${dateLabel}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openAdminResetPw('${uid}')">🔑 ตั้งรหัสใหม่</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button></td>
+      <td style="white-space:nowrap;">
+        ${permBtn}
+        <button class="btn btn-ghost btn-sm" onclick="openAdminResetPw('${uid}')">🔑 ตั้งรหัสใหม่</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">🗑 ลบ</button>
+      </td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีผู้ใช้งานลงทะเบียน</td></tr>';
 }
+
+/* ---- Admin กำหนดสิทธิ์การเข้าถึงแต่ละฟังก์ชันให้ผู้ใช้แต่ละคน ---- */
+function openUserPermissions(uid){
+  const u = STATE.users[uid];
+  if(!u) return;
+  document.getElementById('upUserId').value = uid;
+  document.getElementById('upUserLabel').textContent = `${u.displayName} (${ROLE_LABELS[u.role]||u.role} - ${u.username})`;
+  const perms = u.permissions || permsFromRoleTabs(u.role);
+  document.getElementById('upCheckboxes').innerHTML = TAB_DEFS.map(t=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <input type="checkbox" data-permkey="${t.key}" ${perms[t.key] ? 'checked' : ''}> ${t.label}
+    </label>`).join('');
+  openModal('userPermissionsModal');
+}
+document.getElementById('upSaveBtn').addEventListener('click', ()=>{
+  const uid = document.getElementById('upUserId').value;
+  const boxes = document.querySelectorAll('#upCheckboxes input[type=checkbox]');
+  const perms = {};
+  boxes.forEach(b=>{ perms[b.dataset.permkey] = b.checked; });
+  db.ref('users/'+uid+'/permissions').set(perms).then(()=>{
+    toast('บันทึกสิทธิ์การใช้งานสำเร็จ','success');
+    closeModal('userPermissionsModal');
+    if(uid === CURRENT_USER_ID){
+      CURRENT_USER.permissions = perms;
+      applyAccessControl(CURRENT_USER);
+    }
+  });
+});
 
 function openAdminResetPw(uid){
   const u = STATE.users[uid];
