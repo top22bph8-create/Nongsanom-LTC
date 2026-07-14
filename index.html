@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบบันทึกการเยี่ยมผู้สูงอายุ - รพ.สต.บ้านหนองสนม</title>
+<title>ระบบการดูแลผู้สูงอายุและผู้ที่มีภาวะพึ่งพิง (LTC) - รพ.สต.บ้านหนองสนม</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -20,7 +20,7 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);padding-bottom:40px;}
 header.app-header{background:linear-gradient(120deg,var(--primary),var(--secondary));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
-header.app-header img.app-logo{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;}
+header.app-header img.app-logo{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;}
 header.app-header .app-header-text{flex:1;}
 header.app-header h1{margin:0;font-size:17px;font-weight:700;}
 header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
@@ -109,7 +109,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#EAF6FC,#D6ECF7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
 .login-box{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 28px rgba(21,113,186,.2);max-width:380px;width:100%;}
 .login-banner{background:linear-gradient(135deg,var(--primary),var(--secondary));padding:26px 20px 20px;text-align:center;color:#fff;}
-.login-banner .login-logo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #fff;margin-bottom:10px;}
+.login-banner .login-logo{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #fff;margin-bottom:10px;}
 .login-banner h2{font-size:16px;margin:0 0 4px;color:#fff;}
 .login-banner p{font-size:11.5px;opacity:.92;margin:0;}
 .login-body{padding:22px 26px 26px;text-align:center;}
@@ -136,7 +136,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="login-box">
     <div class="login-banner">
       <img class="login-logo" id="loginLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
-      <h2>ระบบบันทึกการเยี่ยมผู้สูงอายุที่มีภาวะพึ่งพิง</h2>
+      <h2>ระบบการดูแลผู้สูงอายุและผู้ที่มีภาวะพึ่งพิง (LTC)</h2>
       <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
     </div>
     <div class="login-body">
@@ -319,7 +319,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <header class="app-header">
   <img class="app-logo" id="appHeaderLogo" alt="โลโก้ รพ.สต.บ้านหนองสนม">
   <div class="app-header-text">
-    <h1>📋 ระบบบันทึกการเยี่ยมผู้สูงอายุที่มีภาวะพึ่งพิง</h1>
+    <h1>📋 ระบบการดูแลผู้สูงอายุและผู้ที่มีภาวะพึ่งพิง (LTC)</h1>
     <p>รพ.สต.บ้านหนองสนม ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
   </div>
   <div class="app-header-user">
