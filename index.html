@@ -718,30 +718,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('editVisitModal')">ยกเลิก</button><button class="btn btn-primary" id="editVisitSaveBtn">บันทึก</button></div>
 </div></div>
 
-<div class="modal-overlay" id="equipmentModal"><div class="modal-box">
+<div class="modal-overlay" id="equipmentModal"><div class="modal-box" style="max-width:560px;">
   <h3 id="eqModalTitle">เพิ่มรายการอุปกรณ์</h3>
   <input type="hidden" id="eqEditId">
   <div class="field"><label>ชื่อผู้สูงอายุ</label><select id="eqElderly"></select></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรญาติ</label><input type="tel" id="eqRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>เลขครุภัณฑ์ (ถ้ามี)</label><input type="text" id="eqItemCode" placeholder="เช่น ครภ.001/2569"></div>
-    <div class="field"><label>หมวดหมู่</label>
-      <select id="eqCategory">
-        <option value="durable">ครุภัณฑ์การแพทย์</option>
-        <option value="material">วัสดุการแพทย์</option>
-      </select>
-    </div>
-  </div>
-  <div class="field" style="margin-top:8px;">
-    <label>รายการ</label>
-    <select id="eqItemType"></select>
-    <input type="text" id="eqItemTypeOther" placeholder="ระบุประเภทสิ่งของที่ได้รับสนับสนุน" style="display:none;margin-top:6px;">
-  </div>
-  <div class="row" style="margin-top:8px;">
     <div class="field"><label>วันที่ได้รับการสนับสนุน</label><input type="date" id="eqDateReceived"></div>
-    <div class="field"><label>จำนวน</label><input type="number" id="eqQuantity" min="0"></div>
+    <div class="field"><label>วันที่ส่งคืน (ถ้ายังไม่คืน เว้นว่างไว้)</label><input type="date" id="eqDateReturned"></div>
   </div>
-  <div class="field" style="margin-top:8px;"><label>วันที่ส่งคืนอุปกรณ์ (ถ้ายังไม่คืน เว้นว่างไว้)</label><input type="date" id="eqDateReturned"></div>
+  <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">รายการครุภัณฑ์ / วัสดุการแพทย์ที่ขอรับการสนับสนุน</h4>
+  <div id="eqItemRows" style="display:flex;flex-direction:column;gap:10px;"></div>
+  <button type="button" class="btn btn-ghost btn-sm" id="eqAddRowBtn" style="margin-top:10px;">➕ เพิ่มอีกรายการ</button>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentModal')">ยกเลิก</button><button class="btn btn-primary" id="eqSaveBtn">บันทึก</button></div>
 </div></div>
 
@@ -2646,35 +2634,81 @@ const EQUIPMENT_MATERIAL_ITEMS = [
   "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
   "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา"
 ];
-function renderEqItemTypeOptions(selectedValue){
-  const cat = document.getElementById('eqCategory').value;
-  const list = (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS;
-  const sel = document.getElementById('eqItemType');
-  sel.innerHTML = list.map(i=>`<option value="${i}">${i}</option>`).join('') + '<option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>';
-  if(selectedValue && list.includes(selectedValue)){ sel.value = selectedValue; }
-  else if(selectedValue){ sel.value = 'อื่นๆ'; }
-  toggleEqItemTypeOther(selectedValue && !list.includes(selectedValue) ? selectedValue : '');
+
+/* ---- แถวรายการอุปกรณ์แบบเพิ่มได้หลายรายการในการขอรับการสนับสนุนครั้งเดียว ---- */
+let eqRowCounter = 0;
+function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
+
+function createEqItemRow(prefill){
+  prefill = prefill || {};
+  const rowId = 'eqrow' + (++eqRowCounter);
+  const wrap = document.createElement('div');
+  wrap.className = 'eq-item-row';
+  wrap.dataset.rowId = rowId;
+  wrap.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;position:relative;';
+  wrap.innerHTML = `
+    <button type="button" class="btn btn-danger btn-sm eq-remove-row" style="position:absolute;top:8px;right:8px;padding:2px 8px;">✕</button>
+    <div class="row">
+      <div class="field"><label>เลขครุภัณฑ์ (ถ้ามี)</label><input type="text" class="eq-item-code" placeholder="เช่น ครภ.001/2569"></div>
+      <div class="field"><label>หมวดหมู่</label>
+        <select class="eq-item-category">
+          <option value="durable">ครุภัณฑ์การแพทย์</option>
+          <option value="material">วัสดุการแพทย์</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:8px;">
+      <label>รายการ</label>
+      <select class="eq-item-type"></select>
+      <input type="text" class="eq-item-type-other" placeholder="ระบุประเภทสิ่งของที่ได้รับสนับสนุน" style="display:none;margin-top:6px;">
+    </div>
+    <div class="field" style="margin-top:8px;max-width:160px;"><label>จำนวน</label><input type="number" class="eq-item-qty" min="0"></div>
+  `;
+  const codeInput = wrap.querySelector('.eq-item-code');
+  const catSel = wrap.querySelector('.eq-item-category');
+  const typeSel = wrap.querySelector('.eq-item-type');
+  const otherInput = wrap.querySelector('.eq-item-type-other');
+  const qtyInput = wrap.querySelector('.eq-item-qty');
+
+  function renderTypeOptions(selectedValue){
+    const list = eqCategoryItemList(catSel.value);
+    typeSel.innerHTML = list.map(i=>`<option value="${i}">${i}</option>`).join('') + '<option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>';
+    if(selectedValue && list.includes(selectedValue)){ typeSel.value = selectedValue; otherInput.style.display='none'; otherInput.value=''; }
+    else if(selectedValue){ typeSel.value = 'อื่นๆ'; otherInput.style.display='block'; otherInput.value = selectedValue; }
+    else{ otherInput.style.display='none'; otherInput.value=''; }
+  }
+  catSel.addEventListener('change', ()=>renderTypeOptions());
+  typeSel.addEventListener('change', ()=>{
+    const isOther = typeSel.value === 'อื่นๆ';
+    otherInput.style.display = isOther ? 'block' : 'none';
+    if(!isOther) otherInput.value = '';
+  });
+  wrap.querySelector('.eq-remove-row').addEventListener('click', ()=>{
+    const rows = document.querySelectorAll('#eqItemRows .eq-item-row');
+    if(rows.length <= 1){ toast('ต้องมีอย่างน้อย 1 รายการ','error'); return; }
+    wrap.remove();
+  });
+
+  codeInput.value = prefill.itemCode || '';
+  catSel.value = prefill.category || 'durable';
+  renderTypeOptions(prefill.itemType || '');
+  qtyInput.value = prefill.quantity || '';
+  return wrap;
 }
-document.getElementById('eqCategory').addEventListener('change', ()=>renderEqItemTypeOptions());
-document.getElementById('eqItemType').addEventListener('change', ()=>toggleEqItemTypeOther());
-function toggleEqItemTypeOther(prefillOther){
-  const isOther = document.getElementById('eqItemType').value === 'อื่นๆ';
-  const otherInput = document.getElementById('eqItemTypeOther');
-  otherInput.style.display = isOther ? 'block' : 'none';
-  if(prefillOther !== undefined && prefillOther !== ''){ otherInput.value = prefillOther; }
-  else if(!isOther){ otherInput.value = ''; }
-}
+document.getElementById('eqAddRowBtn').addEventListener('click', ()=>{
+  document.getElementById('eqItemRows').appendChild(createEqItemRow());
+});
 
 document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
   document.getElementById('eqModalTitle').textContent = 'เพิ่มรายการอุปกรณ์';
   document.getElementById('eqEditId').value = '';
   document.getElementById('eqRelativePhone').value = '';
-  document.getElementById('eqItemCode').value = '';
-  document.getElementById('eqCategory').value = 'durable';
-  renderEqItemTypeOptions();
   document.getElementById('eqDateReceived').value = '';
-  document.getElementById('eqQuantity').value = '';
   document.getElementById('eqDateReturned').value = '';
+  const rowsWrap = document.getElementById('eqItemRows');
+  rowsWrap.innerHTML = '';
+  rowsWrap.appendChild(createEqItemRow());
+  document.getElementById('eqAddRowBtn').style.display = '';
   openModal('equipmentModal');
 });
 function openEditEquipment(id){
@@ -2683,35 +2717,62 @@ function openEditEquipment(id){
   document.getElementById('eqEditId').value = id;
   document.getElementById('eqElderly').value = e.elderlyId||'';
   document.getElementById('eqRelativePhone').value = e.relativePhone||'';
-  document.getElementById('eqItemCode').value = e.itemCode||'';
-  document.getElementById('eqCategory').value = e.category||'durable';
-  renderEqItemTypeOptions(e.itemType||'');
   document.getElementById('eqDateReceived').value = e.dateReceived||'';
-  document.getElementById('eqQuantity').value = e.quantity||'';
   document.getElementById('eqDateReturned').value = e.dateReturned||'';
+  const rowsWrap = document.getElementById('eqItemRows');
+  rowsWrap.innerHTML = '';
+  rowsWrap.appendChild(createEqItemRow({ itemCode:e.itemCode, category:e.category, itemType:e.itemType, quantity:e.quantity }));
+  /* แก้ไขได้ทีละ 1 รายการเท่านั้น (ตรงกับ 1 บันทึกที่มีอยู่แล้ว) จึงซ่อนปุ่มเพิ่ม/ลบแถว */
+  document.getElementById('eqAddRowBtn').style.display = 'none';
+  rowsWrap.querySelectorAll('.eq-remove-row').forEach(btn=>btn.style.display='none');
   openModal('equipmentModal');
 }
 document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
   const editId = document.getElementById('eqEditId').value;
   const elderlyId = document.getElementById('eqElderly').value;
   const relativePhone = document.getElementById('eqRelativePhone').value.trim();
-  const itemCode = document.getElementById('eqItemCode').value.trim();
-  const category = document.getElementById('eqCategory').value;
-  const itemTypeSel = document.getElementById('eqItemType').value;
-  const itemType = (itemTypeSel === 'อื่นๆ') ? document.getElementById('eqItemTypeOther').value.trim() : itemTypeSel;
   const dateReceived = document.getElementById('eqDateReceived').value;
-  const quantity = document.getElementById('eqQuantity').value;
   const dateReturned = document.getElementById('eqDateReturned').value;
   if(!elderlyId){ toast('กรุณาเลือกผู้สูงอายุ','error'); return; }
-  if(!itemType){ toast('กรุณาเลือกหรือระบุประเภทครุภัณฑ์/วัสดุการแพทย์','error'); return; }
   const elderly = STATE.elderly[elderlyId];
-  const data = {
-    elderlyId, elderlyName: elderly?elderly.name:'',
-    relativePhone, itemCode, category, itemType, dateReceived, quantity, dateReturned,
-    createdAt: Date.now()
-  };
-  const id = editId || ('EQ' + Date.now());
-  db.ref('equipment/'+id).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal'); });
+
+  const rowEls = Array.from(document.querySelectorAll('#eqItemRows .eq-item-row'));
+  const items = [];
+  for(const rowEl of rowEls){
+    const itemCode = rowEl.querySelector('.eq-item-code').value.trim();
+    const category = rowEl.querySelector('.eq-item-category').value;
+    const typeSelVal = rowEl.querySelector('.eq-item-type').value;
+    const itemType = (typeSelVal === 'อื่นๆ') ? rowEl.querySelector('.eq-item-type-other').value.trim() : typeSelVal;
+    const quantity = rowEl.querySelector('.eq-item-qty').value;
+    if(!itemType) continue;
+    items.push({ itemCode, category, itemType, quantity });
+  }
+  if(items.length === 0){ toast('กรุณาเลือกหรือระบุประเภทครุภัณฑ์/วัสดุการแพทย์อย่างน้อย 1 รายการ','error'); return; }
+
+  if(editId){
+    const it = items[0];
+    const data = {
+      elderlyId, elderlyName: elderly?elderly.name:'',
+      relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
+      quantity: it.quantity, dateReceived, dateReturned, createdAt: Date.now()
+    };
+    db.ref('equipment/'+editId).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal'); });
+  } else {
+    const updates = {};
+    const ts = Date.now();
+    items.forEach((it, i)=>{
+      const id = 'EQ' + ts + '_' + i;
+      updates['equipment/'+id] = {
+        elderlyId, elderlyName: elderly?elderly.name:'',
+        relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
+        quantity: it.quantity, dateReceived, dateReturned, createdAt: ts
+      };
+    });
+    db.ref().update(updates).then(()=>{
+      toast(`บันทึกสำเร็จ (${items.length} รายการ)`,'success');
+      closeModal('equipmentModal');
+    });
+  }
 });
 function deleteEquipment(id){
   showConfirm('ลบรายการอุปกรณ์นี้?','การลบไม่สามารถย้อนกลับได้', ()=>{
