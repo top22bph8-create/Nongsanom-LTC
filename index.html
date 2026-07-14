@@ -578,16 +578,19 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <section id="tab-history" class="tabpanel">
   <div class="card">
     <h3>ประวัติผู้สูงอายุและผู้มีภาวะพึ่งพิงที่เคยได้รับการดูแล</h3>
-    <p class="muted">รายชื่อผู้ที่จำหน่ายออกจากระบบเนื่องจากเสียชีวิตหรือย้ายที่อยู่ พร้อมประวัติการเยี่ยมทั้งหมด — มองเห็นและจัดการได้เฉพาะ Admin และ CM</p>
+    <p class="muted">รายชื่อผู้ที่จำหน่ายออกจากระบบเนื่องจากหายป่วย, อาการดีขึ้นไม่เข้าเกณฑ์การดูแล, เสียชีวิต หรือย้ายที่อยู่ พร้อมประวัติการเยี่ยมทั้งหมด — มองเห็นและจัดการได้เฉพาะ Admin และ CM</p>
     <div class="row" style="margin-top:8px;">
       <div class="field"><label>กรองตามเหตุผล</label>
         <select id="filterHistoryReason">
           <option value="">ทั้งหมด</option>
+          <option value="recovered">หายป่วย</option>
+          <option value="improved">อาการดีขึ้นไม่เข้าเกณฑ์</option>
           <option value="death">เสียชีวิต</option>
           <option value="moved">ย้ายที่อยู่</option>
         </select>
       </div>
-      <button class="btn btn-secondary btn-sm" id="historyReportBtn" style="align-self:flex-end;">📄 ออกรายงาน</button>
+      <button class="btn btn-secondary btn-sm" id="historyReportBtn" style="align-self:flex-end;">📄 ออกทะเบียน PDF</button>
+      <button class="btn btn-secondary btn-sm" id="historyExcelBtn" style="align-self:flex-end;">📊 ออกทะเบียน Excel</button>
     </div>
     <table style="margin-top:10px;">
       <thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG เดิม</th><th>เหตุผล</th><th>วันที่จำหน่าย</th><th>หมายเหตุ</th><th></th></tr></thead>
@@ -2239,6 +2242,40 @@ if(historyReportBtn){
       root.innerHTML = '';
       historyReportBtn.disabled = false;
     }
+  });
+}
+
+const historyExcelBtn = document.getElementById('historyExcelBtn');
+if(historyExcelBtn){
+  historyExcelBtn.addEventListener('click', ()=>{
+    const fReason = filterHistoryReasonSel ? filterHistoryReasonSel.value : '';
+    const list = Object.values(STATE_ELDERLY_HISTORY).filter(e=>!fReason || e.dischargeReason===fReason)
+      .sort((a,b)=>(b.dischargedAt||0)-(a.dischargedAt||0));
+    if(list.length === 0){ toast('ไม่พบข้อมูลประวัติสำหรับออกทะเบียน','error'); return; }
+    const sheetData = list.map((e,i)=>({
+      'ลำดับ': i+1,
+      'ชื่อ-สกุล': e.name,
+      'เลขประจำตัวประชาชน': e.idCard||'',
+      'อายุ': e.age||'',
+      'เพศ': e.gender||'',
+      'บ้านเลขที่': e.houseNo||'',
+      'หมู่': e.moo||'',
+      'CG เดิม': STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
+      'คะแนน ADL': (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
+      'กลุ่ม ADL': e.adlGroup||'',
+      'เหตุผลจำหน่าย': e.dischargeReasonLabel||'',
+      'วันที่จำหน่าย': e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '',
+      'หมายเหตุ': e.dischargeNote||'',
+      'เบอร์โทรญาติ': e.relativePhone||'',
+      'ชื่อ อสม.': e.vhvName||'',
+      'เบอร์โทร อสม.': e.vhvPhone||''
+    }));
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 14) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ประวัติผู้สูงอายุ');
+    XLSX.writeFile(wb, `ทะเบียนประวัติผู้สูงอายุที่เคยได้รับการดูแล.xlsx`);
+    toast('ออกทะเบียน Excel สำเร็จ','success');
   });
 }
 
