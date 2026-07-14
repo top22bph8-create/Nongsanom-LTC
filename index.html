@@ -519,7 +519,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการอุปกรณ์</button>
     </div>
     <div style="overflow-x:auto;">
-    <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
+    <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
     <tbody id="equipmentTable"></tbody></table>
     </div>
   </div>
@@ -696,7 +696,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
   <div class="field" style="margin-top:8px;"><label>วันที่จำหน่าย</label><input type="date" id="dischargeDate"></div>
   <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><textarea id="dischargeNote"></textarea></div>
-  <p class="muted" style="margin-top:8px;">* กรณีเสียชีวิตหรือย้ายที่อยู่ ระบบจะย้ายชื่อและประวัติการดูแลทั้งหมดไปเก็บไว้ที่แท็บ "ประวัติผู้สูงอายุ" โดยอัตโนมัติ (มองเห็นได้เฉพาะ Admin และ CM)</p>
+  <p class="muted" style="margin-top:8px;">* ไม่ว่าเหตุผลใด (หายป่วย, อาการดีขึ้นไม่เข้าเกณฑ์, เสียชีวิต, ย้ายที่อยู่) ระบบจะย้ายชื่อและประวัติการดูแลทั้งหมดไปเก็บไว้ที่แท็บ "ประวัติผู้สูงอายุ" โดยอัตโนมัติ (มองเห็นได้เฉพาะ Admin และ CM)</p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('dischargeModal')">ยกเลิก</button><button class="btn btn-danger" id="dischargeSubmitBtn">ยืนยันการจำหน่าย</button></div>
 </div></div>
 
@@ -721,8 +721,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="field"><label>ชื่อผู้สูงอายุ</label><select id="eqElderly"></select></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรญาติ</label><input type="tel" id="eqRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>เลขครุภัณฑ์</label><input type="text" id="eqItemCode" placeholder="เช่น ครภ.001/2569"></div>
-    <div class="field"><label>ประเภทครุภัณฑ์ / วัสดุการแพทย์</label><input type="text" id="eqItemType" placeholder="เช่น เตียงผู้ป่วย, ผ้าอ้อมผู้ใหญ่"></div>
+    <div class="field"><label>เลขครุภัณฑ์ (ถ้ามี)</label><input type="text" id="eqItemCode" placeholder="เช่น ครภ.001/2569"></div>
+    <div class="field"><label>หมวดหมู่</label>
+      <select id="eqCategory">
+        <option value="durable">ครุภัณฑ์การแพทย์</option>
+        <option value="material">วัสดุการแพทย์</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>รายการ</label>
+    <select id="eqItemType"></select>
+    <input type="text" id="eqItemTypeOther" placeholder="ระบุประเภทสิ่งของที่ได้รับสนับสนุน" style="display:none;margin-top:6px;">
   </div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>วันที่ได้รับการสนับสนุน</label><input type="date" id="eqDateReceived"></div>
@@ -2084,40 +2094,26 @@ document.getElementById('dischargeSubmitBtn').addEventListener('click', ()=>{
   const reasonLabel = DISCHARGE_REASON_LABELS[reason];
 
   showConfirm('ยืนยันการจำหน่ายผู้สูงอายุนี้?', `${e.name} — เหตุผล: ${reasonLabel}`, ()=>{
-    if(reason === 'death' || reason === 'moved'){
-      const updates = {};
-      const historyRecord = Object.assign({}, e, {
-        dischargeReason: reason,
-        dischargeReasonLabel: reasonLabel,
-        dischargeDate: date,
-        dischargeNote: note,
-        dischargedAt: Date.now()
-      });
-      updates['elderlyHistory/'+id] = historyRecord;
-      updates['elderly/'+id] = null;
-      Object.entries(STATE.visits||{}).forEach(([vid,v])=>{
-        if(v.elderlyId === id){
-          updates['visitHistory/'+vid] = v;
-          updates['visits/'+vid] = null;
-        }
-      });
-      db.ref().update(updates).then(()=>{
-        closeModal('dischargeModal');
-        toast(`ย้ายข้อมูล "${e.name}" ไปยังแท็บ "ประวัติผู้สูงอายุ" เรียบร้อยแล้ว`, 'success');
-      });
-    } else {
-      db.ref('elderly/'+id).update({
-        status: 'discharged',
-        dischargeReason: reason,
-        dischargeReasonLabel: reasonLabel,
-        dischargeDate: date,
-        dischargeNote: note,
-        dischargedAt: Date.now()
-      }).then(()=>{
-        closeModal('dischargeModal');
-        toast(`จำหน่าย "${e.name}" ออกจากระบบ (${reasonLabel}) เรียบร้อยแล้ว`, 'success');
-      });
-    }
+    const updates = {};
+    const historyRecord = Object.assign({}, e, {
+      dischargeReason: reason,
+      dischargeReasonLabel: reasonLabel,
+      dischargeDate: date,
+      dischargeNote: note,
+      dischargedAt: Date.now()
+    });
+    updates['elderlyHistory/'+id] = historyRecord;
+    updates['elderly/'+id] = null;
+    Object.entries(STATE.visits||{}).forEach(([vid,v])=>{
+      if(v.elderlyId === id){
+        updates['visitHistory/'+vid] = v;
+        updates['visits/'+vid] = null;
+      }
+    });
+    db.ref().update(updates).then(()=>{
+      closeModal('dischargeModal');
+      toast(`ย้ายข้อมูล "${e.name}" ไปยังแท็บ "ประวัติผู้สูงอายุ" เรียบร้อยแล้ว (เหตุผล: ${reasonLabel})`, 'success');
+    });
   });
 });
 
@@ -2582,6 +2578,7 @@ function renderEquipmentElderlySelect(){
 
 function renderEquipmentTable(){
   const filterElderly = document.getElementById('eqElderlyFilter').value;
+  const CATEGORY_LABELS = { durable:'ครุภัณฑ์การแพทย์', material:'วัสดุการแพทย์' };
   const rows = Object.entries(STATE.equipment||{})
     .filter(([id,e])=> !filterElderly || e.elderlyId===filterElderly)
     .sort((a,b)=> (b[1].dateReceived||'').localeCompare(a[1].dateReceived||''))
@@ -2592,6 +2589,7 @@ function renderEquipmentTable(){
         <td>${e.elderlyName||'-'}</td>
         <td>${e.relativePhone||'-'}</td>
         <td>${e.itemCode||'-'}</td>
+        <td>${CATEGORY_LABELS[e.category]||'-'}</td>
         <td>${e.itemType||'-'}</td>
         <td>${e.dateReceived?formatThaiDate(e.dateReceived):'-'}</td>
         <td>${e.quantity||'-'}</td>
@@ -2599,7 +2597,35 @@ function renderEquipmentTable(){
         <td><button class="btn btn-ghost btn-sm" onclick="openEditEquipment('${id}')">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${id}')">🗑</button></td>
       </tr>`;}).join('');
-  document.getElementById('equipmentTable').innerHTML = rows || '<tr><td colspan="8" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('equipmentTable').innerHTML = rows || '<tr><td colspan="9" class="muted">ยังไม่มีข้อมูล</td></tr>';
+}
+
+/* รายการครุภัณฑ์การแพทย์ / วัสดุการแพทย์ ให้เลือกเป็นช้อยสะดวก — เลือก "อื่นๆ" เพื่อพิมพ์เองได้ */
+const EQUIPMENT_DURABLE_ITEMS = [
+  "เตียงฟาวเลอร์","เครื่องผลิตออกซิเจน","ถังออกซิเจน ขนาดใหญ่","ถังออกซิเจน ขนาดเล็ก",
+  "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
+];
+const EQUIPMENT_MATERIAL_ITEMS = [
+  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
+  "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา"
+];
+function renderEqItemTypeOptions(selectedValue){
+  const cat = document.getElementById('eqCategory').value;
+  const list = (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS;
+  const sel = document.getElementById('eqItemType');
+  sel.innerHTML = list.map(i=>`<option value="${i}">${i}</option>`).join('') + '<option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>';
+  if(selectedValue && list.includes(selectedValue)){ sel.value = selectedValue; }
+  else if(selectedValue){ sel.value = 'อื่นๆ'; }
+  toggleEqItemTypeOther(selectedValue && !list.includes(selectedValue) ? selectedValue : '');
+}
+document.getElementById('eqCategory').addEventListener('change', ()=>renderEqItemTypeOptions());
+document.getElementById('eqItemType').addEventListener('change', ()=>toggleEqItemTypeOther());
+function toggleEqItemTypeOther(prefillOther){
+  const isOther = document.getElementById('eqItemType').value === 'อื่นๆ';
+  const otherInput = document.getElementById('eqItemTypeOther');
+  otherInput.style.display = isOther ? 'block' : 'none';
+  if(prefillOther !== undefined && prefillOther !== ''){ otherInput.value = prefillOther; }
+  else if(!isOther){ otherInput.value = ''; }
 }
 
 document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
@@ -2607,7 +2633,8 @@ document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
   document.getElementById('eqEditId').value = '';
   document.getElementById('eqRelativePhone').value = '';
   document.getElementById('eqItemCode').value = '';
-  document.getElementById('eqItemType').value = '';
+  document.getElementById('eqCategory').value = 'durable';
+  renderEqItemTypeOptions();
   document.getElementById('eqDateReceived').value = '';
   document.getElementById('eqQuantity').value = '';
   document.getElementById('eqDateReturned').value = '';
@@ -2620,7 +2647,8 @@ function openEditEquipment(id){
   document.getElementById('eqElderly').value = e.elderlyId||'';
   document.getElementById('eqRelativePhone').value = e.relativePhone||'';
   document.getElementById('eqItemCode').value = e.itemCode||'';
-  document.getElementById('eqItemType').value = e.itemType||'';
+  document.getElementById('eqCategory').value = e.category||'durable';
+  renderEqItemTypeOptions(e.itemType||'');
   document.getElementById('eqDateReceived').value = e.dateReceived||'';
   document.getElementById('eqQuantity').value = e.quantity||'';
   document.getElementById('eqDateReturned').value = e.dateReturned||'';
@@ -2631,16 +2659,18 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
   const elderlyId = document.getElementById('eqElderly').value;
   const relativePhone = document.getElementById('eqRelativePhone').value.trim();
   const itemCode = document.getElementById('eqItemCode').value.trim();
-  const itemType = document.getElementById('eqItemType').value.trim();
+  const category = document.getElementById('eqCategory').value;
+  const itemTypeSel = document.getElementById('eqItemType').value;
+  const itemType = (itemTypeSel === 'อื่นๆ') ? document.getElementById('eqItemTypeOther').value.trim() : itemTypeSel;
   const dateReceived = document.getElementById('eqDateReceived').value;
   const quantity = document.getElementById('eqQuantity').value;
   const dateReturned = document.getElementById('eqDateReturned').value;
   if(!elderlyId){ toast('กรุณาเลือกผู้สูงอายุ','error'); return; }
-  if(!itemType){ toast('กรุณากรอกประเภทครุภัณฑ์','error'); return; }
+  if(!itemType){ toast('กรุณาเลือกหรือระบุประเภทครุภัณฑ์/วัสดุการแพทย์','error'); return; }
   const elderly = STATE.elderly[elderlyId];
   const data = {
     elderlyId, elderlyName: elderly?elderly.name:'',
-    relativePhone, itemCode, itemType, dateReceived, quantity, dateReturned,
+    relativePhone, itemCode, category, itemType, dateReceived, quantity, dateReturned,
     createdAt: Date.now()
   };
   const id = editId || ('EQ' + Date.now());
