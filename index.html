@@ -495,26 +495,26 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       </select>
     </div>
     <div class="field" style="margin-top:10px;">
-      <label>กิจกรรมฟื้นฟูสภาพร่างกาย (เลือกได้มากกว่า 1 ข้อ)</label>
-      <div class="checkbox-group">
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="1"> 1. ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="2"> 2. จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="3"> 3. บริหารข้อและกล้ามเนื้อ (ROM Exercise)</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="4"> 4. ฝึกการลุกนั่งจากเตียง</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="5"> 5. ฝึกการทรงตัว</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="6"> 6. ฝึกยืน</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="7"> 7. ฝึกเดินด้วยอุปกรณ์ช่วยเดิน</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="8"> 8. ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="9"> 9. ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="10"> 10. นวดผ่อนคลายกล้ามเนื้อ</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="11"> 11. ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="12"> 12. กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="13"> 13. ฝึกการหายใจและการไออย่างมีประสิทธิภาพ</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="14"> 14. ดูแลและป้องกันแผลกดทับ</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="15"> 15. ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน</label>
-        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="16"> 16. ติดตามและประเมินผลการฟื้นฟู</label>
-        <label class="checkbox-item"><input type="checkbox" id="recRehabOther" value="17"> 17. อื่น ๆ (ระบุ)</label>
-      </div>
+      <label>กิจกรรมฟื้นฟูสภาพร่างกาย (กดค้าง Ctrl หรือ Cmd เพื่อเลือกได้มากกว่า 1 ข้อ)</label>
+      <select id="recRehabActivity" multiple size="8">
+        <option value="1">1. ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)</option>
+        <option value="2">2. จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง</option>
+        <option value="3">3. บริหารข้อและกล้ามเนื้อ (ROM Exercise)</option>
+        <option value="4">4. ฝึกการลุกนั่งจากเตียง</option>
+        <option value="5">5. ฝึกการทรงตัว</option>
+        <option value="6">6. ฝึกยืน</option>
+        <option value="7">7. ฝึกเดินด้วยอุปกรณ์ช่วยเดิน</option>
+        <option value="8">8. ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)</option>
+        <option value="9">9. ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร</option>
+        <option value="10">10. นวดผ่อนคลายกล้ามเนื้อ</option>
+        <option value="11">11. ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง</option>
+        <option value="12">12. กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด</option>
+        <option value="13">13. ฝึกการหายใจและการไออย่างมีประสิทธิภาพ</option>
+        <option value="14">14. ดูแลและป้องกันแผลกดทับ</option>
+        <option value="15">15. ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน</option>
+        <option value="16">16. ติดตามและประเมินผลการฟื้นฟู</option>
+        <option value="17">17. อื่น ๆ (ระบุ)</option>
+      </select>
       <input type="text" id="recRehabOtherText" placeholder="ระบุกิจกรรมฟื้นฟูอื่นๆ" style="display:none;margin-top:8px;">
     </div>
     <div class="field" style="margin-top:10px;">
@@ -1016,12 +1016,18 @@ db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
-   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
+   และสร้างบัญชี "ผู้ใช้งานทั่วไป" แบบดูอย่างเดียว (username: TOP / password: TOP) ถ้ายังไม่มี */
 db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
   if(Object.keys(STATE.users).length === 0){
     db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() },
+      U_VIEWER_SEED: { username:'TOP', password:'TOP', displayName:'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)', idCard:'', address:'', phone:'', role:'viewer', cgCode:'', permissions: permsFromRoleTabs('viewer'), createdAt: Date.now() }
+    });
+  } else if(!Object.values(STATE.users).some(u=>u.username==='TOP')){
+    db.ref('users/U_VIEWER_SEED').set({
+      username:'TOP', password:'TOP', displayName:'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)', idCard:'', address:'', phone:'', role:'viewer', cgCode:'', permissions: permsFromRoleTabs('viewer'), createdAt: Date.now()
     });
   }
   renderUsersTable();
@@ -1158,6 +1164,7 @@ const ROLE_TABS = {
   admin:        ['dashboard','record','cg','elderly','equipment','pdf','history','users'],
   care_manager: ['dashboard','record','cg','elderly','equipment','pdf','history'],
   cg:           ['dashboard','record','equipment'],
+  viewer:       ['dashboard','record','cg','elderly','equipment','pdf','history'],
   unassigned:   ['dashboard'],
   public:       ['dashboard']
 };
@@ -1165,6 +1172,7 @@ const ROLE_LABELS = {
   admin: 'ผู้ดูแลระบบ (Admin)',
   care_manager: 'Care Manager (CM)',
   cg: 'CG (ผู้ดูแลผู้สูงอายุ)',
+  viewer: 'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)',
   unassigned: 'ยังไม่กำหนดบทบาท',
   public: 'บุคคลทั่วไป'
 };
@@ -1191,6 +1199,19 @@ function tabsAllowedForUser(u){
   if(u.role === 'admin') return ROLE_TABS.admin;
   const perms = u.permissions || permsFromRoleTabs(u.role || 'unassigned');
   return Object.keys(perms).filter(k=>perms[k]);
+}
+/* ผู้ใช้งานทั่วไป (username/password: TOP) ดูได้ทุกฟังก์ชัน (ยกเว้นแท็บผู้ใช้งานซึ่งเป็นของ Admin โดยเฉพาะ
+   เพราะมีรหัสผ่านของคนอื่นแสดงอยู่) แต่บันทึก/แก้ไข/ลบข้อมูลใดๆ ไม่ได้เลย — ฟังก์ชันที่มีการเขียนข้อมูลทุกจุด
+   จะเรียก isReadOnlyUser() ตรวจสอบก่อนเสมอ */
+function isReadOnlyUser(){
+  return !!(CURRENT_USER && CURRENT_USER.role === 'viewer');
+}
+function blockIfReadOnly(){
+  if(isReadOnlyUser()){
+    toast('บัญชีนี้เป็นบัญชีสำหรับดูข้อมูลเท่านั้น ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้','error');
+    return true;
+  }
+  return false;
 }
 
 let CURRENT_ROLE = null;
@@ -1782,6 +1803,7 @@ function editVisit(vid){
   openModal('editVisitModal');
 }
 document.getElementById('editVisitSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const vid = document.getElementById('editVisitId').value;
   const date = document.getElementById('editVisitDate').value.trim();
   const note = document.getElementById('editVisitNote').value.trim();
@@ -1791,6 +1813,7 @@ document.getElementById('editVisitSaveBtn').addEventListener('click', ()=>{
   });
 });
 function deleteVisit(vid){
+  if(blockIfReadOnly()) return;
   showConfirm('ลบรูปนี้?','การลบไม่สามารถย้อนกลับได้', ()=>{
     db.ref('visits/'+vid).remove().then(()=>toast('ลบสำเร็จ','success'));
   });
@@ -1895,13 +1918,16 @@ document.getElementById('recPhotos').addEventListener('change', e=>{
 document.getElementById('recFoodType').addEventListener('change', function(){
   document.getElementById('recFoodTypeDetailWrap').style.display = (this.value === '3') ? 'block' : 'none';
 });
-document.getElementById('recRehabOther').addEventListener('change', function(){
+document.getElementById('recRehabActivity').addEventListener('change', function(){
+  const selected = Array.from(this.selectedOptions).map(o=>o.value);
   const otherText = document.getElementById('recRehabOtherText');
-  otherText.style.display = this.checked ? 'block' : 'none';
-  if(!this.checked) otherText.value = '';
+  const isOtherSelected = selected.includes('17');
+  otherText.style.display = isOtherSelected ? 'block' : 'none';
+  if(!isOtherSelected) otherText.value = '';
 });
 
 document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
+  if(blockIfReadOnly()) return;
   const cgCode = document.getElementById('recCg').value;
   const elderlyId = document.getElementById('recElderly').value;
   const files = document.getElementById('recPhotos').files;
@@ -1922,8 +1948,9 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   }
   const careActivities = Array.from(document.querySelectorAll('.recCareActivity:checked')).map(cb=>cb.value);
   const foodTypeDetail = Array.from(document.querySelectorAll('.recFoodTypeDetail:checked')).map(cb=>cb.value);
-  const rehabActivities = Array.from(document.querySelectorAll('.recRehabActivity:checked')).map(cb=>cb.value);
-  const rehabOtherChecked = document.getElementById('recRehabOther').checked;
+  const rehabSelected = Array.from(document.getElementById('recRehabActivity').selectedOptions).map(o=>o.value);
+  const rehabActivities = rehabSelected.filter(v=>v!=='17');
+  const rehabOtherChecked = rehabSelected.includes('17');
   const rehabOtherText = document.getElementById('recRehabOtherText').value.trim();
   const assessment = {
     vitals: {
@@ -1985,8 +2012,7 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     document.getElementById('recFoodTypeDetailWrap').style.display='none';
     document.querySelectorAll('.recFoodTypeDetail:checked').forEach(cb=>cb.checked=false);
     document.getElementById('recMentalHealth').value='';
-    document.querySelectorAll('.recRehabActivity:checked').forEach(cb=>cb.checked=false);
-    document.getElementById('recRehabOther').checked=false;
+    Array.from(document.getElementById('recRehabActivity').options).forEach(o=>o.selected=false);
     document.getElementById('recRehabOtherText').value='';
     document.getElementById('recRehabOtherText').style.display='none';
     document.getElementById('recAdlScore').value='';
@@ -2051,6 +2077,7 @@ function openTransferElderly(fromCode){
   openModal('transferElderlyModal');
 }
 document.getElementById('transferElderlySaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const fromCode = document.getElementById('transferFromCg').value;
   const toCode = document.getElementById('transferToCg').value;
   if(!toCode){ toast('ไม่มี CG ปลายทางให้ย้ายไป','error'); return; }
@@ -2089,6 +2116,7 @@ function openEditCg(code){
   openModal('cgModal');
 }
 document.getElementById('cgSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const editId = document.getElementById('cgEditId').value;
   const name = document.getElementById('cgName').value.trim();
   if(!name){ toast('กรุณากรอกชื่อ','error'); return; }
@@ -2104,6 +2132,7 @@ document.getElementById('cgSaveBtn').addEventListener('click', ()=>{
   db.ref('cgs/'+code).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('cgModal'); });
 });
 function deleteCg(code){
+  if(blockIfReadOnly()) return;
   const hasElderly = Object.values(STATE.elderly).some(e=>e.cgCode===code);
   if(hasElderly){ toast('ไม่สามารถลบได้ เนื่องจากยังมีผู้สูงอายุในความดูแล','error'); return; }
   showConfirm('ลบ CG นี้?', STATE.cgs[code].name, ()=>{
@@ -2177,6 +2206,7 @@ function openEditElderly(id){
   openModal('elderlyModal');
 }
 document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const editId = document.getElementById('elderlyEditId').value;
   const name = document.getElementById('elderlyName').value.trim();
   const cgCode = document.getElementById('elderlyCg').value;
@@ -2208,6 +2238,7 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   db.ref('elderly/'+id).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('elderlyModal'); });
 });
 function deleteElderly(id){
+  if(blockIfReadOnly()) return;
   showConfirm('ลบผู้สูงอายุนี้?','รวมถึงประวัติการเยี่ยมทั้งหมดของบุคคลนี้', ()=>{
     const updates = {};
     updates['elderly/'+id] = null;
@@ -2233,6 +2264,7 @@ function openDischarge(id){
   openModal('dischargeModal');
 }
 document.getElementById('dischargeSubmitBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const id = document.getElementById('dischargeElderlyId').value;
   const reason = document.getElementById('dischargeReason').value;
   const date = document.getElementById('dischargeDate').value;
@@ -2299,6 +2331,7 @@ function renderHistoryTable(){
   }).join('');
 }
 function deleteHistoryRecord(id){
+  if(blockIfReadOnly()) return;
   const e = STATE_ELDERLY_HISTORY[id];
   showConfirm('ลบประวัตินี้ถาวร?', (e?e.name:id)+' (การลบนี้ไม่สามารถย้อนกลับได้)', ()=>{
     const updates = {};
@@ -2894,6 +2927,7 @@ function openEditEquipment(id){
   openModal('equipmentModal');
 }
 document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const editId = document.getElementById('eqEditId').value;
   const elderlyId = document.getElementById('eqElderly').value;
   const relativePhone = document.getElementById('eqRelativePhone').value.trim();
@@ -2941,6 +2975,7 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
   }
 });
 function deleteEquipment(id){
+  if(blockIfReadOnly()) return;
   showConfirm('ลบรายการอุปกรณ์นี้?','การลบไม่สามารถย้อนกลับได้', ()=>{
     db.ref('equipment/'+id).remove().then(()=>toast('ลบสำเร็จ','success'));
   });
