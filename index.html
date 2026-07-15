@@ -55,6 +55,15 @@ select,input[type=text],input[type=number],input[type=tel],input[type=file],inpu
   font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;
 }
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,113,186,.12);}
+.ms-dropdown{position:relative;}
+.ms-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.ms-toggle:hover{border-color:var(--primary);}
+.ms-toggle.open{border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,113,186,.12);}
+.ms-toggle .ms-arrow{color:var(--muted);font-size:11px;transition:transform .15s;flex-shrink:0;}
+.ms-toggle.open .ms-arrow{transform:rotate(180deg);}
+.ms-toggle span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(21,113,186,.18);padding:8px;max-height:280px;overflow-y:auto;}
+.ms-panel.open{display:block;}
 textarea{resize:vertical;min-height:60px;}
 .btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:filter .15s,transform .1s,box-shadow .15s;}
 .btn:hover{filter:brightness(1.06);box-shadow:0 3px 10px rgba(21,113,186,.18);}
@@ -495,26 +504,32 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       </select>
     </div>
     <div class="field" style="margin-top:10px;">
-      <label>กิจกรรมฟื้นฟูสภาพร่างกาย (กดค้าง Ctrl หรือ Cmd เพื่อเลือกได้มากกว่า 1 ข้อ)</label>
-      <select id="recRehabActivity" multiple size="8">
-        <option value="1">1. ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)</option>
-        <option value="2">2. จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง</option>
-        <option value="3">3. บริหารข้อและกล้ามเนื้อ (ROM Exercise)</option>
-        <option value="4">4. ฝึกการลุกนั่งจากเตียง</option>
-        <option value="5">5. ฝึกการทรงตัว</option>
-        <option value="6">6. ฝึกยืน</option>
-        <option value="7">7. ฝึกเดินด้วยอุปกรณ์ช่วยเดิน</option>
-        <option value="8">8. ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)</option>
-        <option value="9">9. ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร</option>
-        <option value="10">10. นวดผ่อนคลายกล้ามเนื้อ</option>
-        <option value="11">11. ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง</option>
-        <option value="12">12. กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด</option>
-        <option value="13">13. ฝึกการหายใจและการไออย่างมีประสิทธิภาพ</option>
-        <option value="14">14. ดูแลและป้องกันแผลกดทับ</option>
-        <option value="15">15. ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน</option>
-        <option value="16">16. ติดตามและประเมินผลการฟื้นฟู</option>
-        <option value="17">17. อื่น ๆ (ระบุ)</option>
-      </select>
+      <label>กิจกรรมฟื้นฟูสภาพร่างกาย (เลือกได้มากกว่า 1 ข้อ)</label>
+      <div class="ms-dropdown" id="rehabDropdown">
+        <button type="button" class="ms-toggle" id="rehabDropdownToggle">
+          <span id="rehabDropdownLabel">-- เลือกกิจกรรม --</span>
+          <span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-panel" id="rehabDropdownPanel">
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="1"> 1. ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="2"> 2. จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="3"> 3. บริหารข้อและกล้ามเนื้อ (ROM Exercise)</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="4"> 4. ฝึกการลุกนั่งจากเตียง</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="5"> 5. ฝึกการทรงตัว</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="6"> 6. ฝึกยืน</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="7"> 7. ฝึกเดินด้วยอุปกรณ์ช่วยเดิน</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="8"> 8. ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="9"> 9. ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="10"> 10. นวดผ่อนคลายกล้ามเนื้อ</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="11"> 11. ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="12"> 12. กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="13"> 13. ฝึกการหายใจและการไออย่างมีประสิทธิภาพ</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="14"> 14. ดูแลและป้องกันแผลกดทับ</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="15"> 15. ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน</label>
+          <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="16"> 16. ติดตามและประเมินผลการฟื้นฟู</label>
+          <label class="checkbox-item"><input type="checkbox" id="recRehabOtherCb"> 17. อื่น ๆ (ระบุ)</label>
+        </div>
+      </div>
       <input type="text" id="recRehabOtherText" placeholder="ระบุกิจกรรมฟื้นฟูอื่นๆ" style="display:none;margin-top:8px;">
     </div>
     <div class="field" style="margin-top:10px;">
@@ -1918,12 +1933,31 @@ document.getElementById('recPhotos').addEventListener('change', e=>{
 document.getElementById('recFoodType').addEventListener('change', function(){
   document.getElementById('recFoodTypeDetailWrap').style.display = (this.value === '3') ? 'block' : 'none';
 });
-document.getElementById('recRehabActivity').addEventListener('change', function(){
-  const selected = Array.from(this.selectedOptions).map(o=>o.value);
+
+/* กิจกรรมฟื้นฟูสภาพร่างกาย: dropdown แบบกำหนดเอง หน้าตาเหมือนช่องเลือกทั่วไป แต่เลือกได้หลายข้อ */
+const rehabDropdownToggle = document.getElementById('rehabDropdownToggle');
+const rehabDropdownPanel = document.getElementById('rehabDropdownPanel');
+rehabDropdownToggle.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  rehabDropdownPanel.classList.toggle('open');
+  rehabDropdownToggle.classList.toggle('open');
+});
+document.addEventListener('click', (e)=>{
+  if(!document.getElementById('rehabDropdown').contains(e.target)){
+    rehabDropdownPanel.classList.remove('open');
+    rehabDropdownToggle.classList.remove('open');
+  }
+});
+function updateRehabDropdownLabel(){
+  const checkedCount = document.querySelectorAll('.recRehabActivity:checked').length + (document.getElementById('recRehabOtherCb').checked ? 1 : 0);
+  document.getElementById('rehabDropdownLabel').textContent = checkedCount>0 ? `เลือกแล้ว ${checkedCount} รายการ` : '-- เลือกกิจกรรม --';
+}
+document.querySelectorAll('.recRehabActivity').forEach(cb=>cb.addEventListener('change', updateRehabDropdownLabel));
+document.getElementById('recRehabOtherCb').addEventListener('change', function(){
   const otherText = document.getElementById('recRehabOtherText');
-  const isOtherSelected = selected.includes('17');
-  otherText.style.display = isOtherSelected ? 'block' : 'none';
-  if(!isOtherSelected) otherText.value = '';
+  otherText.style.display = this.checked ? 'block' : 'none';
+  if(!this.checked) otherText.value = '';
+  updateRehabDropdownLabel();
 });
 
 document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
@@ -1948,9 +1982,8 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   }
   const careActivities = Array.from(document.querySelectorAll('.recCareActivity:checked')).map(cb=>cb.value);
   const foodTypeDetail = Array.from(document.querySelectorAll('.recFoodTypeDetail:checked')).map(cb=>cb.value);
-  const rehabSelected = Array.from(document.getElementById('recRehabActivity').selectedOptions).map(o=>o.value);
-  const rehabActivities = rehabSelected.filter(v=>v!=='17');
-  const rehabOtherChecked = rehabSelected.includes('17');
+  const rehabActivities = Array.from(document.querySelectorAll('.recRehabActivity:checked')).map(cb=>cb.value);
+  const rehabOtherChecked = document.getElementById('recRehabOtherCb').checked;
   const rehabOtherText = document.getElementById('recRehabOtherText').value.trim();
   const assessment = {
     vitals: {
@@ -2012,9 +2045,11 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     document.getElementById('recFoodTypeDetailWrap').style.display='none';
     document.querySelectorAll('.recFoodTypeDetail:checked').forEach(cb=>cb.checked=false);
     document.getElementById('recMentalHealth').value='';
-    Array.from(document.getElementById('recRehabActivity').options).forEach(o=>o.selected=false);
+    document.querySelectorAll('.recRehabActivity:checked').forEach(cb=>cb.checked=false);
+    document.getElementById('recRehabOtherCb').checked=false;
     document.getElementById('recRehabOtherText').value='';
     document.getElementById('recRehabOtherText').style.display='none';
+    updateRehabDropdownLabel();
     document.getElementById('recAdlScore').value='';
     document.querySelectorAll('.recCareActivity:checked').forEach(cb=>cb.checked=false);
     STATE.selectedDates = [];
