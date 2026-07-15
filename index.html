@@ -482,6 +482,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <button class="btn btn-primary" id="recSaveBtn" style="margin-top:12px;">💾 บันทึกการเยี่ยม</button>
     <div class="upload-progress" id="recProgress"></div>
   </div>
+
+  <div class="card" id="recManageCard" style="display:none;">
+    <h3>🗑 ลบ/แก้ไขบันทึกการเยี่ยมที่มีอยู่แล้ว (เฉพาะ Admin)</h3>
+    <p class="muted">ค้นหาบันทึกการเยี่ยมแยกตาม CG และวันที่ เพื่อแก้ไขหรือลบเป็นรายรูป</p>
+    <div class="row">
+      <div class="field"><label>CG</label><select id="recManageCg"><option value="">ทุก CG</option></select></div>
+      <div class="field"><label>วันที่เยี่ยม</label><input type="date" id="recManageDate"></div>
+    </div>
+    <div id="recManageList" style="margin-top:12px;"></div>
+  </div>
 </section>
 
 <!-- ===================== CG MANAGEMENT ===================== -->
@@ -1158,8 +1168,11 @@ function applyAccessControl(u){
   document.querySelector('nav.tabs button[data-tab="dashboard"]').classList.add('active');
   document.getElementById('tab-dashboard').classList.add('active');
   document.getElementById('changePasswordBtn').style.display = u ? 'inline-flex' : 'none';
+  const recManageCard = document.getElementById('recManageCard');
+  if(recManageCard) recManageCard.style.display = (u && u.role === 'admin') ? 'block' : 'none';
   renderDrill();
   renderUsersTable();
+  renderRecManageList();
 }
 
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
@@ -1480,14 +1493,15 @@ document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
 ============================================================= */
 function renderCgSelects(){
   const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
-  ['recCg','elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter'].forEach(id=>{
+  ['recCg','elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg'].forEach(id=>{
     const el = document.getElementById(id);
-    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
+    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
     const prevVal = el.value;
     el.innerHTML = keepFirst + opts;
     if(prevVal) el.value = prevVal;
   });
   renderRecElderlyOptions();
+  renderRecManageList();
 }
 
 function renderRecElderlyOptions(){
@@ -1703,6 +1717,41 @@ function deleteVisit(vid){
     db.ref('visits/'+vid).remove().then(()=>toast('ลบสำเร็จ','success'));
   });
 }
+
+/* ---- ลบ/แก้ไขบันทึกการเยี่ยม แยกตาม CG และวันที่ (เฉพาะ Admin) ---- */
+function renderRecManageList(){
+  const listEl = document.getElementById('recManageList');
+  const cgSel = document.getElementById('recManageCg');
+  const dateInput = document.getElementById('recManageDate');
+  if(!listEl || !cgSel || !dateInput) return;
+  const cgFilter = cgSel.value;
+  const dateFilter = dateInput.value;
+  const entries = Object.entries(STATE.visits||{}).filter(([vid,v])=>{
+    if(cgFilter && v.cgCode !== cgFilter) return false;
+    if(dateFilter && v.visitDate !== dateFilter) return false;
+    return true;
+  }).sort((a,b)=> (b[1].visitDate||'').localeCompare(a[1].visitDate||''));
+
+  if(!cgFilter && !dateFilter){
+    listEl.innerHTML = '<p class="muted">เลือก CG และ/หรือวันที่ เพื่อค้นหาบันทึกการเยี่ยมที่ต้องการแก้ไขหรือลบ</p>';
+    return;
+  }
+  if(entries.length === 0){
+    listEl.innerHTML = '<p class="muted">ไม่พบบันทึกการเยี่ยมตามเงื่อนไขที่เลือก</p>';
+    return;
+  }
+  listEl.innerHTML = `<div class="photo-grid">${entries.map(([vid,v])=>`
+    <div class="photo-card">
+      <img src="${v.photoUrl}" crossorigin="anonymous">
+      <div class="pc-body">${formatThaiDate(v.visitDate)}<br><span class="muted">${v.elderlyName||'-'} (${v.cgName||'-'})</span>${v.note?('<br><span class="muted">'+v.note+'</span>'):''}</div>
+      <div class="pc-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editVisit('${vid}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteVisit('${vid}')">🗑</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+document.getElementById('recManageCg').addEventListener('change', renderRecManageList);
+document.getElementById('recManageDate').addEventListener('change', renderRecManageList);
 
 /* =============================================================
    RECORD VISIT TAB
