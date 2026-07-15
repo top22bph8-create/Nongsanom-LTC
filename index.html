@@ -20,11 +20,11 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);padding-bottom:40px;}
 header.app-header{background:linear-gradient(120deg,var(--primary),var(--secondary));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
-header.app-header img.app-logo{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;}
+header.app-header img.app-logo{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 header.app-header .app-header-text{flex:1;}
-header.app-header h1{margin:0;font-size:17px;font-weight:700;}
+header.app-header h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.2px;}
 header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
-.adl-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:middle;flex-shrink:0;}
+.adl-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:middle;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.6) inset;}
 .adl-dot.adl-1{background:#43A047;}
 .adl-dot.adl-2{background:#FBC02D;}
 .adl-dot.adl-3{background:#FB8C00;}
@@ -35,29 +35,36 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .quota-badge.quota-yellow{background:#FFFDE7;color:#F9A825;}
 .quota-badge.quota-blue{background:#E3F7FF;color:#0F8FC7;}
 .adl-dot.adl-4{background:#E53935;}
-nav.tabs{display:flex;overflow-x:auto;background:#fff;position:sticky;top:64px;z-index:49;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-nav.tabs button{flex:1 0 auto;background:none;border:none;padding:12px 10px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+nav.tabs{display:flex;overflow-x:auto;background:#fff;position:sticky;top:64px;z-index:49;box-shadow:0 1px 4px rgba(0,0,0,.06);scrollbar-width:thin;}
+nav.tabs::-webkit-scrollbar{height:4px;}
+nav.tabs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+nav.tabs button{flex:1 0 auto;background:none;border:none;padding:12px 10px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s,background .15s;}
+nav.tabs button:hover{color:var(--primary-dark);background:#F4FBFF;}
 nav.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);}
 main{max-width:920px;margin:0 auto;padding:14px;}
 .tabpanel{display:none;}
 .tabpanel.active{display:block;animation:fade .2s ease;}
 @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px;}
-.card h3{margin:0 0 10px;font-size:15px;color:var(--primary-dark);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px;border:1px solid rgba(21,113,186,.06);transition:box-shadow .2s;}
+.card:hover{box-shadow:0 4px 16px rgba(21,113,186,.14);}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--primary-dark);padding-bottom:9px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 .field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;}
 .field label{font-size:12px;color:var(--muted);font-weight:600;}
-select,input[type=text],input[type=number],input[type=tel],input[type=file],textarea{
-  font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;width:100%;
+select,input[type=text],input[type=number],input[type=tel],input[type=file],input[type=date],input[type=password],textarea{
+  font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;
 }
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,113,186,.12);}
 textarea{resize:vertical;min-height:60px;}
-.btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:filter .15s,transform .1s,box-shadow .15s;}
+.btn:hover{filter:brightness(1.06);box-shadow:0 3px 10px rgba(21,113,186,.18);}
+.btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--primary);color:#fff;}
 .btn-primary:hover{background:var(--primary-dark);}
 .btn-secondary{background:var(--secondary);color:#fff;}
 .btn-danger{background:var(--danger);color:#fff;}
 .btn-ghost{background:#eef2f1;color:var(--text);}
-.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
 .btn-sm{padding:6px 10px;font-size:12.5px;}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;}
 .stat{background:#EDF8FD;border-radius:10px;padding:10px;text-align:center;}
@@ -95,8 +102,10 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .calendar-grid .day{text-align:center;padding:8px 0;border-radius:8px;background:#f4f6f8;cursor:pointer;font-size:13px;}
 .calendar-grid .day.selected{background:var(--primary);color:#fff;font-weight:700;}
 .calendar-grid .day.empty{visibility:hidden;}
-.checkbox-group{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
-.checkbox-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:400;cursor:pointer;}
+.checkbox-group{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+.checkbox-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:400;cursor:pointer;padding:6px 8px;border-radius:6px;transition:background .15s;}
+.checkbox-item:hover{background:#F4FBFF;}
+.checkbox-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;}
 .checkbox-item input{width:16px;height:16px;flex-shrink:0;}
 .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
 .badge.normal{background:#e8f0fb;color:var(--secondary);}
@@ -438,7 +447,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <select id="recElimination">
           <option value="">-- เลือก --</option>
           <option value="1">1. ปกติ</option>
-          <option value="2">2. ดูแลสายสวนปัสสาวะ</option>
+          <option value="2">2. ใช้สายสวนปัสสาวะ</option>
           <option value="3">3. มีปัญหาการขับถ่าย</option>
         </select>
       </div>
@@ -446,7 +455,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <select id="recFeedingMethod">
           <option value="">-- เลือก --</option>
           <option value="1">1. รับประทานเอง</option>
-          <option value="2">2. CG ป้อนอาหาร</option>
+          <option value="2">2. ผู้ดูแลหรือญาติต้องป้อนอาหาร</option>
           <option value="3">3. ให้อาหารทางสายยาง</option>
         </select>
       </div>
@@ -457,10 +466,56 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
           <option value="">-- เลือก --</option>
           <option value="1">1. อาหารธรรมดา</option>
           <option value="2">2. อาหารอ่อน</option>
-          <option value="3">3. อาหารแข็ง</option>
+          <option value="3">3. อาหารแยกตามประเภท</option>
         </select>
       </div>
       <div class="field"><label>คะแนน ADL (0-20)</label><input type="number" id="recAdlScore" min="0" max="20" placeholder="0-20"></div>
+    </div>
+    <div class="field" id="recFoodTypeDetailWrap" style="margin-top:10px;display:none;">
+      <label>ประเภทอาหารผู้ป่วยติดเตียง (เลือกได้มากกว่า 1 ข้อ)</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="1"> 1. อาหารธรรมดา</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="2"> 2. อาหารอ่อน</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="3"> 3. อาหารบดละเอียด</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="4"> 4. อาหารปั่น</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="5"> 5. อาหารเหลว</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="6"> 6. อาหารทางสายให้อาหาร (NG Tube)</label>
+        <label class="checkbox-item"><input type="checkbox" class="recFoodTypeDetail" value="7"> 7. อาหารทางการแพทย์สูตรเฉพาะโรค</label>
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label>สุขภาพจิตและอารมณ์</label>
+      <select id="recMentalHealth">
+        <option value="">-- เลือก --</option>
+        <option value="1">1. ปกติ แจ่มใส ร่าเริง</option>
+        <option value="2">2. วิตกกังวล / เครียด</option>
+        <option value="3">3. ซึมเศร้า เบื่อหน่าย</option>
+        <option value="4">4. หงุดหงิดง่าย / ก้าวร้าว</option>
+        <option value="5">5. สับสน ไม่รับรู้เวลา สถานที่ หรือบุคคล</option>
+      </select>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label>กิจกรรมฟื้นฟูสภาพร่างกาย (เลือกได้มากกว่า 1 ข้อ)</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="1"> 1. ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="2"> 2. จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="3"> 3. บริหารข้อและกล้ามเนื้อ (ROM Exercise)</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="4"> 4. ฝึกการลุกนั่งจากเตียง</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="5"> 5. ฝึกการทรงตัว</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="6"> 6. ฝึกยืน</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="7"> 7. ฝึกเดินด้วยอุปกรณ์ช่วยเดิน</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="8"> 8. ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="9"> 9. ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="10"> 10. นวดผ่อนคลายกล้ามเนื้อ</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="11"> 11. ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="12"> 12. กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="13"> 13. ฝึกการหายใจและการไออย่างมีประสิทธิภาพ</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="14"> 14. ดูแลและป้องกันแผลกดทับ</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="15"> 15. ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน</label>
+        <label class="checkbox-item"><input type="checkbox" class="recRehabActivity" value="16"> 16. ติดตามและประเมินผลการฟื้นฟู</label>
+        <label class="checkbox-item"><input type="checkbox" id="recRehabOther" value="17"> 17. อื่น ๆ (ระบุ)</label>
+      </div>
+      <input type="text" id="recRehabOtherText" placeholder="ระบุกิจกรรมฟื้นฟูอื่นๆ" style="display:none;margin-top:8px;">
     </div>
     <div class="field" style="margin-top:10px;">
       <label>กิจกรรมที่ได้ทำในการดูแล (เลือกได้หลายข้อ)</label>
@@ -485,12 +540,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
   <div class="card" id="recManageCard" style="display:none;">
     <h3>🗑 ลบ/แก้ไขบันทึกการเยี่ยมที่มีอยู่แล้ว (เฉพาะ Admin)</h3>
-    <p class="muted">ค้นหาบันทึกการเยี่ยมแยกตาม CG และวันที่ เพื่อแก้ไขหรือลบเป็นรายรูป</p>
+    <p class="muted">กำหนด CG และช่วงวันที่ แล้วกดค้นหา เพื่อเรียกดูบันทึกการเยี่ยมที่ต้องการแก้ไขหรือลบ</p>
     <div class="row">
       <div class="field"><label>CG</label><select id="recManageCg"><option value="">ทุก CG</option></select></div>
-      <div class="field"><label>วันที่เยี่ยม</label><input type="date" id="recManageDate"></div>
+      <div class="field"><label>วันที่เริ่มต้น</label><input type="date" id="recManageDateFrom"></div>
+      <div class="field"><label>วันที่สิ้นสุด</label><input type="date" id="recManageDateTo"></div>
     </div>
-    <div id="recManageList" style="margin-top:12px;"></div>
+    <button class="btn btn-secondary" id="recManageSearchBtn" style="margin-top:10px;">🔍 ค้นหาบันทึกการเยี่ยม</button>
+    <div id="recManageList" style="margin-top:14px;"></div>
   </div>
 </section>
 
@@ -784,9 +841,29 @@ const TH_DOW = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 
 const MEDICATION_LABELS = {'1':'กินยาสม่ำเสมอ','2':'กินยาไม่สม่ำเสมอ','3':'ไม่กินยา'};
 const DAILY_ACTIVITY_LABELS = {'1':'ช่วยเหลือตัวเองได้','2':'ช่วยเหลือตัวเองได้เล็กน้อย','3':'ต้องให้ญาติช่วยดูแล','4':'ช่วยเหลือตัวเองไม่ได้'};
-const ELIMINATION_LABELS = {'1':'ปกติ','2':'ดูแลสายสวนปัสสาวะ','3':'มีปัญหาการขับถ่าย'};
-const FEEDING_LABELS = {'1':'รับประทานเอง','2':'CG ป้อนอาหาร','3':'ให้อาหารทางสายยาง'};
-const FOODTYPE_LABELS = {'1':'อาหารธรรมดา','2':'อาหารอ่อน','3':'อาหารแข็ง'};
+const ELIMINATION_LABELS = {'1':'ปกติ','2':'ใช้สายสวนปัสสาวะ','3':'มีปัญหาการขับถ่าย'};
+const FEEDING_LABELS = {'1':'รับประทานเอง','2':'ผู้ดูแลหรือญาติต้องป้อนอาหาร','3':'ให้อาหารทางสายยาง'};
+const FOODTYPE_LABELS = {'1':'อาหารธรรมดา','2':'อาหารอ่อน','3':'อาหารแยกตามประเภท'};
+const FOODTYPE_DETAIL_LABELS = {'1':'อาหารธรรมดา','2':'อาหารอ่อน','3':'อาหารบดละเอียด','4':'อาหารปั่น','5':'อาหารเหลว','6':'อาหารทางสายให้อาหาร (NG Tube)','7':'อาหารทางการแพทย์สูตรเฉพาะโรค'};
+const MENTAL_HEALTH_LABELS = {'1':'ปกติ แจ่มใส ร่าเริง','2':'วิตกกังวล / เครียด','3':'ซึมเศร้า เบื่อหน่าย','4':'หงุดหงิดง่าย / ก้าวร้าว','5':'สับสน ไม่รับรู้เวลา สถานที่ หรือบุคคล'};
+const REHAB_ACTIVITY_LABELS = {
+  '1':'ประเมินสภาพร่างกายและความสามารถในการทำกิจวัตรประจำวัน (ADL)',
+  '2':'จัดท่าทางที่ถูกต้องและเปลี่ยนท่าทุก 2 ชั่วโมง',
+  '3':'บริหารข้อและกล้ามเนื้อ (ROM Exercise)',
+  '4':'ฝึกการลุกนั่งจากเตียง',
+  '5':'ฝึกการทรงตัว',
+  '6':'ฝึกยืน',
+  '7':'ฝึกเดินด้วยอุปกรณ์ช่วยเดิน',
+  '8':'ฝึกการเคลื่อนย้ายตัว (เตียง–รถเข็น–เก้าอี้)',
+  '9':'ฝึกกิจวัตรประจำวัน (ADL) เช่น แต่งตัว อาบน้ำ รับประทานอาหาร',
+  '10':'นวดผ่อนคลายกล้ามเนื้อ',
+  '11':'ยืดเหยียดกล้ามเนื้อเพื่อลดการหดรั้ง',
+  '12':'กระตุ้นการไหลเวียนโลหิตและป้องกันข้อยึดติด',
+  '13':'ฝึกการหายใจและการไออย่างมีประสิทธิภาพ',
+  '14':'ดูแลและป้องกันแผลกดทับ',
+  '15':'ให้คำแนะนำผู้ดูแลในการฟื้นฟูร่างกายที่บ้าน',
+  '16':'ติดตามและประเมินผลการฟื้นฟู'
+};
 const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2':'ดูแลความสะอาดร่างกายคนไข้','3':'ดูแลสภาพแวดล้อมทั่วไป','4':'ช่วยเหลือญาติทำกิจกรรม','5':'ให้กำลังใจญาติและผู้ป่วย'};
 const ADL_EMOJI = {'1':'🟢','2':'🟡','3':'🟠','4':'🔴'};
 
@@ -1677,6 +1754,7 @@ function renderDrill(){
         if(a.vitals && a.vitals.pr) parts.push(`PR ${a.vitals.pr}`);
         if(a.vitals && a.vitals.temp) parts.push(`T ${a.vitals.temp}°C`);
         if(a.adlScore!==undefined && a.adlScore!=='') parts.push(`ADL ${a.adlScore}`);
+        if(a.mentalHealth) parts.push(`จิตใจ: ${MENTAL_HEALTH_LABELS[a.mentalHealth]||'-'}`);
         if(parts.length) assessHtml = `<br><span class="muted">${parts.join(' | ')}</span>`;
       }
       return `
@@ -1718,29 +1796,37 @@ function deleteVisit(vid){
   });
 }
 
-/* ---- ลบ/แก้ไขบันทึกการเยี่ยม แยกตาม CG และวันที่ (เฉพาะ Admin) ---- */
+/* ---- ลบ/แก้ไขบันทึกการเยี่ยม แยกตาม CG และช่วงวันที่ (เฉพาะ Admin) ---- */
 function renderRecManageList(){
   const listEl = document.getElementById('recManageList');
   const cgSel = document.getElementById('recManageCg');
-  const dateInput = document.getElementById('recManageDate');
-  if(!listEl || !cgSel || !dateInput) return;
+  const fromInput = document.getElementById('recManageDateFrom');
+  const toInput = document.getElementById('recManageDateTo');
+  if(!listEl || !cgSel || !fromInput || !toInput) return;
   const cgFilter = cgSel.value;
-  const dateFilter = dateInput.value;
+  const dateFrom = fromInput.value;
+  const dateTo = toInput.value;
+
+  if(!cgFilter && !dateFrom && !dateTo){
+    listEl.innerHTML = '<p class="muted">กรุณาเลือก CG และ/หรือกำหนดช่วงวันที่ แล้วกด "ค้นหาบันทึกการเยี่ยม"</p>';
+    return;
+  }
+  if(dateFrom && dateTo && dateFrom > dateTo){
+    listEl.innerHTML = '<p class="muted" style="color:var(--danger);">ช่วงวันที่ไม่ถูกต้อง: วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด</p>';
+    return;
+  }
   const entries = Object.entries(STATE.visits||{}).filter(([vid,v])=>{
     if(cgFilter && v.cgCode !== cgFilter) return false;
-    if(dateFilter && v.visitDate !== dateFilter) return false;
+    if(dateFrom && v.visitDate < dateFrom) return false;
+    if(dateTo && v.visitDate > dateTo) return false;
     return true;
   }).sort((a,b)=> (b[1].visitDate||'').localeCompare(a[1].visitDate||''));
 
-  if(!cgFilter && !dateFilter){
-    listEl.innerHTML = '<p class="muted">เลือก CG และ/หรือวันที่ เพื่อค้นหาบันทึกการเยี่ยมที่ต้องการแก้ไขหรือลบ</p>';
-    return;
-  }
   if(entries.length === 0){
     listEl.innerHTML = '<p class="muted">ไม่พบบันทึกการเยี่ยมตามเงื่อนไขที่เลือก</p>';
     return;
   }
-  listEl.innerHTML = `<div class="photo-grid">${entries.map(([vid,v])=>`
+  listEl.innerHTML = `<p class="muted" style="margin-bottom:8px;">พบ ${entries.length} รายการ</p><div class="photo-grid">${entries.map(([vid,v])=>`
     <div class="photo-card">
       <img src="${v.photoUrl}" crossorigin="anonymous">
       <div class="pc-body">${formatThaiDate(v.visitDate)}<br><span class="muted">${v.elderlyName||'-'} (${v.cgName||'-'})</span>${v.note?('<br><span class="muted">'+v.note+'</span>'):''}</div>
@@ -1750,8 +1836,7 @@ function renderRecManageList(){
       </div>
     </div>`).join('')}</div>`;
 }
-document.getElementById('recManageCg').addEventListener('change', renderRecManageList);
-document.getElementById('recManageDate').addEventListener('change', renderRecManageList);
+document.getElementById('recManageSearchBtn').addEventListener('click', renderRecManageList);
 
 /* =============================================================
    RECORD VISIT TAB
@@ -1807,6 +1892,15 @@ document.getElementById('recPhotos').addEventListener('change', e=>{
   document.getElementById('recPhotoCount').textContent = `เลือกแล้ว ${e.target.files.length} รูป`;
 });
 
+document.getElementById('recFoodType').addEventListener('change', function(){
+  document.getElementById('recFoodTypeDetailWrap').style.display = (this.value === '3') ? 'block' : 'none';
+});
+document.getElementById('recRehabOther').addEventListener('change', function(){
+  const otherText = document.getElementById('recRehabOtherText');
+  otherText.style.display = this.checked ? 'block' : 'none';
+  if(!this.checked) otherText.value = '';
+});
+
 document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   const cgCode = document.getElementById('recCg').value;
   const elderlyId = document.getElementById('recElderly').value;
@@ -1827,6 +1921,10 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     }
   }
   const careActivities = Array.from(document.querySelectorAll('.recCareActivity:checked')).map(cb=>cb.value);
+  const foodTypeDetail = Array.from(document.querySelectorAll('.recFoodTypeDetail:checked')).map(cb=>cb.value);
+  const rehabActivities = Array.from(document.querySelectorAll('.recRehabActivity:checked')).map(cb=>cb.value);
+  const rehabOtherChecked = document.getElementById('recRehabOther').checked;
+  const rehabOtherText = document.getElementById('recRehabOtherText').value.trim();
   const assessment = {
     vitals: {
       bpSys: document.getElementById('recBpSys').value || '',
@@ -1840,6 +1938,10 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     elimination: document.getElementById('recElimination').value || '',
     feedingMethod: document.getElementById('recFeedingMethod').value || '',
     foodType: document.getElementById('recFoodType').value || '',
+    foodTypeDetail,
+    mentalHealth: document.getElementById('recMentalHealth').value || '',
+    rehabActivities,
+    rehabOther: rehabOtherChecked ? rehabOtherText : '',
     careActivities,
     adlScore: adlScore===null ? '' : adlScore
   };
@@ -1880,6 +1982,13 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     document.getElementById('recElimination').value='';
     document.getElementById('recFeedingMethod').value='';
     document.getElementById('recFoodType').value='';
+    document.getElementById('recFoodTypeDetailWrap').style.display='none';
+    document.querySelectorAll('.recFoodTypeDetail:checked').forEach(cb=>cb.checked=false);
+    document.getElementById('recMentalHealth').value='';
+    document.querySelectorAll('.recRehabActivity:checked').forEach(cb=>cb.checked=false);
+    document.getElementById('recRehabOther').checked=false;
+    document.getElementById('recRehabOtherText').value='';
+    document.getElementById('recRehabOtherText').style.display='none';
     document.getElementById('recAdlScore').value='';
     document.querySelectorAll('.recCareActivity:checked').forEach(cb=>cb.checked=false);
     STATE.selectedDates = [];
@@ -2335,9 +2444,15 @@ function buildVisitBlockHTML(v, elderly, cg){
   const elimLabel = ELIMINATION_LABELS[a.elimination] || '-';
   const feedLabel = FEEDING_LABELS[a.feedingMethod] || '-';
   const foodLabel = FOODTYPE_LABELS[a.foodType] || '-';
+  const foodDetailList = (a.foodTypeDetail||[]).map(c=>FOODTYPE_DETAIL_LABELS[c]).filter(Boolean);
+  const foodDetailText = foodDetailList.length ? ` [${foodDetailList.join(', ')}]` : '';
+  const mentalLabel = a.mentalHealth ? (MENTAL_HEALTH_LABELS[a.mentalHealth] || '-') : '';
   const adlText = (a.adlScore!==undefined && a.adlScore!=='') ? a.adlScore : '-';
   const careList = (a.careActivities||[]).map(c=>CARE_ACTIVITY_LABELS[c]).filter(Boolean);
   const careText = careList.length ? careList.join(', ') : '-';
+  const rehabList = (a.rehabActivities||[]).map(c=>REHAB_ACTIVITY_LABELS[c]).filter(Boolean);
+  if(a.rehabOther) rehabList.push(`อื่นๆ: ${a.rehabOther}`);
+  const rehabText = rehabList.length ? rehabList.join(', ') : '';
 
   return `
   <div style="display:flex;gap:10px;border:1px solid var(--border,#D6ECF7);border-radius:8px;padding:8px;margin-bottom:7px;">
@@ -2347,8 +2462,10 @@ function buildVisitBlockHTML(v, elderly, cg){
       <div>CG ผู้เยี่ยม: ${cg?cg.name:'-'}</div>
       <div>BP ${bpText} mmHg &nbsp;|&nbsp; PR ${prText} &nbsp;|&nbsp; RR ${rrText} &nbsp;|&nbsp; T ${tText}°C &nbsp;|&nbsp; ADL ${adlText} คะแนน</div>
       <div>ยา: ${medLabel} &nbsp;|&nbsp; กิจวัตร: ${dailyLabel} &nbsp;|&nbsp; ขับถ่าย: ${elimLabel}</div>
-      <div>อาหาร: ${feedLabel} (${foodLabel})</div>
+      <div>อาหาร: ${feedLabel} (${foodLabel}${foodDetailText})</div>
+      ${mentalLabel ? `<div>สุขภาพจิตและอารมณ์: ${mentalLabel}</div>` : ''}
       <div>กิจกรรมที่ทำ: ${careText}</div>
+      ${rehabText ? `<div>กิจกรรมฟื้นฟูสภาพร่างกาย: ${rehabText}</div>` : ''}
       ${v.note ? `<div style="margin-top:3px;"><b>ปัญหาสำคัญของคนไข้คนนี้คือ:</b> ${v.note}</div>` : ''}
     </div>
   </div>`;
