@@ -108,10 +108,11 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .list-item{display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer;}
 .list-item:hover{background:#f7faf9;}
 .list-item .meta{font-size:12px;color:var(--muted);}
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;}
-.photo-card{background:#fafcfb;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.photo-card img{width:100%;height:100px;object-fit:cover;display:block;}
-.photo-card .pc-body{padding:6px;font-size:11.5px;}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+.photo-card{background:#fafcfb;border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .15s,box-shadow .15s;}
+.photo-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(21,113,186,.2);}
+.photo-card img{width:100%;height:150px;object-fit:cover;display:block;background:#eef2f1;}
+.photo-card .pc-body{padding:8px 9px;font-size:11.5px;line-height:1.5;}
 .photo-card .pc-actions{display:flex;gap:4px;padding:0 6px 6px;}
 .chip{background:#DCF0FA;color:var(--primary-dark);border-radius:16px;padding:4px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px;}
 .chip button{background:none;border:none;color:var(--danger);cursor:pointer;font-weight:700;}
@@ -431,8 +432,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>🔴 ผู้สูงอายุกลุ่ม ADL สีแดง ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
-    <p class="muted">คัดกรองจากคะแนน/กลุ่ม ADL ระดับสีแดง (กลุ่ม 4) ซึ่งเป็นกลุ่มที่มีภาวะพึ่งพิงสูงสุด คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
+    <h3>🔴🟠 ผู้สูงอายุกลุ่ม ADL สีแดงและสีส้ม ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
+    <p class="muted">คัดกรองจากกลุ่ม ADL ระดับสีแดง (กลุ่ม 4) และสีส้ม (กลุ่ม 3) ซึ่งมีภาวะพึ่งพิงสูง แยกกลุ่มให้ดูง่าย พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
@@ -798,6 +799,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <button class="btn btn-ghost" onclick="closeModal('visitPlanModal')">ปิด</button>
     <button class="btn btn-secondary btn-sm" id="visitPlanPdfBtn">📄 บันทึก + ออก PDF</button>
     <button class="btn btn-secondary btn-sm" id="visitPlanExcelBtn">📊 บันทึก + ออก Excel</button>
+    <button class="btn btn-secondary btn-sm" id="visitPlanRegistryBtn">🖨 ออกทะเบียนเยี่ยมบ้าน (ให้ญาติเซ็น)</button>
     <button class="btn btn-primary" id="visitPlanSaveBtn">💾 บันทึกแผนการเยี่ยมทั้งหมด</button>
   </div>
 </div></div>
@@ -1099,20 +1101,18 @@ db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onData
 db.ref('visitPlans').on('value', snap=>{ STATE.visitPlans = snap.val()||{}; });
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
-   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
-   และสร้างบัญชี "ผู้ใช้งานทั่วไป" แบบดูอย่างเดียว (username: TOP / password: TOP) ถ้ายังไม่มี */
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
 db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
   if(Object.keys(STATE.users).length === 0){
     db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() },
-      U_VIEWER_SEED: { username:'TOP', password:'TOP', displayName:'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)', idCard:'', address:'', phone:'', role:'viewer', cgCode:'', permissions: permsFromRoleTabs('viewer'), createdAt: Date.now() }
-    });
-  } else if(!Object.values(STATE.users).some(u=>u.username==='TOP')){
-    db.ref('users/U_VIEWER_SEED').set({
-      username:'TOP', password:'TOP', displayName:'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)', idCard:'', address:'', phone:'', role:'viewer', cgCode:'', permissions: permsFromRoleTabs('viewer'), createdAt: Date.now()
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
     });
   }
+  /* ลบบัญชี "ผู้ใช้งานทั่วไป" (TOP/TOP) ที่เคยสร้างไว้ก่อนหน้านี้ทิ้งอัตโนมัติ ถ้ายังพบอยู่ในระบบ */
+  Object.entries(STATE.users).forEach(([uid,u])=>{
+    if(u.username === 'TOP'){ db.ref('users/'+uid).remove(); }
+  });
   renderUsersTable();
 });
 
@@ -1247,7 +1247,6 @@ const ROLE_TABS = {
   admin:        ['dashboard','record','cg','elderly','equipment','pdf','history','users'],
   care_manager: ['dashboard','record','cg','elderly','equipment','pdf','history'],
   cg:           ['dashboard','record','equipment'],
-  viewer:       ['dashboard','record','cg','elderly','equipment','pdf','history'],
   unassigned:   ['dashboard'],
   public:       ['dashboard']
 };
@@ -1255,7 +1254,6 @@ const ROLE_LABELS = {
   admin: 'ผู้ดูแลระบบ (Admin)',
   care_manager: 'Care Manager (CM)',
   cg: 'CG (ผู้ดูแลผู้สูงอายุ)',
-  viewer: 'ผู้ใช้งานทั่วไป (ดูข้อมูลอย่างเดียว)',
   unassigned: 'ยังไม่กำหนดบทบาท',
   public: 'บุคคลทั่วไป'
 };
@@ -1830,21 +1828,34 @@ function renderDashboard(){
   }).join('');
   document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
 
-  /* ผู้สูงอายุกลุ่ม ADL สีแดง (กลุ่ม 4) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
+  /* ผู้สูงอายุกลุ่ม ADL สีแดง (กลุ่ม 4) และสีส้ม (กลุ่ม 3) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
   const attentionCard = document.getElementById('attentionCard');
   if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
     attentionCard.style.display = 'block';
-    const redGroupData = elderlyIds.filter(id=>String(STATE.elderly[id].adlGroup)==='4').map(id=>{
-      const e = STATE.elderly[id];
-      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
-      const target = parseInt(e.visitsPerMonth,10) || 5;
-      return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target };
-    }).sort((a,b)=>a.cnt-b.cnt);
-    document.getElementById('attentionList').innerHTML = redGroupData.length ? redGroupData.map(x=>`
-      <div class="list-item" onclick="openAttentionDetail('${x.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
-        <span><span class="adl-dot adl-4"></span>${x.name} <span class="muted" style="font-size:12px;">(CG: ${x.cgName})</span></span>
-        <span class="status-tag ${x.cnt>=x.target?'approved':'disabled'}">เยี่ยมแล้ว ${x.cnt}/${x.target} ครั้งเดือนนี้ ›</span>
-      </div>`).join('') : '<p class="muted">ไม่มีผู้สูงอายุกลุ่ม ADL สีแดงในระบบขณะนี้</p>';
+    function buildAdlGroupList(groupCode){
+      return elderlyIds.filter(id=>String(STATE.elderly[id].adlGroup)===groupCode).map(id=>{
+        const e = STATE.elderly[id];
+        const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+        const target = parseInt(e.visitsPerMonth,10) || 5;
+        return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target };
+      }).sort((a,b)=>a.cnt-b.cnt);
+    }
+    function renderAdlGroupSection(list, dotClass){
+      if(list.length === 0) return '<p class="muted" style="margin-bottom:14px;">ไม่มีผู้สูงอายุในกลุ่มนี้ขณะนี้</p>';
+      return list.map(x=>`
+        <div class="list-item" onclick="openAttentionDetail('${x.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+          <span><span class="adl-dot ${dotClass}"></span>${x.name} <span class="muted" style="font-size:12px;">(CG: ${x.cgName})</span></span>
+          <span class="status-tag ${x.cnt>=x.target?'approved':'disabled'}">เยี่ยมแล้ว ${x.cnt}/${x.target} ครั้งเดือนนี้ ›</span>
+        </div>`).join('');
+    }
+    const redList = buildAdlGroupList('4');
+    const orangeList = buildAdlGroupList('3');
+    document.getElementById('attentionList').innerHTML = `
+      <div style="font-weight:700;color:#D8503A;margin-bottom:6px;">🔴 กลุ่มสีแดง (กลุ่ม ADL 4) — ${redList.length} คน</div>
+      ${renderAdlGroupSection(redList,'adl-4')}
+      <div style="font-weight:700;color:#EF6C00;margin:14px 0 6px;">🟠 กลุ่มสีส้ม (กลุ่ม ADL 3) — ${orangeList.length} คน</div>
+      ${renderAdlGroupSection(orangeList,'adl-3')}
+    `;
   } else {
     attentionCard.style.display = 'none';
   }
@@ -1857,7 +1868,7 @@ function openAttentionDetail(id){
   const cgName = STATE.cgs[e.cgCode]?.name || '-';
   document.getElementById('attentionDetailBody').innerHTML = `
     <div>CG ผู้ดูแล: <b>${cgName}</b></div>
-    <div>อายุ: ${e.age||'-'} ปี &nbsp;|&nbsp; คะแนน ADL: ${(e.adlScore!==undefined && e.adlScore!=='') ? e.adlScore : '-'} &nbsp;|&nbsp; กลุ่ม ADL: <span class="adl-dot adl-4"></span>${e.adlGroup||'-'}</div>
+    <div>อายุ: ${e.age||'-'} ปี &nbsp;|&nbsp; คะแนน ADL: ${(e.adlScore!==undefined && e.adlScore!=='') ? e.adlScore : '-'} &nbsp;|&nbsp; กลุ่ม ADL: <span class="adl-dot adl-${e.adlGroup||''}"></span>${e.adlGroup||'-'}</div>
     <div style="margin-top:10px;">📞 เบอร์โทรศัพท์ญาติ: <b>${e.relativePhone||'-'}</b></div>
     <div>🧑‍⚕️ อสม. ผู้รับผิดชอบใกล้บ้าน: <b>${e.vhvName||'-'}</b></div>
     <div>📞 เบอร์โทรศัพท์ อสม.: <b>${e.vhvPhone||'-'}</b></div>
@@ -1886,20 +1897,33 @@ function openCgVisitStatus(cgCode){
 }
 
 /* ---- Drill down ---- */
+function isCgScopedUser(){
+  return !!(CURRENT_USER && CURRENT_USER.role === 'cg' && CURRENT_USER.cgCode);
+}
 function renderDrillBreadcrumb(){
   const bc = document.getElementById('drillBreadcrumb');
-  let html = `<span onclick="drillGoto(1)">CG ทั้งหมด</span>`;
-  if(STATE.drillLevel>=2){ html += `<span class="sep">›</span><span onclick="drillGoto(2)">${STATE.cgs[STATE.drillCg]?.name||STATE.drillCg}</span>`; }
+  let html;
+  if(isCgScopedUser()){
+    html = `<span onclick="drillGoto(2)">${STATE.cgs[CURRENT_USER.cgCode]?.name || 'รายงานของฉัน'}</span>`;
+  } else {
+    html = `<span onclick="drillGoto(1)">CG ทั้งหมด</span>`;
+    if(STATE.drillLevel>=2){ html += `<span class="sep">›</span><span onclick="drillGoto(2)">${STATE.cgs[STATE.drillCg]?.name||STATE.drillCg}</span>`; }
+  }
   if(STATE.drillLevel>=3){ html += `<span class="sep">›</span><span>${STATE.elderly[STATE.drillElderly]?.name||STATE.drillElderly}</span>`; }
   bc.innerHTML = html;
 }
 function drillGoto(level){
+  if(isCgScopedUser() && level < 2) level = 2;
   STATE.drillLevel = level;
   if(level===1){ STATE.drillCg=null; STATE.drillElderly=null; }
-  if(level===2){ STATE.drillElderly=null; }
+  if(level===2){ STATE.drillElderly=null; if(isCgScopedUser()) STATE.drillCg = CURRENT_USER.cgCode; }
   renderDrill();
 }
 function renderDrill(){
+  if(isCgScopedUser() && STATE.drillLevel < 2){
+    STATE.drillLevel = 2;
+    STATE.drillCg = CURRENT_USER.cgCode;
+  }
   renderDrillBreadcrumb();
   const content = document.getElementById('drillContent');
   if(STATE.drillLevel===1){
@@ -2568,6 +2592,95 @@ document.getElementById('visitPlanExcelBtn').addEventListener('click', async ()=
     XLSX.writeFile(wb, `แผนการเยี่ยมบ้าน_${cgName}_${monthLabel}${yBE}.xlsx`);
     progressEl.textContent = '';
     toast('บันทึกและออกรายงาน Excel สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาด: '+err.message,'error');
+    progressEl.textContent = '';
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ---- ทะเบียนเยี่ยมบ้านสำหรับ CG ถือไปให้ญาติเซ็นรับรอง ตามแผน 1 แผ่น A4 ต่อ 1 วัน ต่อ CG ---- */
+function buildVisitRegistryPageHTML(cgName, dateIso, rowCount, monthLabel, yBE){
+  let rowsHtml = '';
+  for(let i=1;i<=rowCount;i++){
+    rowsHtml += `<tr>
+      <td style="padding:14px 8px;border:1px solid #999;text-align:center;">${i}</td>
+      <td style="padding:14px 8px;border:1px solid #999;"></td>
+      <td style="padding:14px 8px;border:1px solid #999;width:90px;"></td>
+      <td style="padding:14px 8px;border:1px solid #999;width:150px;"></td>
+    </tr>`;
+  }
+  return `
+  <div style="width:754px;min-height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:16px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">ทะเบียนควบคุมการเยี่ยมบ้านผู้สูงอายุที่มีภาวะพึ่งพิง</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:58px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:22px 30px;flex:1;font-size:13px;color:#1B2E3B;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+        <div>CG ผู้เยี่ยม: <b>${cgName}</b></div>
+        <div>วันที่เยี่ยม: <b>${formatThaiDate(dateIso)}</b> (${monthLabel} ${yBE})</div>
+      </div>
+      <p style="font-size:11.5px;color:#5B7A8C;margin:0 0 10px;">ใช้สำหรับให้ญาติ/ผู้รับการเยี่ยมลงลายมือชื่อรับรองว่าได้รับการเยี่ยมบ้านจาก CG จริงตามแผนของวันดังกล่าว</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;">
+          <th style="padding:8px;border:1px solid #999;width:45px;">ลำดับ</th>
+          <th style="padding:8px;border:1px solid #999;">ลายมือชื่อญาติ/ผู้รับการเยี่ยม (รับรองว่าได้รับการเยี่ยมจริง)</th>
+          <th style="padding:8px;border:1px solid #999;">เวลา</th>
+          <th style="padding:8px;border:1px solid #999;">หมายเหตุ</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div style="margin-top:50px;text-align:right;">
+        <div>ลงชื่อ CG ผู้เยี่ยม ..................................................... </div>
+        <div style="margin-top:6px;">( ${cgName} )</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:8px 0;">
+      ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+document.getElementById('visitPlanRegistryBtn').addEventListener('click', async ()=>{
+  if(blockIfReadOnly()) return;
+  const progressEl = document.getElementById('visitPlanProgress');
+  const btn = document.getElementById('visitPlanRegistryBtn');
+  try{
+    btn.disabled = true;
+    progressEl.textContent = 'กำลังบันทึกแผนก่อนออกทะเบียน...';
+    await saveVisitPlanAll();
+    const { cg, monthLabel, yBE } = buildVisitPlanUpdates();
+    const cgName = cg ? cg.name : visitPlanCurrentCg;
+
+    const dateCounts = {};
+    Object.values(visitPlanWorking).forEach(set=>{
+      set.forEach(ds=>{ dateCounts[ds] = (dateCounts[ds]||0) + 1; });
+    });
+    const dates = Object.keys(dateCounts).sort();
+    if(dates.length === 0){ toast('ยังไม่มีวันที่วางแผนไว้ ไม่สามารถออกทะเบียนได้ กรุณากำหนดวันที่ก่อน','error'); progressEl.textContent=''; return; }
+
+    const root = document.getElementById('pdfRenderRoot');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    for(let i=0;i<dates.length;i++){
+      progressEl.textContent = `กำลังสร้างหน้า ${i+1}/${dates.length}`;
+      root.innerHTML = buildVisitRegistryPageHTML(cgName, dates[i], dateCounts[dates[i]], monthLabel, yBE);
+      await new Promise(r=>setTimeout(r,300));
+      const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,0,210,297);
+    }
+    root.innerHTML = '';
+    pdf.save(`ทะเบียนเยี่ยมบ้าน_${cgName}_${monthLabel}${yBE}.pdf`);
+    progressEl.textContent = '';
+    toast(`บันทึกและออกทะเบียนเยี่ยมบ้านสำเร็จ (${dates.length} วัน)`,'success');
   }catch(err){
     console.error(err);
     toast('เกิดข้อผิดพลาด: '+err.message,'error');
