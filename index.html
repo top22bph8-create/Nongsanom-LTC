@@ -64,6 +64,12 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .ms-toggle span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(21,113,186,.18);padding:8px;max-height:280px;overflow-y:auto;}
 .ms-panel.open{display:block;}
+.plan-elderly-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.plan-elderly-card .plan-elderly-name{font-weight:600;font-size:13.5px;color:var(--primary-dark);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.plan-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.plan-day-btn{border:1px solid var(--border);border-radius:6px;background:#fff;font-size:12px;padding:5px 0;cursor:pointer;color:var(--text);transition:background .15s,color .15s,border-color .15s;}
+.plan-day-btn:hover{border-color:var(--primary);}
+.plan-day-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700;}
 textarea{resize:vertical;min-height:60px;}
 .btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:filter .15s,transform .1s,box-shadow .15s;}
 .btn:hover{filter:brightness(1.06);box-shadow:0 3px 10px rgba(21,113,186,.18);}
@@ -735,6 +741,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferElderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="transferElderlySaveBtn">ย้ายผู้ที่เลือก</button></div>
 </div></div>
 
+<div class="modal-overlay" id="visitPlanModal"><div class="modal-box" style="max-width:640px;">
+  <h3 id="visitPlanTitle">แผนการเยี่ยมบ้าน</h3>
+  <input type="hidden" id="visitPlanCgCode">
+  <p class="muted">กำหนดวันที่ที่วางแผนจะไปเยี่ยมล่วงหน้าเป็นรายบุคคลในแต่ละเดือน ใช้เป็นแผนงาน ไม่ผูกกับการบันทึกรูปเยี่ยมจริง</p>
+  <div class="row">
+    <div class="field"><label>เดือน</label><select id="visitPlanMonth"></select></div>
+    <div class="field"><label>ปี พ.ศ.</label><select id="visitPlanYear"></select></div>
+  </div>
+  <div id="visitPlanList" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow-y:auto;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('visitPlanModal')">ปิด</button><button class="btn btn-primary" id="visitPlanSaveBtn">💾 บันทึกแผนการเยี่ยมทั้งหมด</button></div>
+</div></div>
+
 <div class="modal-overlay" id="elderlyModal"><div class="modal-box">
   <h3 id="elderlyModalTitle">เพิ่มผู้สูงอายุ</h3>
   <input type="hidden" id="elderlyEditId">
@@ -983,7 +1001,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -1029,6 +1047,7 @@ db.ref('cgs').on('value', snap=>{ STATE.cgs = snap.val()||{}; onDataChange(); })
 db.ref('elderly').on('value', snap=>{ STATE.elderly = snap.val()||{}; onDataChange(); });
 db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange(); });
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
+db.ref('visitPlans').on('value', snap=>{ STATE.visitPlans = snap.val()||{}; });
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
    (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
@@ -2073,6 +2092,7 @@ function renderCgTable(){
       <td>${code}</td><td>${cg.name}</td><td>${cg.idCard||'-'}</td><td>${cg.phone||'-'}</td><td>${cg.moo||'-'}</td><td>${count}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openEditCg('${code}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="openVisitPlan('${code}')">📅 แผนการเยี่ยม</button>
         <button class="btn btn-ghost btn-sm" onclick="openTransferElderly('${code}')">🔄 ย้ายผู้สูงอายุ</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCg('${code}')">🗑</button>
       </td>
@@ -2126,6 +2146,92 @@ document.getElementById('transferElderlySaveBtn').addEventListener('click', ()=>
       toast(`ย้ายผู้สูงอายุ ${selected.length} คน สำเร็จ`,'success');
       closeModal('transferElderlyModal');
     });
+  });
+});
+
+/* =============================================================
+   แผนการเยี่ยมบ้านผู้สูงอายุ (รายบุคคล ต่อเดือน ต่อ CG)
+============================================================= */
+const visitPlanMonthSel = document.getElementById('visitPlanMonth');
+const visitPlanYearSel = document.getElementById('visitPlanYear');
+fillMonthYearSelects(visitPlanMonthSel, visitPlanYearSel);
+let visitPlanWorking = {}; // { elderlyId: Set of 'YYYY-MM-DD' }
+let visitPlanCurrentCg = '';
+
+function openVisitPlan(cgCode){
+  visitPlanCurrentCg = cgCode;
+  const cg = STATE.cgs[cgCode];
+  document.getElementById('visitPlanCgCode').value = cgCode;
+  document.getElementById('visitPlanTitle').textContent = `แผนการเยี่ยมบ้าน - ${cg ? cg.name : cgCode}`;
+  renderVisitPlanList();
+  openModal('visitPlanModal');
+}
+visitPlanMonthSel.addEventListener('change', renderVisitPlanList);
+visitPlanYearSel.addEventListener('change', renderVisitPlanList);
+
+function renderVisitPlanList(){
+  const cgCode = visitPlanCurrentCg;
+  if(!cgCode) return;
+  const m = parseInt(visitPlanMonthSel.value,10);
+  const yBE = parseInt(visitPlanYearSel.value,10);
+  const y = yBE - 543;
+  const yearMonth = `${yBE}-${pad2(m)}`;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const firstDow = new Date(y, m-1, 1).getDay();
+
+  const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cgCode && STATE.elderly[id].status!=='discharged').sort();
+  visitPlanWorking = {};
+  const listEl = document.getElementById('visitPlanList');
+  if(elderlyIds.length === 0){
+    listEl.innerHTML = '<p class="muted">CG นี้ไม่มีผู้สูงอายุในความรับผิดชอบ</p>';
+    return;
+  }
+  listEl.innerHTML = elderlyIds.map(id=>{
+    const e = STATE.elderly[id];
+    const existing = STATE.visitPlans[id+'_'+yearMonth];
+    const existingDates = existing ? (existing.dates||[]) : [];
+    visitPlanWorking[id] = new Set(existingDates);
+    let dowHtml = TH_DOW.map(d=>`<div style="text-align:center;font-size:10.5px;color:var(--muted);">${d}</div>`).join('');
+    let dayCells = '';
+    for(let i=0;i<firstDow;i++) dayCells += `<div></div>`;
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = dateStr(y, m-1, d);
+      const sel = existingDates.includes(ds) ? 'selected' : '';
+      dayCells += `<button type="button" class="plan-day-btn ${sel}" data-elderly="${id}" data-date="${ds}" onclick="togglePlanDay('${id}','${ds}',this)">${d}</button>`;
+    }
+    return `<div class="plan-elderly-card">
+      <div class="plan-elderly-name"><span>👴 ${e.name}</span><span class="muted" id="planCount_${id}" style="font-weight:400;font-size:12px;">วางแผนไว้ ${existingDates.length} วัน</span></div>
+      <div class="plan-day-grid">${dowHtml}${dayCells}</div>
+    </div>`;
+  }).join('');
+}
+function togglePlanDay(elderlyId, ds, btn){
+  const set = visitPlanWorking[elderlyId];
+  if(set.has(ds)){ set.delete(ds); btn.classList.remove('selected'); }
+  else{ set.add(ds); btn.classList.add('selected'); }
+  const countEl = document.getElementById('planCount_'+elderlyId);
+  if(countEl) countEl.textContent = `วางแผนไว้ ${set.size} วัน`;
+}
+document.getElementById('visitPlanSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const cgCode = visitPlanCurrentCg;
+  const cg = STATE.cgs[cgCode];
+  const m = parseInt(visitPlanMonthSel.value,10);
+  const yBE = parseInt(visitPlanYearSel.value,10);
+  const yearMonth = `${yBE}-${pad2(m)}`;
+  const updates = {};
+  Object.keys(visitPlanWorking).forEach(elderlyId=>{
+    const e = STATE.elderly[elderlyId];
+    const dates = Array.from(visitPlanWorking[elderlyId]).sort();
+    const key = elderlyId+'_'+yearMonth;
+    updates['visitPlans/'+key] = {
+      elderlyId, elderlyName: e?e.name:'', cgCode, cgName: cg?cg.name:'',
+      yearMonth, dates, updatedAt: Date.now()
+    };
+  });
+  db.ref().update(updates).then(()=>{
+    toast('บันทึกแผนการเยี่ยมทั้งหมดสำเร็จ','success');
+    closeModal('visitPlanModal');
   });
 });
 
@@ -2961,6 +3067,81 @@ function openEditEquipment(id){
   rowsWrap.querySelectorAll('.eq-remove-row').forEach(btn=>btn.style.display='none');
   openModal('equipmentModal');
 }
+/* ---- สัญญายืมครุภัณฑ์การแพทย์ (เฉพาะหมวดครุภัณฑ์ ไม่รวมวัสดุการแพทย์ซึ่งเป็นของใช้สิ้นเปลือง) ---- */
+function buildLoanContractHTML(payload){
+  const { elderly, cgName, relativePhone, dateReceived, items, contractNo } = payload;
+  const itemRows = items.map((it,i)=>`
+    <tr>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${i+1}</td>
+      <td style="padding:7px 8px;border:1px solid #999;">${it.itemType}</td>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.itemCode||'-'}</td>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.quantity||'-'}</td>
+    </tr>`).join('');
+  return `
+  <div style="width:754px;min-height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:16px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:19px;font-weight:700;">สัญญายืมครุภัณฑ์การแพทย์</div>
+        <div style="font-size:11.5px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:60px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:26px 34px;flex:1;font-size:13px;color:#1B2E3B;line-height:1.9;">
+      <div style="text-align:right;margin-bottom:10px;">เลขที่สัญญา ${contractNo}</div>
+      <div>ทำที่ ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      <div>วันที่ ${dateReceived ? formatThaiDate(dateReceived) : '-'}</div>
+      <div style="margin-top:14px;">สัญญาฉบับนี้ทำขึ้นระหว่าง ${FACILITY_NAME} ("ผู้ให้ยืม") กับผู้ยืมตามรายละเอียดด้านล่าง</div>
+      <div>ชื่อผู้สูงอายุ/ผู้รับการสนับสนุน: <b>${elderly ? elderly.name : '-'}</b> อายุ ${elderly && elderly.age ? elderly.age : '-'} ปี &nbsp;&nbsp; ผู้ดูแล (CG): ${cgName||'-'}</div>
+      <div>เบอร์โทรศัพท์ญาติ/ผู้ติดต่อ: ${relativePhone||'-'}</div>
+      <div style="margin-top:16px;font-weight:700;">รายการครุภัณฑ์ที่ยืม</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;">
+          <th style="padding:7px 8px;border:1px solid #999;">ลำดับ</th>
+          <th style="padding:7px 8px;border:1px solid #999;">รายการครุภัณฑ์</th>
+          <th style="padding:7px 8px;border:1px solid #999;">เลขครุภัณฑ์</th>
+          <th style="padding:7px 8px;border:1px solid #999;">จำนวน</th>
+        </tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      <div style="margin-top:18px;font-weight:700;">ข้อตกลง</div>
+      <div>1. ผู้ยืมจะดูแลรักษาครุภัณฑ์ที่ยืมให้อยู่ในสภาพดี ใช้งานอย่างถูกวิธี และไม่นำไปใช้ผิดวัตถุประสงค์</div>
+      <div>2. หากครุภัณฑ์ชำรุด สูญหาย หรือเสียหาย ผู้ยืมจะแจ้งให้ ${FACILITY_NAME} ทราบทันที</div>
+      <div>3. ผู้ยืมจะคืนครุภัณฑ์เมื่อเลิกใช้งาน หรือเมื่อ ${FACILITY_NAME} ร้องขอคืน โดยไม่มีเงื่อนไข</div>
+      <div>4. ${FACILITY_NAME} ขอสงวนสิทธิ์ในการเรียกคืนครุภัณฑ์ก่อนกำหนด หากพบว่ามีการใช้งานไม่เหมาะสม</div>
+      <div style="display:flex;justify-content:space-between;margin-top:70px;">
+        <div style="text-align:center;width:45%;">
+          <div>ลงชื่อ .....................................................</div>
+          <div style="margin-top:6px;">( ${elderly ? elderly.name : '.....................................................'} / ผู้แทน )</div>
+          <div>ผู้ยืม</div>
+        </div>
+        <div style="text-align:center;width:45%;">
+          <div>ลงชื่อ .....................................................</div>
+          <div style="margin-top:6px;">( เจ้าหน้าที่ผู้ให้ยืม )</div>
+          <div>ผู้ให้ยืม</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:8px 0;">
+      ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+async function generateEquipmentLoanContractPDF(payload){
+  const root = document.getElementById('pdfRenderRoot');
+  root.innerHTML = buildLoanContractHTML(payload);
+  await new Promise(r=>setTimeout(r,300));
+  const target = root.firstElementChild;
+  const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+  const imgData = canvas.toDataURL('image/jpeg',0.92);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  pdf.addImage(imgData,'JPEG',0,0,210,297);
+  const safeName = (payload.elderly ? payload.elderly.name : 'ผู้ยืม').replace(/[\\/:*?"<>|]/g,'');
+  pdf.save(`สัญญายืมครุภัณฑ์_${safeName}_${payload.contractNo}.pdf`);
+  root.innerHTML = '';
+}
+
 document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const editId = document.getElementById('eqEditId').value;
@@ -2991,7 +3172,15 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
       relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
       quantity: it.quantity, dateReceived, dateReturned, createdAt: Date.now()
     };
-    db.ref('equipment/'+editId).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal'); });
+    db.ref('equipment/'+editId).update(data).then(async ()=>{
+      toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal');
+      if(it.category === 'durable'){
+        await generateEquipmentLoanContractPDF({
+          elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
+          relativePhone, dateReceived, items:[it], contractNo: 'EQC-'+editId
+        });
+      }
+    });
   } else {
     const updates = {};
     const ts = Date.now();
@@ -3003,9 +3192,16 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
         quantity: it.quantity, dateReceived, dateReturned, createdAt: ts
       };
     });
-    db.ref().update(updates).then(()=>{
+    db.ref().update(updates).then(async ()=>{
       toast(`บันทึกสำเร็จ (${items.length} รายการ)`,'success');
       closeModal('equipmentModal');
+      const durableItems = items.filter(it=>it.category==='durable');
+      if(durableItems.length > 0){
+        await generateEquipmentLoanContractPDF({
+          elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
+          relativePhone, dateReceived, items: durableItems, contractNo: 'EQC-'+ts
+        });
+      }
     });
   }
 });
