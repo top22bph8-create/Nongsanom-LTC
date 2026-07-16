@@ -749,8 +749,15 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>เดือน</label><select id="visitPlanMonth"></select></div>
     <div class="field"><label>ปี พ.ศ.</label><select id="visitPlanYear"></select></div>
   </div>
+  <button type="button" class="btn btn-secondary btn-sm" id="visitPlanAutoFillBtn" style="margin-top:10px;">🎲 สร้างแผนอัตโนมัติ (เฉพาะคนที่ CG ยังไม่ได้กำหนดเอง)</button>
   <div id="visitPlanList" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow-y:auto;"></div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('visitPlanModal')">ปิด</button><button class="btn btn-primary" id="visitPlanSaveBtn">💾 บันทึกแผนการเยี่ยมทั้งหมด</button></div>
+  <div class="upload-progress" id="visitPlanProgress"></div>
+  <div class="modal-actions" style="flex-wrap:wrap;">
+    <button class="btn btn-ghost" onclick="closeModal('visitPlanModal')">ปิด</button>
+    <button class="btn btn-secondary btn-sm" id="visitPlanPdfBtn">📄 บันทึก + ออก PDF</button>
+    <button class="btn btn-secondary btn-sm" id="visitPlanExcelBtn">📊 บันทึก + ออก Excel</button>
+    <button class="btn btn-primary" id="visitPlanSaveBtn">💾 บันทึกแผนการเยี่ยมทั้งหมด</button>
+  </div>
 </div></div>
 
 <div class="modal-overlay" id="elderlyModal"><div class="modal-box">
@@ -2212,8 +2219,7 @@ function togglePlanDay(elderlyId, ds, btn){
   const countEl = document.getElementById('planCount_'+elderlyId);
   if(countEl) countEl.textContent = `วางแผนไว้ ${set.size} วัน`;
 }
-document.getElementById('visitPlanSaveBtn').addEventListener('click', ()=>{
-  if(blockIfReadOnly()) return;
+function buildVisitPlanUpdates(){
   const cgCode = visitPlanCurrentCg;
   const cg = STATE.cgs[cgCode];
   const m = parseInt(visitPlanMonthSel.value,10);
@@ -2229,10 +2235,200 @@ document.getElementById('visitPlanSaveBtn').addEventListener('click', ()=>{
       yearMonth, dates, updatedAt: Date.now()
     };
   });
-  db.ref().update(updates).then(()=>{
+  return { updates, cgCode, cg, m, yBE, yearMonth };
+}
+function saveVisitPlanAll(){
+  const { updates } = buildVisitPlanUpdates();
+  return db.ref().update(updates);
+}
+document.getElementById('visitPlanSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  saveVisitPlanAll().then(()=>{
     toast('บันทึกแผนการเยี่ยมทั้งหมดสำเร็จ','success');
     closeModal('visitPlanModal');
   });
+});
+
+/* ---- สร้างแผนอัตโนมัติ: กระจายวันเยี่ยมให้เท่าๆ กันตลอดเดือน เฉพาะคนที่ยังไม่มีวันที่ถูกกำหนดไว้เลย ---- */
+function distributeDatesEvenly(y, m0, daysInMonth, count){
+  // y = ค.ศ., m0 = เดือน (0-indexed), คืนอาร์เรย์วันที่แบบ 'YYYY-MM-DD' กระจายเท่าๆ กันตลอดเดือน
+  count = Math.min(count, daysInMonth);
+  const dates = [];
+  const gap = daysInMonth / count;
+  for(let i=0;i<count;i++){
+    let day = Math.round(gap*i + gap/2);
+    if(day < 1) day = 1;
+    if(day > daysInMonth) day = daysInMonth;
+    dates.push(day);
+  }
+  const uniqueDays = Array.from(new Set(dates)).sort((a,b)=>a-b);
+  // ถ้ามีวันซ้ำกันจนจำนวนไม่ครบ ให้เติมวันที่ใกล้เคียงที่ยังไม่ถูกใช้
+  let d = 1;
+  while(uniqueDays.length < count && d <= daysInMonth){
+    if(!uniqueDays.includes(d)) uniqueDays.push(d);
+    d++;
+  }
+  uniqueDays.sort((a,b)=>a-b);
+  return uniqueDays.slice(0,count).map(d=>dateStr(y, m0, d));
+}
+document.getElementById('visitPlanAutoFillBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const m = parseInt(visitPlanMonthSel.value,10);
+  const yBE = parseInt(visitPlanYearSel.value,10);
+  const y = yBE - 543;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  let filledCount = 0;
+  Object.keys(visitPlanWorking).forEach(elderlyId=>{
+    const set = visitPlanWorking[elderlyId];
+    if(set.size > 0) return; // CG กำหนดเองไว้แล้ว ไม่แตะต้อง
+    const e = STATE.elderly[elderlyId];
+    const required = parseInt(e && e.visitsPerMonth, 10) || 5;
+    const autoDates = distributeDatesEvenly(y, m-1, daysInMonth, required);
+    autoDates.forEach(ds=>set.add(ds));
+    filledCount++;
+    // อัปเดตปุ่มวันที่ในตารางให้ตรงกับที่สุ่มไว้
+    document.querySelectorAll(`.plan-day-btn[data-elderly="${elderlyId}"]`).forEach(btn=>{
+      if(autoDates.includes(btn.dataset.date)) btn.classList.add('selected');
+    });
+    const countEl = document.getElementById('planCount_'+elderlyId);
+    if(countEl) countEl.textContent = `วางแผนไว้ ${set.size} วัน`;
+  });
+  if(filledCount === 0){
+    toast('ทุกคนมีวันที่ที่ CG กำหนดไว้แล้ว ไม่มีรายการให้สร้างแผนอัตโนมัติ','error');
+  } else {
+    toast(`สร้างแผนอัตโนมัติให้ ${filledCount} คนที่ยังไม่ได้กำหนดวันเรียบร้อย (ยังไม่บันทึก กรุณากด "บันทึก")`,'success');
+  }
+});
+
+/* ---- ออกรายงานแผนการเยี่ยมเป็น PDF และ Excel (จะบันทึกแผนปัจจุบันก่อนออกรายงานเสมอ) ---- */
+function buildVisitPlanReportRows(){
+  const { cg, m, yBE } = buildVisitPlanUpdates();
+  const monthLabel = TH_MONTHS_FULL[m-1];
+  const rows = Object.keys(visitPlanWorking).sort((a,b)=>{
+    const nameA = STATE.elderly[a] ? STATE.elderly[a].name : '';
+    const nameB = STATE.elderly[b] ? STATE.elderly[b].name : '';
+    return nameA.localeCompare(nameB,'th');
+  }).map(elderlyId=>{
+    const e = STATE.elderly[elderlyId] || {};
+    const dates = Array.from(visitPlanWorking[elderlyId]).sort();
+    const required = parseInt(e.visitsPerMonth,10) || 5;
+    return {
+      elderlyId, name: e.name||'-', age: e.age||'-', required,
+      planned: dates.length,
+      datesLabel: dates.length ? dates.map(d=>formatThaiDate(d,true)).join(', ') : '- ยังไม่กำหนด -'
+    };
+  });
+  return { rows, cg, monthLabel, yBE };
+}
+
+function buildVisitPlanPdfPageHTML(rowsChunk, cgName, monthLabel, yBE, pageNo, totalPages){
+  const rowsHtml = rowsChunk.map((r,i)=>`
+    <tr>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${i+1}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;">${r.name}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${r.age}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${r.planned}/${r.required}</td>
+      <td style="padding:6px 8px;border:1px solid #ddd;font-size:10.5px;">${r.datesLabel}</td>
+    </tr>`).join('');
+  return `
+  <div style="width:754px;min-height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">แผนการเยี่ยมบ้านผู้สูงอายุ ประจำเดือน ${monthLabel} ${yBE}</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">CG: ${cgName} | ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:54px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:16px 24px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+        <thead>
+          <tr style="background:#EAF6FC;color:#0F5590;">
+            <th style="padding:6px 8px;border:1px solid #ddd;">ลำดับ</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">อายุ</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">วางแผน/เป้าหมาย</th>
+            <th style="padding:6px 8px;border:1px solid #ddd;">วันที่วางแผนเยี่ยม</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      หน้า ${pageNo}/${totalPages} | CG: ${cgName} | ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+
+document.getElementById('visitPlanPdfBtn').addEventListener('click', async ()=>{
+  if(blockIfReadOnly()) return;
+  const progressEl = document.getElementById('visitPlanProgress');
+  const btn = document.getElementById('visitPlanPdfBtn');
+  try{
+    btn.disabled = true;
+    progressEl.textContent = 'กำลังบันทึกแผนก่อนออกรายงาน...';
+    await saveVisitPlanAll();
+    const { rows, cg, monthLabel, yBE } = buildVisitPlanReportRows();
+    if(rows.length === 0){ toast('CG นี้ไม่มีผู้สูงอายุในความรับผิดชอบ','error'); return; }
+    const cgName = cg ? cg.name : visitPlanCurrentCg;
+    const ROWS_PER_PAGE = 16;
+    const pages = [];
+    for(let i=0;i<rows.length;i+=ROWS_PER_PAGE) pages.push(rows.slice(i,i+ROWS_PER_PAGE));
+    const root = document.getElementById('pdfRenderRoot');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    for(let i=0;i<pages.length;i++){
+      progressEl.textContent = `กำลังสร้างหน้า ${i+1}/${pages.length}`;
+      root.innerHTML = buildVisitPlanPdfPageHTML(pages[i], cgName, monthLabel, yBE, i+1, pages.length);
+      await new Promise(r=>setTimeout(r,300));
+      const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,0,210,297);
+    }
+    root.innerHTML = '';
+    pdf.save(`แผนการเยี่ยมบ้าน_${cgName}_${monthLabel}${yBE}.pdf`);
+    progressEl.textContent = '';
+    toast('บันทึกและออกรายงาน PDF สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาด: '+err.message,'error');
+    progressEl.textContent = '';
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('visitPlanExcelBtn').addEventListener('click', async ()=>{
+  if(blockIfReadOnly()) return;
+  const progressEl = document.getElementById('visitPlanProgress');
+  const btn = document.getElementById('visitPlanExcelBtn');
+  try{
+    btn.disabled = true;
+    progressEl.textContent = 'กำลังบันทึกแผนก่อนออกรายงาน...';
+    await saveVisitPlanAll();
+    const { rows, cg, monthLabel, yBE } = buildVisitPlanReportRows();
+    if(rows.length === 0){ toast('CG นี้ไม่มีผู้สูงอายุในความรับผิดชอบ','error'); progressEl.textContent=''; return; }
+    const cgName = cg ? cg.name : visitPlanCurrentCg;
+    const sheetData = rows.map((r,i)=>({
+      'ลำดับ': i+1, 'ชื่อ-สกุล': r.name, 'อายุ': r.age,
+      'วางแผน (ครั้ง)': r.planned, 'เป้าหมาย/เดือน (ครั้ง)': r.required,
+      'วันที่วางแผนเยี่ยม': r.datesLabel
+    }));
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 16) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'แผนการเยี่ยม');
+    XLSX.writeFile(wb, `แผนการเยี่ยมบ้าน_${cgName}_${monthLabel}${yBE}.xlsx`);
+    progressEl.textContent = '';
+    toast('บันทึกและออกรายงาน Excel สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาด: '+err.message,'error');
+    progressEl.textContent = '';
+  }finally{
+    btn.disabled = false;
+  }
 });
 
 document.getElementById('addCgBtn').addEventListener('click', ()=>{
