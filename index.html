@@ -286,6 +286,24 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('cgVisitStatusModal')">ปิด</button></div>
 </div></div>
 
+<div class="modal-overlay" id="attentionDetailModal"><div class="modal-box" style="max-width:420px;">
+  <h3 id="attentionDetailTitle">รายละเอียดผู้สูงอายุ</h3>
+  <div id="attentionDetailBody" style="font-size:14px;line-height:2;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('attentionDetailModal')">ปิด</button></div>
+</div></div>
+
+<div class="modal-overlay" id="photoViewModal"><div class="modal-box" style="max-width:540px;">
+  <h3>📋 ตรวจสอบข้อมูลที่บันทึก</h3>
+  <input type="hidden" id="photoViewVid">
+  <img id="photoViewImg" crossorigin="anonymous" style="width:100%;max-height:60vh;object-fit:contain;background:#f4f4f4;border-radius:10px;margin-bottom:12px;">
+  <div id="photoViewDetails" style="font-size:13.5px;line-height:1.8;color:var(--text);"></div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" onclick="closeModal('photoViewModal')">ปิด</button>
+    <button class="btn btn-secondary" id="photoViewEditBtn">✏️ แก้ไขข้อมูล</button>
+    <button class="btn btn-danger" id="photoViewDeleteBtn">🗑 ลบ</button>
+  </div>
+</div></div>
+
 <div class="modal-overlay" id="changePasswordModal"><div class="modal-box">
   <h3>🔑 เปลี่ยนรหัสผ่านของฉัน</h3>
   <div class="field">
@@ -413,13 +431,13 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>🔍 จุดที่ควรให้ความสนใจ (เยี่ยมน้อยที่สุดในเดือนนี้)</h3>
-    <p class="muted">รายชื่อผู้สูงอายุที่ยังเยี่ยมไม่ครบตามเกณฑ์ เรียงจากน้อยไปมาก เพื่อให้ติดตามได้ง่าย</p>
+    <h3>🔴 ผู้สูงอายุกลุ่ม ADL สีแดง ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
+    <p class="muted">คัดกรองจากคะแนน/กลุ่ม ADL ระดับสีแดง (กลุ่ม 4) ซึ่งเป็นกลุ่มที่มีภาวะพึ่งพิงสูงสุด คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
   <div class="card">
-    <h3>📂 ดูข้อมูลที่บันทึก</h3>
+    <h3>📋 รายงานผลการบันทึกข้อมูล</h3>
     <div class="breadcrumb" id="drillBreadcrumb"></div>
     <div id="drillContent"></div>
   </div>
@@ -1812,24 +1830,39 @@ function renderDashboard(){
   }).join('');
   document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
 
-  /* จุดที่ควรให้ความสนใจ (สำหรับ CM/Admin): ผู้สูงอายุที่เยี่ยมได้สัดส่วนน้อยที่สุดเทียบเป้าหมาย */
+  /* ผู้สูงอายุกลุ่ม ADL สีแดง (กลุ่ม 4) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
   const attentionCard = document.getElementById('attentionCard');
   if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
     attentionCard.style.display = 'block';
-    const attentionData = elderlyIds.map(id=>{
+    const redGroupData = elderlyIds.filter(id=>String(STATE.elderly[id].adlGroup)==='4').map(id=>{
       const e = STATE.elderly[id];
-      const target = parseInt(e.visitsPerMonth,10) || 5;
       const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
-      return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target, pct: target ? cnt/target : 0 };
-    }).filter(x=>x.pct < 1).sort((a,b)=>a.pct-b.pct).slice(0,8);
-    document.getElementById('attentionList').innerHTML = attentionData.length ? attentionData.map(x=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
-        <span>${x.name} <span class="muted" style="font-size:12px;">(CG: ${x.cgName})</span></span>
-        <span class="status-tag disabled">${x.cnt}/${x.target} ครั้ง</span>
-      </div>`).join('') : '<p class="muted">ไม่มีรายการที่ต้องเร่งติดตาม เยี่ยมครบตามเกณฑ์ทุกคนแล้ว 🎉</p>';
+      const target = parseInt(e.visitsPerMonth,10) || 5;
+      return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target };
+    }).sort((a,b)=>a.cnt-b.cnt);
+    document.getElementById('attentionList').innerHTML = redGroupData.length ? redGroupData.map(x=>`
+      <div class="list-item" onclick="openAttentionDetail('${x.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+        <span><span class="adl-dot adl-4"></span>${x.name} <span class="muted" style="font-size:12px;">(CG: ${x.cgName})</span></span>
+        <span class="status-tag ${x.cnt>=x.target?'approved':'disabled'}">เยี่ยมแล้ว ${x.cnt}/${x.target} ครั้งเดือนนี้ ›</span>
+      </div>`).join('') : '<p class="muted">ไม่มีผู้สูงอายุกลุ่ม ADL สีแดงในระบบขณะนี้</p>';
   } else {
     attentionCard.style.display = 'none';
   }
+}
+
+function openAttentionDetail(id){
+  const e = STATE.elderly[id];
+  if(!e) return;
+  document.getElementById('attentionDetailTitle').textContent = e.name;
+  const cgName = STATE.cgs[e.cgCode]?.name || '-';
+  document.getElementById('attentionDetailBody').innerHTML = `
+    <div>CG ผู้ดูแล: <b>${cgName}</b></div>
+    <div>อายุ: ${e.age||'-'} ปี &nbsp;|&nbsp; คะแนน ADL: ${(e.adlScore!==undefined && e.adlScore!=='') ? e.adlScore : '-'} &nbsp;|&nbsp; กลุ่ม ADL: <span class="adl-dot adl-4"></span>${e.adlGroup||'-'}</div>
+    <div style="margin-top:10px;">📞 เบอร์โทรศัพท์ญาติ: <b>${e.relativePhone||'-'}</b></div>
+    <div>🧑‍⚕️ อสม. ผู้รับผิดชอบใกล้บ้าน: <b>${e.vhvName||'-'}</b></div>
+    <div>📞 เบอร์โทรศัพท์ อสม.: <b>${e.vhvPhone||'-'}</b></div>
+  `;
+  openModal('attentionDetailModal');
 }
 
 function openCgVisitStatus(cgCode){
@@ -1898,13 +1931,9 @@ function renderDrill(){
         if(parts.length) assessHtml = `<br><span class="muted">${parts.join(' | ')}</span>`;
       }
       return `
-      <div class="photo-card">
+      <div class="photo-card" style="cursor:pointer;" onclick="openPhotoView('${vid}')">
         <img src="${v.photoUrl}" crossorigin="anonymous">
-        <div class="pc-body">${formatThaiDate(v.visitDate)}${v.note?('<br><span class="muted">'+v.note+'</span>'):''}${assessHtml}</div>
-        <div class="pc-actions">
-          <button class="btn btn-ghost btn-sm" onclick="editVisit('${vid}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteVisit('${vid}')">🗑</button>
-        </div>
+        <div class="pc-body">${formatThaiDate(v.visitDate)}${v.note?('<br><span class="muted">'+v.note+'</span>'):''}${assessHtml}<br><span class="muted" style="font-size:11px;">🔍 คลิกเพื่อตรวจสอบ/แก้ไข</span></div>
       </div>`;
     }).join('');
     content.innerHTML = `<div class="photo-grid">${cards}</div>` || '<p class="muted">ยังไม่มีรูป</p>';
@@ -1921,6 +1950,33 @@ function editVisit(vid){
   document.getElementById('editVisitNote').value = v.note||'';
   openModal('editVisitModal');
 }
+
+/* ป็อปอัพภาพผลการบันทึกเพื่อดูความถูกต้อง พร้อมปุ่มแก้ไข/ลบ กรณี CG บันทึกข้อมูลผิดพลาด */
+function openPhotoView(vid){
+  const v = STATE.visits[vid];
+  if(!v) return;
+  const e = STATE.elderly[v.elderlyId] || {};
+  const a = v.assessment || {};
+  document.getElementById('photoViewVid').value = vid;
+  document.getElementById('photoViewImg').src = v.photoUrl;
+  let html = `<div><b>${v.elderlyName || e.name || '-'}</b> &nbsp;|&nbsp; CG: ${v.cgName || '-'}</div>
+    <div>วันที่เยี่ยม: ${formatThaiDate(v.visitDate)}</div>`;
+  if(a && a.adlScore!==undefined && a.adlScore!==''){ html += `<div>คะแนน ADL ขณะเยี่ยม: ${a.adlScore}</div>`; }
+  if(v.note){ html += `<div style="margin-top:6px;"><b>ปัญหาสำคัญที่บันทึกไว้:</b> ${v.note}</div>`; }
+  document.getElementById('photoViewDetails').innerHTML = html;
+  openModal('photoViewModal');
+}
+document.getElementById('photoViewEditBtn').addEventListener('click', ()=>{
+  const vid = document.getElementById('photoViewVid').value;
+  closeModal('photoViewModal');
+  editVisit(vid);
+});
+document.getElementById('photoViewDeleteBtn').addEventListener('click', ()=>{
+  const vid = document.getElementById('photoViewVid').value;
+  closeModal('photoViewModal');
+  deleteVisit(vid);
+});
+
 document.getElementById('editVisitSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const vid = document.getElementById('editVisitId').value;
@@ -2892,7 +2948,10 @@ const pdfMonthSel = document.getElementById('pdfMonth');
 const pdfYearSel = document.getElementById('pdfYear');
 fillMonthYearSelects(pdfMonthSel, pdfYearSel);
 
-function buildVisitBlockHTML(v, elderly, cg){
+function buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale){
+  imgW = imgW || 118; imgH = imgH || 140; fontScale = fontScale || 1;
+  const baseFont = 10.5 * fontScale;
+  const titleFont = 13 * fontScale;
   const a = v.assessment || {};
   const vitals = a.vitals || {};
   const bpText = (vitals.bpSys || vitals.bpDia) ? `${vitals.bpSys||'-'}/${vitals.bpDia||'-'}` : '-';
@@ -2915,10 +2974,10 @@ function buildVisitBlockHTML(v, elderly, cg){
   const rehabText = rehabList.length ? rehabList.join(', ') : '';
 
   return `
-  <div style="display:flex;gap:10px;border:1px solid var(--border,#D6ECF7);border-radius:8px;padding:8px;margin-bottom:7px;">
-    <img src="${v.photoUrl}" crossorigin="anonymous" style="width:118px;height:140px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid #ddd;">
-    <div style="flex:1;font-size:10.5px;line-height:1.5;color:#1B2E3B;">
-      <div style="font-weight:700;font-size:13px;color:#0F5590;">${elderly.name} <span style="font-weight:400;color:#5B7A8C;font-size:10.5px;">(วันที่ ${formatThaiDate(v.visitDate)})</span></div>
+  <div style="display:flex;gap:12px;border:1px solid var(--border,#D6ECF7);border-radius:8px;padding:10px;margin-bottom:9px;flex:1;">
+    <img src="${v.photoUrl}" crossorigin="anonymous" style="width:${imgW}px;height:${imgH}px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid #ddd;">
+    <div style="flex:1;font-size:${baseFont}px;line-height:1.55;color:#1B2E3B;">
+      <div style="font-weight:700;font-size:${titleFont}px;color:#0F5590;">${elderly.name} <span style="font-weight:400;color:#5B7A8C;font-size:${baseFont}px;">(วันที่ ${formatThaiDate(v.visitDate)})</span></div>
       <div>CG ผู้เยี่ยม: ${cg?cg.name:'-'}</div>
       <div>BP ${bpText} mmHg &nbsp;|&nbsp; PR ${prText} &nbsp;|&nbsp; RR ${rrText} &nbsp;|&nbsp; T ${tText}°C &nbsp;|&nbsp; ADL ${adlText} คะแนน</div>
       <div>ยา: ${medLabel} &nbsp;|&nbsp; กิจวัตร: ${dailyLabel} &nbsp;|&nbsp; ขับถ่าย: ${elimLabel}</div>
@@ -2932,7 +2991,13 @@ function buildVisitBlockHTML(v, elderly, cg){
 }
 
 function buildPdfPageHTML(elderly, cg, visitsChunk, monthLabel, yearBE){
-  const blocks = visitsChunk.map(v=>buildVisitBlockHTML(v, elderly, cg)).join('');
+  const count = visitsChunk.length;
+  let imgW, imgH, fontScale;
+  if(count === 1){ imgW = 280; imgH = 380; fontScale = 1.25; }
+  else if(count === 2){ imgW = 220; imgH = 260; fontScale = 1.1; }
+  else if(count === 3){ imgW = 160; imgH = 190; fontScale = 1; }
+  else { imgW = 118; imgH = 140; fontScale = 0.92; }
+  const blocks = visitsChunk.map(v=>buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale)).join('');
   const notedIssues = visitsChunk.filter(v=>v.note && v.note.trim()).map(v=>`${formatThaiDate(v.visitDate,true)}: ${v.note.trim()}`);
   const adlScores = visitsChunk.map(v=>v.assessment && v.assessment.adlScore).filter(s=>s!==undefined && s!=='');
   const adlSummary = adlScores.length ? `${adlScores.join(', ')} คะแนน` : '-';
@@ -2952,7 +3017,7 @@ function buildPdfPageHTML(elderly, cg, visitsChunk, monthLabel, yearBE){
     <div style="text-align:center;font-size:16px;font-weight:700;color:#0F5590;padding:10px 0 4px;">${elderly.name}</div>
     <div style="text-align:center;font-size:11.5px;color:#5B7A8C;padding-bottom:8px;">อายุ ${elderly.age||'-'} ปี &nbsp;|&nbsp; CG ผู้ดูแล: ${cg?cg.name:'-'} &nbsp;|&nbsp; จำนวน ${visitsChunk.length} ครั้งในหน้านี้</div>
 
-    <div style="padding:0 24px;flex:1;">
+    <div style="padding:0 24px;flex:1;display:flex;flex-direction:column;justify-content:center;">
       ${blocks}
     </div>
 
