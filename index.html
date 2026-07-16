@@ -85,6 +85,18 @@ textarea{resize:vertical;min-height:60px;}
 .stat{background:#EDF8FD;border-radius:10px;padding:10px;text-align:center;}
 .stat b{display:block;font-size:20px;color:var(--primary-dark);}
 .stat span{font-size:11.5px;color:var(--muted);}
+.stat.stat-info{background:#E8F0FB;}
+.stat.stat-info b{color:#185FA5;}
+.stat.stat-success{background:#E8F5E9;}
+.stat.stat-success b{color:#2E7D32;}
+.stat.stat-danger{background:#FDECEA;}
+.stat.stat-danger b{color:#D8503A;}
+.stat.stat-warning{background:#FFF3E0;}
+.stat.stat-warning b{color:#EF6C00;}
+.stat.stat-purple{background:#F1E9FB;}
+.stat.stat-purple b{color:#7B4FA0;}
+.stat.stat-teal{background:#E0F7F5;}
+.stat.stat-teal b{color:#00897B;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);}
 th{color:var(--muted);font-weight:600;font-size:12px;}
@@ -388,10 +400,22 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="stat-grid" id="statTotal"></div>
   </div>
 
+  <div class="card" id="myCgSummaryCard" style="display:none;">
+    <h3>👤 สรุปสำหรับฉัน (CG)</h3>
+    <div class="stat-grid" id="myCgStatGrid"></div>
+    <div id="myCgElderlyList" style="margin-top:12px;"></div>
+  </div>
+
   <div class="card">
     <h3>สถานะ CG รายเดือน</h3>
     <table><thead><tr><th>CG</th><th>ผู้สูงอายุ</th><th>เยี่ยมแล้ว</th><th>ความคืบหน้า</th><th>สถานะตามเกณฑ์การเยี่ยม</th><th></th></tr></thead>
     <tbody id="cgStatusTable"></tbody></table>
+  </div>
+
+  <div class="card" id="attentionCard" style="display:none;">
+    <h3>🔍 จุดที่ควรให้ความสนใจ (เยี่ยมน้อยที่สุดในเดือนนี้)</h3>
+    <p class="muted">รายชื่อผู้สูงอายุที่ยังเยี่ยมไม่ครบตามเกณฑ์ เรียงจากน้อยไปมาก เพื่อให้ติดตามได้ง่าย</p>
+    <div id="attentionList"></div>
   </div>
 
   <div class="card">
@@ -1312,6 +1336,7 @@ function applyAccessControl(u){
   renderDrill();
   renderUsersTable();
   renderRecManageList();
+  renderDashboard();
 }
 
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
@@ -1717,20 +1742,54 @@ function renderDashboard(){
   const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].status!=='discharged');
   const visitedElderlyIds = new Set(monthVisits.map(([id,v])=>v.elderlyId));
   document.getElementById('statMonth').innerHTML = `
-    <div class="stat"><b>${Object.keys(STATE.cgs).length}</b><span>CG ทั้งหมด</span></div>
-    <div class="stat"><b>${elderlyIds.length}</b><span>ผู้สูงอายุ</span></div>
-    <div class="stat"><b>${visitedElderlyIds.size}</b><span>เยี่ยมแล้ว</span></div>
-    <div class="stat"><b>${elderlyIds.length - visitedElderlyIds.size}</b><span>ยังไม่ได้เยี่ยม</span></div>
-    <div class="stat"><b>${monthVisits.length}</b><span>จำนวนครั้ง</span></div>
+    <div class="stat stat-info"><b>${Object.keys(STATE.cgs).length}</b><span>CG ทั้งหมด</span></div>
+    <div class="stat stat-info"><b>${elderlyIds.length}</b><span>ผู้สูงอายุ</span></div>
+    <div class="stat stat-success"><b>${visitedElderlyIds.size}</b><span>เยี่ยมแล้ว</span></div>
+    <div class="stat stat-danger"><b>${elderlyIds.length - visitedElderlyIds.size}</b><span>ยังไม่ได้เยี่ยม</span></div>
+    <div class="stat stat-purple"><b>${monthVisits.length}</b><span>จำนวนครั้ง</span></div>
   `;
   const totalVisits = Object.keys(STATE.visits||{}).length;
   const normalCount = elderlyIds.filter(id=>STATE.elderly[id].pdfMode!=='obt').length;
   const obtCount = elderlyIds.filter(id=>STATE.elderly[id].pdfMode==='obt').length;
   document.getElementById('statTotal').innerHTML = `
-    <div class="stat"><b>${totalVisits}</b><span>บันทึกทั้งหมด</span></div>
-    <div class="stat"><b>${normalCount}</b><span>โหมดปกติ</span></div>
-    <div class="stat"><b>${obtCount}</b><span>โหมด อบต.</span></div>
+    <div class="stat stat-info"><b>${totalVisits}</b><span>บันทึกทั้งหมด</span></div>
+    <div class="stat stat-teal"><b>${normalCount}</b><span>โหมดปกติ</span></div>
+    <div class="stat stat-warning"><b>${obtCount}</b><span>โหมด อบต.</span></div>
   `;
+
+  /* สรุปสำหรับฉัน (แสดงเฉพาะผู้ใช้ที่เป็น CG และมี cgCode ผูกไว้) */
+  const myCgCard = document.getElementById('myCgSummaryCard');
+  if(CURRENT_USER && CURRENT_USER.role === 'cg' && CURRENT_USER.cgCode){
+    myCgCard.style.display = 'block';
+    const myCode = CURRENT_USER.cgCode;
+    const myElderlyIds = elderlyIds.filter(id=>STATE.elderly[id].cgCode===myCode);
+    const myVisitedIds = myElderlyIds.filter(id=>visitedElderlyIds.has(id));
+    const myMetCount = myElderlyIds.filter(id=>{
+      const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      return cnt >= target;
+    }).length;
+    document.getElementById('myCgStatGrid').innerHTML = `
+      <div class="stat stat-info"><b>${myElderlyIds.length}</b><span>ผู้สูงอายุในความดูแล</span></div>
+      <div class="stat stat-success"><b>${myVisitedIds.length}</b><span>เยี่ยมแล้ว (เดือนนี้)</span></div>
+      <div class="stat stat-danger"><b>${myElderlyIds.length - myVisitedIds.length}</b><span>ยังไม่ได้เยี่ยม</span></div>
+      <div class="stat stat-purple"><b>${myMetCount}/${myElderlyIds.length}</b><span>ครบตามเกณฑ์</span></div>
+    `;
+    const listHtml = myElderlyIds.map(id=>{
+      const e = STATE.elderly[id];
+      const target = parseInt(e.visitsPerMonth,10) || 5;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      const met = cnt >= target;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+        <span>${e.name}</span>
+        <span class="status-tag ${met?'approved':'disabled'}">${cnt}/${target} ครั้ง</span>
+      </div>`;
+    }).join('');
+    document.getElementById('myCgElderlyList').innerHTML = listHtml || '<p class="muted">ไม่มีผู้สูงอายุในความดูแล</p>';
+  } else {
+    myCgCard.style.display = 'none';
+  }
+
   const rows = Object.keys(STATE.cgs).sort().map(code=>{
     const cg = STATE.cgs[code];
     const elderlyOfCg = elderlyIds.filter(id=>STATE.elderly[id].cgCode===code);
@@ -1752,6 +1811,25 @@ function renderDashboard(){
       <td><button class="btn btn-ghost btn-sm" onclick="openCgVisitStatus('${code}')">👁 ดูรายชื่อ</button></td></tr>`;
   }).join('');
   document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
+
+  /* จุดที่ควรให้ความสนใจ (สำหรับ CM/Admin): ผู้สูงอายุที่เยี่ยมได้สัดส่วนน้อยที่สุดเทียบเป้าหมาย */
+  const attentionCard = document.getElementById('attentionCard');
+  if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
+    attentionCard.style.display = 'block';
+    const attentionData = elderlyIds.map(id=>{
+      const e = STATE.elderly[id];
+      const target = parseInt(e.visitsPerMonth,10) || 5;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target, pct: target ? cnt/target : 0 };
+    }).filter(x=>x.pct < 1).sort((a,b)=>a.pct-b.pct).slice(0,8);
+    document.getElementById('attentionList').innerHTML = attentionData.length ? attentionData.map(x=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+        <span>${x.name} <span class="muted" style="font-size:12px;">(CG: ${x.cgName})</span></span>
+        <span class="status-tag disabled">${x.cnt}/${x.target} ครั้ง</span>
+      </div>`).join('') : '<p class="muted">ไม่มีรายการที่ต้องเร่งติดตาม เยี่ยมครบตามเกณฑ์ทุกคนแล้ว 🎉</p>';
+  } else {
+    attentionCard.style.display = 'none';
+  }
 }
 
 function openCgVisitStatus(cgCode){
