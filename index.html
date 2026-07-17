@@ -1131,6 +1131,22 @@ db.ref('users').on('value', snap=>{
   renderUsersTable();
 });
 
+/* ล้างข้อมูลประวัติเก่าตามคำขอ (ทำครั้งเดียวเท่านั้น ใช้ flag กันไม่ให้ลบซ้ำข้อมูลใหม่ที่จะถูกสร้างขึ้นในอนาคต):
+   - แผนการเยี่ยม (visitPlans)
+   - ประวัติการย้ายผู้สูงอายุระหว่าง CG (cgTransferHistory)
+   - ประวัติผู้สูงอายุและผู้มีภาวะพึ่งพิงที่เคยได้รับการดูแล (elderlyHistory + visitHistory ที่ผูกกัน) */
+db.ref('systemFlags/clearedLegacyHistoryData_20260718').once('value').then(snap=>{
+  if(!snap.exists()){
+    db.ref().update({
+      'visitPlans': null,
+      'cgTransferHistory': null,
+      'elderlyHistory': null,
+      'visitHistory': null,
+      'systemFlags/clearedLegacyHistoryData_20260718': true
+    });
+  }
+});
+
 let dataLoadedOnce = false;
 function onDataChange(){
   renderCgSelects();
