@@ -620,7 +620,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="card">
     <div class="row" style="justify-content:space-between;">
       <h3 style="margin:0;">รายชื่อผู้ดูแล (CG)</h3>
-      <button class="btn btn-primary btn-sm" id="addCgBtn">+ เพิ่ม CG</button>
+      <div class="row" style="gap:8px;">
+        <button class="btn btn-ghost btn-sm" id="viewTransferHistoryBtn">📜 ประวัติการย้าย CG</button>
+        <button class="btn btn-primary btn-sm" id="addCgBtn">+ เพิ่ม CG</button>
+      </div>
     </div>
     <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>เลขบัตรประชาชน</th><th>เบอร์โทร</th><th>หมู่</th><th>ผู้สูงอายุ</th><th></th></tr></thead>
     <tbody id="cgTable"></tbody></table>
@@ -782,6 +785,13 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div id="transferElderlyList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
   </div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferElderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="transferElderlySaveBtn">ย้ายผู้ที่เลือก</button></div>
+</div></div>
+
+<div class="modal-overlay" id="transferHistoryModal"><div class="modal-box" style="max-width:560px;">
+  <h3>📜 ประวัติการย้ายผู้สูงอายุระหว่าง CG</h3>
+  <p class="muted">บันทึกทุกครั้งที่มีการย้ายผู้สูงอายุระหว่าง CG โดยอัตโนมัติ เรียงจากล่าสุดไปเก่าสุด</p>
+  <div id="transferHistoryList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:60vh;overflow-y:auto;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferHistoryModal')">ปิด</button></div>
 </div></div>
 
 <div class="modal-overlay" id="visitPlanModal"><div class="modal-box" style="max-width:640px;">
@@ -1052,7 +1062,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -1099,6 +1109,7 @@ db.ref('elderly').on('value', snap=>{ STATE.elderly = snap.val()||{}; onDataChan
 db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange(); });
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
 db.ref('visitPlans').on('value', snap=>{ STATE.visitPlans = snap.val()||{}; });
+db.ref('cgTransferHistory').on('value', snap=>{ STATE.cgTransferHistory = snap.val()||{}; });
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
    (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
@@ -1779,10 +1790,10 @@ function renderDashboard(){
     myCgCard.style.display = 'block';
     const myCode = CURRENT_USER.cgCode;
     const myElderlyIds = elderlyIds.filter(id=>STATE.elderly[id].cgCode===myCode);
-    const myVisitedIds = myElderlyIds.filter(id=>visitedElderlyIds.has(id));
+    const myVisitedIds = myElderlyIds.filter(id=>monthVisits.some(([vid,v])=>v.elderlyId===id && v.cgCode===myCode));
     const myMetCount = myElderlyIds.filter(id=>{
       const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
-      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===myCode).length;
       return cnt >= target;
     }).length;
     document.getElementById('myCgStatGrid').innerHTML = `
@@ -1794,7 +1805,7 @@ function renderDashboard(){
     const listHtml = myElderlyIds.map(id=>{
       const e = STATE.elderly[id];
       const target = parseInt(e.visitsPerMonth,10) || 5;
-      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===myCode).length;
       const met = cnt >= target;
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
         <span>${e.name}</span>
@@ -1809,11 +1820,13 @@ function renderDashboard(){
   const rows = Object.keys(STATE.cgs).sort().map(code=>{
     const cg = STATE.cgs[code];
     const elderlyOfCg = elderlyIds.filter(id=>STATE.elderly[id].cgCode===code);
-    const visitedOfCg = elderlyOfCg.filter(id=>visitedElderlyIds.has(id));
+    /* นับ "เยี่ยมแล้ว" และ "ครบตามเกณฑ์" จากการเยี่ยมที่บันทึกไว้ว่าทำโดย CG นี้จริง (v.cgCode)
+       เพื่อให้ตัวเลขสัมพันธ์กับข้อมูลที่บันทึกจริง แม้จะมีการย้ายผู้สูงอายุระหว่าง CG ระหว่างเดือนก็ตาม */
+    const visitedOfCg = elderlyOfCg.filter(id=>monthVisits.some(([vid,v])=>v.elderlyId===id && v.cgCode===code));
     const pct = elderlyOfCg.length ? Math.round(visitedOfCg.length/elderlyOfCg.length*100) : 0;
     const metCount = elderlyOfCg.filter(id=>{
       const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
-      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+      const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===code).length;
       return cnt >= target;
     }).length;
     const quotaBadge = elderlyOfCg.length === 0
@@ -1885,7 +1898,9 @@ function openCgVisitStatus(cgCode){
   const listHtml = elderlyIds.map(id=>{
     const e = STATE.elderly[id];
     const target = parseInt(e.visitsPerMonth,10) || 5;
-    const count = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
+    /* นับเฉพาะการเยี่ยมที่บันทึกไว้ว่าทำโดย CG นี้จริง (v.cgCode) ไม่ใช่แค่เพราะ CG นี้เป็นเจ้าของปัจจุบัน
+       เพื่อให้ผลตรงกับความเป็นจริงแม้ผู้สูงอายุคนนั้นจะเคยถูกย้าย CG มาระหว่างเดือน */
+    const count = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===cgCode).length;
     const met = count >= target;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #eee;border-radius:8px;gap:10px;">
       <div><b>${e.name}</b><br><span class="muted" style="font-size:12px;">เยี่ยมแล้ว ${count}/${target} ครั้ง</span></div>
@@ -2303,12 +2318,29 @@ document.getElementById('transferElderlySaveBtn').addEventListener('click', ()=>
   if(!toCode){ toast('ไม่มี CG ปลายทางให้ย้ายไป','error'); return; }
   const selected = Array.from(document.querySelectorAll('.transfer-elderly-cb:checked')).map(cb=>cb.value);
   if(selected.length===0){ toast('กรุณาเลือกผู้สูงอายุที่ต้องการย้ายอย่างน้อย 1 คน','error'); return; }
-  const toName = STATE.cgs[toCode].name;
+  const fromCg = STATE.cgs[fromCode];
+  const toCg = STATE.cgs[toCode];
+  const toName = toCg.name;
   showConfirm('ยืนยันการย้ายผู้สูงอายุ?', `ย้ายผู้สูงอายุ ${selected.length} คน ไปอยู่ในความรับผิดชอบของ "${toName}"`, ()=>{
+    const now = Date.now();
+    const todayIso = new Date().toISOString().slice(0,10);
     const updates = {};
-    selected.forEach(id=>{ updates['elderly/'+id+'/cgCode'] = toCode; });
+    selected.forEach(id=>{
+      const e = STATE.elderly[id];
+      updates['elderly/'+id+'/cgCode'] = toCode;
+      updates['elderly/'+id+'/cgAssignedDate'] = todayIso;
+      /* บันทึกประวัติการย้าย CG ทุกครั้ง เพื่อการตรวจสอบย้อนหลังและให้ผลตรงกับหน้าภาพรวม */
+      const historyId = 'CGT' + now + '_' + id;
+      updates['cgTransferHistory/'+historyId] = {
+        elderlyId: id, elderlyName: e ? e.name : '',
+        fromCgCode: fromCode, fromCgName: fromCg ? fromCg.name : '',
+        toCgCode: toCode, toCgName: toName,
+        transferDate: todayIso, transferredBy: CURRENT_USER ? CURRENT_USER.displayName : '-',
+        createdAt: now
+      };
+    });
     db.ref().update(updates).then(()=>{
-      toast(`ย้ายผู้สูงอายุ ${selected.length} คน สำเร็จ`,'success');
+      toast(`ย้ายผู้สูงอายุ ${selected.length} คน สำเร็จ และบันทึกประวัติการย้ายแล้ว`,'success');
       closeModal('transferElderlyModal');
     });
   });
@@ -2690,6 +2722,17 @@ document.getElementById('visitPlanRegistryBtn').addEventListener('click', async 
   }
 });
 
+document.getElementById('viewTransferHistoryBtn').addEventListener('click', ()=>{
+  const entries = Object.values(STATE.cgTransferHistory||{}).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const listEl = document.getElementById('transferHistoryList');
+  listEl.innerHTML = entries.length ? entries.map(h=>`
+    <div style="border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;">
+      <div style="font-weight:600;">${h.elderlyName || h.elderlyId}</div>
+      <div>ย้ายจาก <b>${h.fromCgName || '-'}</b> ไปยัง <b>${h.toCgName || '-'}</b></div>
+      <div class="muted" style="font-size:12px;">วันที่ย้าย: ${formatThaiDate(h.transferDate)} &nbsp;|&nbsp; ดำเนินการโดย: ${h.transferredBy||'-'}</div>
+    </div>`).join('') : '<p class="muted">ยังไม่มีประวัติการย้าย CG</p>';
+  openModal('transferHistoryModal');
+});
 document.getElementById('addCgBtn').addEventListener('click', ()=>{
   document.getElementById('cgModalTitle').textContent = 'เพิ่ม CG';
   document.getElementById('cgEditId').value = '';
