@@ -633,6 +633,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <!-- ===================== ELDERLY MANAGEMENT ===================== -->
 <section id="tab-elderly" class="tabpanel">
   <div class="card">
+    <h3>📥 นำเข้าข้อมูลผู้สูงอายุจากไฟล์ Excel</h3>
+    <p class="muted">รองรับไฟล์ .xlsx/.xls ที่มีหัวคอลัมน์ทำนองนี้ (ไม่ต้องเรียงลำดับ ไม่ต้องมีครบทุกคอลัมน์): <b>เลขประจำตัวประชาชน, ชื่อสกุล, คะแนน ADL, กลุ่ม ADL, เพศอายุ (เช่น "หญิง : 73 ปี"), ที่อยู่/บ้านเลขที่, หมู่, CG รับผิดชอบ, จำนวนครั้งที่เยี่ยมต่อเดือน, เบอร์โทรศัพท์ญาติ, ชื่ออสม.ใกล้บ้าน, เบอร์โทรศัพท์ อสม.</b> — ชื่อ CG ในไฟล์จะจับคู่กับ CG ที่มีอยู่แล้วในระบบโดยอัตโนมัติจากนามสกุล</p>
+    <div class="row">
+      <div class="field"><label>เลือกไฟล์ Excel</label><input type="file" id="elderlyImportFile" accept=".xlsx,.xls"></div>
+      <button class="btn btn-secondary" id="elderlyImportPreviewBtn" style="align-self:flex-end;">📄 อ่านไฟล์และแสดงตัวอย่าง</button>
+    </div>
+    <div id="elderlyImportPreview" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card">
     <div class="row">
       <div class="field"><label>กรองตาม CG</label><select id="filterElderlyCg"><option value="">ทั้งหมด</option></select></div>
       <div class="field"><label>กรองตามโหมด PDF</label><select id="filterElderlyMode"><option value="">ทั้งหมด</option><option value="normal">ปกติ</option><option value="obt">อบต.</option></select></div>
@@ -1144,6 +1154,18 @@ db.ref('systemFlags/clearedLegacyHistoryData_20260718').once('value').then(snap=
   }
 });
 
+/* ล้างรายชื่อผู้สูงอายุชุดเดิมที่เคยนำเข้าไว้ในระบบออกตามคำขอ (ทำครั้งเดียวเท่านั้น)
+   หมายเหตุ: ไม่ได้ลบข้อมูล "บันทึกการเยี่ยม" (visits) ที่เคยบันทึกไว้จริงไปด้วย เพราะไม่ได้ถูกร้องขอ
+   ข้อมูลเยี่ยมเก่าจะกลายเป็นข้อมูลที่ไม่ผูกกับผู้สูงอายุคนใดแล้ว (orphan) แต่จะไม่ถูกลบทิ้ง */
+db.ref('systemFlags/clearedElderlyRoster_20260718').once('value').then(snap=>{
+  if(!snap.exists()){
+    db.ref().update({
+      'elderly': null,
+      'systemFlags/clearedElderlyRoster_20260718': true
+    });
+  }
+});
+
 let dataLoadedOnce = false;
 function onDataChange(){
   renderCgSelects();
@@ -1156,7 +1178,8 @@ function onDataChange(){
   if(!dataLoadedOnce){
     dataLoadedOnce = true;
     maybeSeedData();
-    maybeSeedElderlyImport();
+    /* maybeSeedElderlyImport(); -- ปิดการนำเข้าอัตโนมัติชุดเดิม (ทะเบียน LTC ปีงบประมาณ 68) แล้ว
+       เพราะได้ล้างรายชื่อผู้สูงอายุชุดนั้นออกตามคำขอ ให้ใช้ปุ่ม "นำเข้าจาก Excel" ในแท็บจัดการผู้สูงอายุแทน */
   }
 }
 
@@ -2817,6 +2840,166 @@ function renderElderlyTable(){
   }).join('');
   document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="10" class="muted">ยังไม่มีข้อมูล</td></tr>';
 }
+/* =============================================================
+   นำเข้าข้อมูลผู้สูงอายุจากไฟล์ Excel
+============================================================= */
+let elderlyImportParsedRows = [];
+
+function findColumnKey(headers, keywordGroups){
+  const norm = s => String(s).toLowerCase().replace(/[\s\.\-]/g,'');
+  for(const h of headers){
+    const hN = norm(h);
+    for(const kw of keywordGroups){
+      if(hN.includes(norm(kw))) return h;
+    }
+  }
+  return null;
+}
+function parseGenderAge(s){
+  if(!s) return { gender:'', age:null };
+  const str = String(s);
+  const gender = str.includes('หญิง') ? 'หญิง' : (str.includes('ชาย') ? 'ชาย' : '');
+  const m = str.match(/(\d+)/);
+  return { gender, age: m ? parseInt(m[1],10) : null };
+}
+function matchCgCodeByName(cgNameRaw){
+  if(!cgNameRaw) return '';
+  const raw = String(cgNameRaw).trim();
+  // ลองจับคู่ชื่อเต็มตรงกันก่อน
+  for(const code of Object.keys(STATE.cgs)){
+    if(STATE.cgs[code].name === raw) return code;
+  }
+  // ถ้าไม่ตรงเป๊ะ ลองจับคู่จากนามสกุล/คำสุดท้ายของชื่อในไฟล์กับชื่อ CG ที่มีอยู่
+  const rawParts = raw.split(/\s+/).filter(Boolean);
+  const rawSurname = rawParts[rawParts.length-1] || raw;
+  for(const code of Object.keys(STATE.cgs)){
+    const cgName = STATE.cgs[code].name || '';
+    if(rawSurname && cgName.includes(rawSurname)) return code;
+  }
+  return '';
+}
+
+document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const fileInput = document.getElementById('elderlyImportFile');
+  const file = fileInput.files[0];
+  if(!file){ toast('กรุณาเลือกไฟล์ Excel ก่อน','error'); return; }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type:'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+      if(rows.length === 0){ toast('ไม่พบข้อมูลในไฟล์ หรือไฟล์ไม่มีหัวตาราง','error'); return; }
+      const headers = Object.keys(rows[0]);
+
+      const colIdCard  = findColumnKey(headers, ['เลขประจำตัวประชาชน','เลขบัตรประชาชน','เลขบัตร']);
+      const colName    = findColumnKey(headers, ['ชื่อสกุล','ชื่อ-สกุล','ชื่อ']);
+      const colAdlScore= findColumnKey(headers, ['คะแนนadl','คะแนน adl','คะแนน']);
+      const colAdlGroup= findColumnKey(headers, ['กลุ่มadl','กลุ่ม adl','กลุ่ม']);
+      const colGenderAge = findColumnKey(headers, ['เพศอายุ','เพศ/อายุ']);
+      const colGender  = findColumnKey(headers, ['เพศ']);
+      const colAge     = findColumnKey(headers, ['อายุ']);
+      const colHouseNo = findColumnKey(headers, ['ที่อยู่','บ้านเลขที่']);
+      const colMoo     = findColumnKey(headers, ['หมู่']);
+      const colCg      = findColumnKey(headers, ['cgรับผิดชอบ','cg ผู้ดูแล','cg']);
+      const colVisits  = findColumnKey(headers, ['จำนวนครั้งที่เยี่ยมต่อเดือน','เยี่ยมต่อเดือน','จำนวนครั้ง']);
+      const colRelPhone= findColumnKey(headers, ['เบอร์โทรศัพท์ญาติ','เบอร์โทรญาติ']);
+      const colVhvName = findColumnKey(headers, ['ชื่ออสม','ชื่อ อสม']);
+      const colVhvPhone= findColumnKey(headers, ['เบอร์โทรศัพท์อสม','เบอร์โทร อสม']);
+
+      if(!colName){ toast('ไม่พบคอลัมน์ชื่อผู้สูงอายุในไฟล์ กรุณาตรวจสอบหัวตาราง','error'); return; }
+
+      const parsed = rows.map(r=>{
+        const name = String(r[colName]||'').trim();
+        if(!name) return null;
+        let gender = '', age = null;
+        if(colGenderAge){ const ga = parseGenderAge(r[colGenderAge]); gender = ga.gender; age = ga.age; }
+        else{
+          gender = colGender ? String(r[colGender]||'').trim() : '';
+          age = colAge ? (parseInt(r[colAge],10) || null) : null;
+        }
+        const cgNameRaw = colCg ? String(r[colCg]||'').trim() : '';
+        const cgCode = matchCgCodeByName(cgNameRaw);
+        return {
+          idCard: colIdCard ? String(r[colIdCard]||'').trim() : '',
+          name, gender, age,
+          adlScore: colAdlScore && r[colAdlScore]!=='' ? parseInt(r[colAdlScore],10) : null,
+          adlGroup: colAdlGroup ? String(r[colAdlGroup]||'').trim() : '',
+          houseNo: colHouseNo ? String(r[colHouseNo]||'').trim() : '',
+          moo: colMoo ? String(r[colMoo]||'').trim() : '',
+          cgNameRaw, cgCode,
+          visitsPerMonth: colVisits && r[colVisits]!=='' ? (parseInt(r[colVisits],10) || 5) : 5,
+          relativePhone: colRelPhone ? String(r[colRelPhone]||'').trim() : '',
+          vhvName: colVhvName ? String(r[colVhvName]||'').trim() : '',
+          vhvPhone: colVhvPhone ? String(r[colVhvPhone]||'').trim() : ''
+        };
+      }).filter(Boolean);
+
+      if(parsed.length === 0){ toast('ไม่พบแถวข้อมูลผู้สูงอายุที่ใช้ได้ในไฟล์','error'); return; }
+      elderlyImportParsedRows = parsed;
+      renderElderlyImportPreview(parsed);
+    }catch(err){
+      console.error(err);
+      toast('เกิดข้อผิดพลาดขณะอ่านไฟล์: '+err.message,'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function renderElderlyImportPreview(parsed){
+  const unmatchedCg = parsed.filter(r=>r.cgNameRaw && !r.cgCode);
+  const rowsHtml = parsed.slice(0,10).map(r=>`
+    <tr>
+      <td>${r.name}</td><td>${r.gender||'-'}</td><td>${r.age||'-'}</td>
+      <td>${r.cgCode ? (STATE.cgs[r.cgCode]?.name||r.cgCode) : (r.cgNameRaw ? `<span style="color:var(--danger)">ไม่พบ: ${r.cgNameRaw}</span>` : '-')}</td>
+      <td>${r.adlScore!==null?r.adlScore:'-'}</td><td>${r.adlGroup||'-'}</td><td>${r.visitsPerMonth}</td>
+    </tr>`).join('');
+  const warnHtml = unmatchedCg.length
+    ? `<p style="color:var(--danger);font-size:12.5px;margin-top:8px;">⚠️ พบ ${unmatchedCg.length} รายการที่จับคู่ชื่อ CG ในไฟล์กับ CG ที่มีอยู่ในระบบไม่ได้ (จะนำเข้าโดยไม่ระบุ CG ผู้ดูแล กรุณาไปกำหนดภายหลังที่ตาราง หรือใช้ปุ่ม "🔄 ย้าย CG")</p>`
+    : '';
+  document.getElementById('elderlyImportPreview').innerHTML = `
+    <p style="font-weight:600;">พบข้อมูลทั้งหมด ${parsed.length} รายการ (แสดงตัวอย่าง ${Math.min(10,parsed.length)} แถวแรก)</p>
+    <div style="overflow-x:auto;">
+    <table style="min-width:600px;"><thead><tr><th>ชื่อ</th><th>เพศ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>เยี่ยม/เดือน</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+    </div>
+    ${warnHtml}
+    <button class="btn btn-primary" id="elderlyImportConfirmBtn" style="margin-top:10px;">✅ ยืนยันนำเข้า ${parsed.length} รายการ</button>
+  `;
+  document.getElementById('elderlyImportConfirmBtn').addEventListener('click', commitElderlyImport);
+}
+
+function commitElderlyImport(){
+  if(blockIfReadOnly()) return;
+  const updates = {};
+  const now = Date.now();
+  elderlyImportParsedRows.forEach(r=>{
+    const id = nextCode(STATE.elderly, 'E', 3);
+    // จองรหัสไว้ในตัวแปรชั่วคราวเพื่อไม่ให้ nextCode ซ้ำกันระหว่างวนลูป
+    STATE.elderly = STATE.elderly || {};
+    STATE.elderly[id] = { name: r.name };
+    updates['elderly/'+id] = {
+      name: r.name, idCard: r.idCard, hn:'', age: r.age||0, gender: r.gender,
+      houseNo: r.houseNo, moo: r.moo,
+      adlScore: r.adlScore, adlGroup: r.adlGroup,
+      cgCode: r.cgCode, cgAssignedDate: new Date().toISOString().slice(0,10),
+      pdfMode:'normal', visitsPerMonth: r.visitsPerMonth,
+      relativePhone: r.relativePhone, vhvName: r.vhvName, vhvPhone: r.vhvPhone,
+      status:'active', createdAt: now
+    };
+  });
+  db.ref().update(updates).then(()=>{
+    toast(`นำเข้าผู้สูงอายุ ${elderlyImportParsedRows.length} รายการสำเร็จ`,'success');
+    elderlyImportParsedRows = [];
+    document.getElementById('elderlyImportPreview').innerHTML = '';
+    document.getElementById('elderlyImportFile').value = '';
+  }).catch(err=>{
+    toast('เกิดข้อผิดพลาดขณะบันทึก: '+err.message,'error');
+  });
+}
+
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
