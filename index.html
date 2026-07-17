@@ -773,18 +773,15 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('cgModal')">ยกเลิก</button><button class="btn btn-primary" id="cgSaveBtn">บันทึก</button></div>
 </div></div>
 
-<div class="modal-overlay" id="transferElderlyModal"><div class="modal-box" style="max-width:520px;">
-  <h3 id="transferElderlyTitle">ย้ายผู้สูงอายุในความรับผิดชอบ</h3>
-  <input type="hidden" id="transferFromCg">
+<div class="modal-overlay" id="transferCgModal"><div class="modal-box" style="max-width:420px;">
+  <h3>🔄 ย้าย CG ผู้รับผิดชอบ</h3>
+  <input type="hidden" id="transferElderlyId">
+  <p class="muted" id="transferElderlyInfo"></p>
   <div class="field">
-    <label>ย้ายไปยัง CG</label>
+    <label>ย้ายไปยัง CG คนใหม่</label>
     <select id="transferToCg"></select>
   </div>
-  <div class="field" style="margin-top:10px;">
-    <label>เลือกผู้สูงอายุที่ต้องการย้าย</label>
-    <div id="transferElderlyList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
-  </div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferElderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="transferElderlySaveBtn">ย้ายผู้ที่เลือก</button></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('transferCgModal')">ยกเลิก</button><button class="btn btn-primary" id="transferCgSaveBtn">ยืนยันการย้าย</button></div>
 </div></div>
 
 <div class="modal-overlay" id="transferHistoryModal"><div class="modal-box" style="max-width:560px;">
@@ -2293,7 +2290,6 @@ function renderCgTable(){
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openEditCg('${code}')">✏️</button>
         <button class="btn btn-ghost btn-sm" onclick="openVisitPlan('${code}')">📅 แผนการเยี่ยม</button>
-        <button class="btn btn-ghost btn-sm" onclick="openTransferElderly('${code}')">🔄 ย้ายผู้สูงอายุ</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCg('${code}')">🗑</button>
       </td>
     </tr>`;
@@ -2302,66 +2298,54 @@ function renderCgTable(){
 }
 
 /* ---- ย้ายผู้สูงอายุในความรับผิดชอบจาก CG หนึ่งไปอีก CG หนึ่ง ---- */
-function openTransferElderly(fromCode){
-  const cg = STATE.cgs[fromCode];
-  if(!cg) return;
-  document.getElementById('transferFromCg').value = fromCode;
-  document.getElementById('transferElderlyTitle').textContent = `ย้ายผู้สูงอายุจาก "${cg.name}"`;
+/* ---- ย้าย CG ผู้รับผิดชอบของผู้สูงอายุแต่ละคน (ย้ายมาไว้ในฟังก์ชัน "จัดการผู้สูงอายุ") ---- */
+function openTransferCg(elderlyId){
+  const e = STATE.elderly[elderlyId];
+  if(!e) return;
+  document.getElementById('transferElderlyId').value = elderlyId;
+  const curCgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
+  document.getElementById('transferElderlyInfo').textContent = `${e.name} — ปัจจุบันอยู่ในความดูแลของ "${curCgName}"`;
   const toSel = document.getElementById('transferToCg');
-  const otherCodes = Object.keys(STATE.cgs).filter(c=>c!==fromCode).sort();
+  const otherCodes = Object.keys(STATE.cgs).filter(c=>c!==e.cgCode).sort();
   toSel.innerHTML = otherCodes.map(c=>`<option value="${c}">${STATE.cgs[c].name}</option>`).join('') || '<option value="">-- ไม่มี CG อื่น --</option>';
-  const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===fromCode && STATE.elderly[id].status!=='discharged').sort();
-  const listEl = document.getElementById('transferElderlyList');
-  if(elderlyIds.length===0){
-    listEl.innerHTML = '<p class="muted" style="margin:0;">CG นี้ไม่มีผู้สูงอายุในความรับผิดชอบอยู่ในขณะนี้</p>';
-  } else {
-    listEl.innerHTML =
-      `<label style="display:flex;align-items:center;gap:8px;font-size:13px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:2px;">
-        <input type="checkbox" id="transferSelectAll"> <b>เลือกทั้งหมด (${elderlyIds.length} คน)</b>
-      </label>` +
-      elderlyIds.map(id=>{
-        const e = STATE.elderly[id];
-        return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-          <input type="checkbox" class="transfer-elderly-cb" value="${id}"> ${e.name} <span class="muted">(อายุ ${e.age||'-'} ปี, ADL กลุ่ม ${e.adlGroup||'-'})</span>
-        </label>`;
-      }).join('');
-    document.getElementById('transferSelectAll').addEventListener('change', function(){
-      document.querySelectorAll('.transfer-elderly-cb').forEach(cb=>cb.checked = this.checked);
-    });
-  }
-  openModal('transferElderlyModal');
+  openModal('transferCgModal');
 }
-document.getElementById('transferElderlySaveBtn').addEventListener('click', ()=>{
+document.getElementById('transferCgSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
-  const fromCode = document.getElementById('transferFromCg').value;
+  const elderlyId = document.getElementById('transferElderlyId').value;
   const toCode = document.getElementById('transferToCg').value;
   if(!toCode){ toast('ไม่มี CG ปลายทางให้ย้ายไป','error'); return; }
-  const selected = Array.from(document.querySelectorAll('.transfer-elderly-cb:checked')).map(cb=>cb.value);
-  if(selected.length===0){ toast('กรุณาเลือกผู้สูงอายุที่ต้องการย้ายอย่างน้อย 1 คน','error'); return; }
+  const e = STATE.elderly[elderlyId];
+  if(!e) return;
+  const fromCode = e.cgCode;
   const fromCg = STATE.cgs[fromCode];
   const toCg = STATE.cgs[toCode];
-  const toName = toCg.name;
-  showConfirm('ยืนยันการย้ายผู้สูงอายุ?', `ย้ายผู้สูงอายุ ${selected.length} คน ไปอยู่ในความรับผิดชอบของ "${toName}"`, ()=>{
+  showConfirm('ยืนยันการย้าย CG ผู้รับผิดชอบ?', `ย้าย "${e.name}" จาก "${fromCg?fromCg.name:'-'}" ไปยัง "${toCg.name}"`, ()=>{
     const now = Date.now();
     const todayIso = new Date().toISOString().slice(0,10);
     const updates = {};
-    selected.forEach(id=>{
-      const e = STATE.elderly[id];
-      updates['elderly/'+id+'/cgCode'] = toCode;
-      updates['elderly/'+id+'/cgAssignedDate'] = todayIso;
-      /* บันทึกประวัติการย้าย CG ทุกครั้ง เพื่อการตรวจสอบย้อนหลังและให้ผลตรงกับหน้าภาพรวม */
-      const historyId = 'CGT' + now + '_' + id;
-      updates['cgTransferHistory/'+historyId] = {
-        elderlyId: id, elderlyName: e ? e.name : '',
-        fromCgCode: fromCode, fromCgName: fromCg ? fromCg.name : '',
-        toCgCode: toCode, toCgName: toName,
-        transferDate: todayIso, transferredBy: CURRENT_USER ? CURRENT_USER.displayName : '-',
-        createdAt: now
-      };
+    updates['elderly/'+elderlyId+'/cgCode'] = toCode;
+    updates['elderly/'+elderlyId+'/cgAssignedDate'] = todayIso;
+    /* บันทึกประวัติการย้าย CG ทุกครั้ง เพื่อให้ผลตรงกับหน้าภาพรวมและตรวจสอบย้อนหลังได้ */
+    const historyId = 'CGT' + now + '_' + elderlyId;
+    updates['cgTransferHistory/'+historyId] = {
+      elderlyId, elderlyName: e.name,
+      fromCgCode: fromCode, fromCgName: fromCg ? fromCg.name : '',
+      toCgCode: toCode, toCgName: toCg.name,
+      transferDate: todayIso, transferredBy: CURRENT_USER ? CURRENT_USER.displayName : '-',
+      createdAt: now
+    };
+    /* ย้ายแผนการเยี่ยม (visitPlans) ของผู้สูงอายุคนนี้ที่มีอยู่ทั้งหมด ให้เป็นของ CG ใหม่ตามผู้รับผิดชอบล่าสุดด้วย
+       (ไม่แตะต้องประวัติการเยี่ยมจริงที่บันทึกไปแล้ว เพราะข้อมูลนั้นต้องคงความถูกต้องตามประวัติศาสตร์ว่าใครเยี่ยมจริง) */
+    Object.entries(STATE.visitPlans||{}).forEach(([key,p])=>{
+      if(p.elderlyId === elderlyId){
+        updates['visitPlans/'+key+'/cgCode'] = toCode;
+        updates['visitPlans/'+key+'/cgName'] = toCg.name;
+      }
     });
     db.ref().update(updates).then(()=>{
-      toast(`ย้ายผู้สูงอายุ ${selected.length} คน สำเร็จ และบันทึกประวัติการย้ายแล้ว`,'success');
-      closeModal('transferElderlyModal');
+      toast(`ย้าย "${e.name}" ไปยัง "${toCg.name}" สำเร็จ และบันทึกประวัติการย้ายแล้ว`,'success');
+      closeModal('transferCgModal');
     });
   });
 });
@@ -2826,6 +2810,7 @@ function renderElderlyTable(){
       <td><span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span></td>
       <td>${statusCell}</td>
       <td class="row" style="gap:4px;"><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
+      ${!isDischarged ? `<button class="btn btn-ghost btn-sm" onclick="openTransferCg('${id}')">🔄 ย้าย CG</button>` : ''}
       ${!isDischarged ? `<button class="btn btn-ghost btn-sm" onclick="openDischarge('${id}')">📤 จำหน่าย</button>` : ''}
       <button class="btn btn-danger btn-sm" onclick="deleteElderly('${id}')">🗑</button></td>
     </tr>`;
