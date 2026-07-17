@@ -27,7 +27,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:middle;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.6) inset;}
 .adl-dot.adl-1{background:#43A047;}
 .adl-dot.adl-2{background:#FBC02D;}
-.adl-dot.adl-3{background:#FB8C00;}
+.adl-dot.adl-3{background:#8E44AD;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
 .quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
@@ -432,8 +432,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>🔴🟠 ผู้สูงอายุกลุ่ม ADL สีแดงและสีส้ม ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
-    <p class="muted">คัดกรองจากกลุ่ม ADL ระดับสีแดง (กลุ่ม 4) และสีส้ม (กลุ่ม 3) ซึ่งมีภาวะพึ่งพิงสูง แยกกลุ่มให้ดูง่าย พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
+    <h3>🔴🟣 ผู้สูงอายุกลุ่ม ADL สีแดงและสีม่วง ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
+    <p class="muted">คัดกรองจากกลุ่ม ADL ระดับสีแดง (กลุ่ม 4) และสีม่วง (กลุ่ม 3) ซึ่งมีภาวะพึ่งพิงสูง แยกกลุ่มให้ดูง่าย พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
@@ -959,7 +959,7 @@ const REHAB_ACTIVITY_LABELS = {
   '16':'ติดตามและประเมินผลการฟื้นฟู'
 };
 const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2':'ดูแลความสะอาดร่างกายคนไข้','3':'ดูแลสภาพแวดล้อมทั่วไป','4':'ช่วยเหลือญาติทำกิจกรรม','5':'ให้กำลังใจญาติและผู้ป่วย'};
-const ADL_EMOJI = {'1':'🟢','2':'🟡','3':'🟠','4':'🔴'};
+const ADL_EMOJI = {'1':'🟢','2':'🟡','3':'🟣','4':'🔴'};
 
 function beYear(y){ return y + 543; }
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1120,9 +1120,13 @@ db.ref('users').on('value', snap=>{
       U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
     });
   }
-  /* ลบบัญชี "ผู้ใช้งานทั่วไป" (TOP/TOP) ที่เคยสร้างไว้ก่อนหน้านี้ทิ้งอัตโนมัติ ถ้ายังพบอยู่ในระบบ */
+  /* ลบบัญชีเก่าที่เคยสร้างไว้อัตโนมัติจากฟังก์ชันที่ถูกยกเลิกไปแล้ว ให้เหลือเฉพาะบัญชี Admin เริ่มต้น
+     กับบัญชีที่มาจาก "เมนูลงทะเบียนใช้งาน" เท่านั้น:
+     - "ผู้ใช้งานทั่วไป" (TOP/TOP)
+     - บัญชี CG รหัสเก่า 001-005 ที่เคยสร้างไว้ล่วงหน้า */
+  const LEGACY_USERNAMES = ['TOP','001','002','003','004','005'];
   Object.entries(STATE.users).forEach(([uid,u])=>{
-    if(u.username === 'TOP'){ db.ref('users/'+uid).remove(); }
+    if(LEGACY_USERNAMES.includes(u.username)){ db.ref('users/'+uid).remove(); }
   });
   renderUsersTable();
 });
@@ -1866,7 +1870,7 @@ function renderDashboard(){
     document.getElementById('attentionList').innerHTML = `
       <div style="font-weight:700;color:#D8503A;margin-bottom:6px;">🔴 กลุ่มสีแดง (กลุ่ม ADL 4) — ${redList.length} คน</div>
       ${renderAdlGroupSection(redList,'adl-4')}
-      <div style="font-weight:700;color:#EF6C00;margin:14px 0 6px;">🟠 กลุ่มสีส้ม (กลุ่ม ADL 3) — ${orangeList.length} คน</div>
+      <div style="font-weight:700;color:#8E44AD;margin:14px 0 6px;">🟣 กลุ่มสีม่วง (กลุ่ม ADL 3) — ${orangeList.length} คน</div>
       ${renderAdlGroupSection(orangeList,'adl-3')}
     `;
   } else {
@@ -2855,6 +2859,9 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   if(visitsPerMonth<1) visitsPerMonth = 1;
   if(visitsPerMonth>10) visitsPerMonth = 10;
   const adlScoreRaw = document.getElementById('elderlyAdlScore').value;
+  const existing = (editId && STATE.elderly[editId]) ? STATE.elderly[editId] : null;
+  const cgChanged = existing && existing.cgCode && existing.cgCode !== cgCode;
+  const todayIso = new Date().toISOString().slice(0,10);
   const data = {
     name, idCard: document.getElementById('elderlyIdCard').value.trim(),
     hn: document.getElementById('elderlyHn').value.trim(),
@@ -2865,16 +2872,31 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     adlScore: adlScoreRaw==='' ? null : parseInt(adlScoreRaw,10),
     adlGroup: document.getElementById('elderlyAdl').value.trim(),
     cgCode,
+    cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
     visitsPerMonth,
     pdfMode: document.getElementById('elderlyPdfMode').value,
     relativePhone: document.getElementById('elderlyRelativePhone').value.trim(),
     vhvName: document.getElementById('elderlyVhvName').value.trim(),
     vhvPhone: document.getElementById('elderlyVhvPhone').value.trim(),
-    status: (editId && STATE.elderly[editId]) ? STATE.elderly[editId].status : 'active',
-    createdAt: (editId && STATE.elderly[editId]) ? STATE.elderly[editId].createdAt : Date.now()
+    status: existing ? existing.status : 'active',
+    createdAt: existing ? existing.createdAt : Date.now()
   };
   const id = editId || nextCode(STATE.elderly, 'E', 3);
-  db.ref('elderly/'+id).update(data).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('elderlyModal'); });
+  const updates = {};
+  Object.keys(data).forEach(k=>{ updates['elderly/'+id+'/'+k] = data[k]; });
+  /* ย้าย CG ผ่านฟอร์มแก้ไขผู้สูงอายุโดยตรง ก็บันทึกประวัติการย้ายเช่นเดียวกับฟังก์ชัน "ย้ายผู้สูงอายุ" ในจัดการ CG
+     เพื่อให้ทุกช่องทางการเปลี่ยนแปลง CG สัมพันธ์กันและมีประวัติล่าสุดครบถ้วนเสมอ */
+  if(cgChanged){
+    const historyId = 'CGT' + Date.now() + '_' + id;
+    updates['cgTransferHistory/'+historyId] = {
+      elderlyId: id, elderlyName: name,
+      fromCgCode: existing.cgCode, fromCgName: STATE.cgs[existing.cgCode]?.name || existing.cgCode,
+      toCgCode: cgCode, toCgName: STATE.cgs[cgCode]?.name || cgCode,
+      transferDate: todayIso, transferredBy: CURRENT_USER ? CURRENT_USER.displayName : '-',
+      createdAt: Date.now()
+    };
+  }
+  db.ref().update(updates).then(()=>{ toast('บันทึกสำเร็จ','success'); closeModal('elderlyModal'); });
 });
 function deleteElderly(id){
   if(blockIfReadOnly()) return;
