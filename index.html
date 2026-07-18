@@ -646,8 +646,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="row">
       <div class="field"><label>กรองตาม CG</label><select id="filterElderlyCg"><option value="">ทั้งหมด</option></select></div>
       <div class="field"><label>กรองตามโหมด PDF</label><select id="filterElderlyMode"><option value="">ทั้งหมด</option><option value="normal">ปกติ</option><option value="obt">อบต.</option></select></div>
+      <button class="btn btn-ghost btn-sm" id="syncAdlVisitsBtn" style="align-self:flex-end;">🔄 ปรับจำนวนครั้งเยี่ยมตามกลุ่ม ADL (ทั้งหมด)</button>
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
+    <p class="muted" style="margin-top:6px;">เกณฑ์: กลุ่ม 1 = 1 ครั้ง/เดือน, กลุ่ม 2 = 2 ครั้ง/เดือน, กลุ่ม 3 = 4 ครั้ง/เดือน, กลุ่ม 4 = 6 ครั้ง/เดือน</p>
     <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
@@ -753,6 +755,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <tbody id="usersTable"></tbody></table>
     </div>
   </div>
+
+  <div class="card">
+    <h3>⚙️ ตั้งค่าผู้รับรองรายงาน</h3>
+    <p class="muted">กำหนดชื่อและตำแหน่งผู้ลงนามรับรองผลงาน ที่จะแสดงในช่องลงชื่อท้ายรายงาน PDF สรุปการเยี่ยมบ้านผู้สูงอายุของ CG แต่ละคน — เปลี่ยนแปลงได้ตลอดเวลา มีผลกับรายงานที่สร้างครั้งถัดไปทันที</p>
+    <div class="row">
+      <div class="field"><label>ชื่อผู้รับรองรายงาน</label><input type="text" id="reportCertifierName" placeholder="เช่น นางศศิธร ภิญญะพงษ์"></div>
+      <div class="field"><label>ตำแหน่ง</label><input type="text" id="reportCertifierPosition" placeholder="เช่น พยาบาลวิชาชีพชำนาญการ"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="saveReportCertifierBtn" style="margin-top:10px;">💾 บันทึกผู้รับรองรายงาน</button>
+  </div>
 </section>
 
 </main>
@@ -841,6 +853,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>คะแนน ADL</label><input type="number" id="elderlyAdlScore" min="0" max="20" placeholder="เช่น 0-20"></div>
     <div class="field"><label>กลุ่ม ADL</label><input type="text" id="elderlyAdl" placeholder="เช่น 1, 2, 3, 4, B3, C2, I3"></div>
   </div>
+  <p class="muted" id="elderlyAdlVisitHint" style="margin-top:4px;font-size:11.5px;">เกณฑ์แนะนำจำนวนครั้งที่ควรเยี่ยม/เดือน ตามกลุ่ม ADL: กลุ่ม 1 = 1 ครั้ง, กลุ่ม 2 = 2 ครั้ง, กลุ่ม 3 = 4 ครั้ง, กลุ่ม 4 = 6 ครั้ง (ระบบจะเติมให้อัตโนมัติ ปรับแก้เองได้ตามความเหมาะสมรายบุคคล)</p>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
@@ -967,6 +980,8 @@ const REHAB_ACTIVITY_LABELS = {
 };
 const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2':'ดูแลความสะอาดร่างกายคนไข้','3':'ดูแลสภาพแวดล้อมทั่วไป','4':'ช่วยเหลือญาติทำกิจกรรม','5':'ให้กำลังใจญาติและผู้ป่วย'};
 const ADL_EMOJI = {'1':'🟢','2':'🟡','3':'🟣','4':'🔴'};
+/* เกณฑ์แนะนำจำนวนครั้งที่ควรเยี่ยมต่อเดือน ตามกลุ่ม ADL (ยิ่งพึ่งพิงมาก ยิ่งต้องเยี่ยมถี่ขึ้น) */
+const ADL_VISIT_REQUIREMENT = {'1':1, '2':2, '3':4, '4':6};
 
 function beYear(y){ return y + 543; }
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1069,7 +1084,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifier:{ name:'นางศศิธร ภิญญะพงษ์', position:'พยาบาลวิชาชีพชำนาญการ' }, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -1117,6 +1132,13 @@ db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
 db.ref('visitPlans').on('value', snap=>{ STATE.visitPlans = snap.val()||{}; });
 db.ref('cgTransferHistory').on('value', snap=>{ STATE.cgTransferHistory = snap.val()||{}; });
+db.ref('systemSettings/reportCertifier').on('value', snap=>{
+  STATE.reportCertifier = snap.val() || { name:'นางศศิธร ภิญญะพงษ์', position:'พยาบาลวิชาชีพชำนาญการ' };
+  const nameInput = document.getElementById('reportCertifierName');
+  const posInput = document.getElementById('reportCertifierPosition');
+  if(nameInput && document.activeElement!==nameInput) nameInput.value = STATE.reportCertifier.name || '';
+  if(posInput && document.activeElement!==posInput) posInput.value = STATE.reportCertifier.position || '';
+});
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
    (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
@@ -2749,6 +2771,15 @@ document.getElementById('visitPlanRegistryBtn').addEventListener('click', async 
   }
 });
 
+document.getElementById('saveReportCertifierBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const name = document.getElementById('reportCertifierName').value.trim();
+  const position = document.getElementById('reportCertifierPosition').value.trim();
+  if(!name){ toast('กรุณากรอกชื่อผู้รับรองรายงาน','error'); return; }
+  db.ref('systemSettings/reportCertifier').set({ name, position }).then(()=>{
+    toast('บันทึกผู้รับรองรายงานสำเร็จ','success');
+  });
+});
 document.getElementById('viewTransferHistoryBtn').addEventListener('click', ()=>{
   const entries = Object.values(STATE.cgTransferHistory||{}).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const listEl = document.getElementById('transferHistoryList');
@@ -3000,6 +3031,35 @@ function commitElderlyImport(){
   });
 }
 
+/* เติมจำนวนครั้งที่ควรเยี่ยม/เดือนให้อัตโนมัติ เมื่อกรอกกลุ่ม ADL ตรงกับกลุ่มมาตรฐาน 1-4 (ปรับแก้เองภายหลังได้เสมอ) */
+document.getElementById('elderlyAdl').addEventListener('input', function(){
+  const group = this.value.trim();
+  const suggested = ADL_VISIT_REQUIREMENT[group];
+  if(suggested !== undefined){
+    document.getElementById('elderlyVisitsPerMonth').value = suggested;
+  }
+});
+
+document.getElementById('syncAdlVisitsBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const candidates = Object.keys(STATE.elderly).filter(id=>{
+    const e = STATE.elderly[id];
+    if(e.status === 'discharged') return false;
+    const suggested = ADL_VISIT_REQUIREMENT[String(e.adlGroup)];
+    return suggested !== undefined && parseInt(e.visitsPerMonth,10) !== suggested;
+  });
+  if(candidates.length === 0){ toast('จำนวนครั้งเยี่ยม/เดือนของทุกคนตรงกับเกณฑ์กลุ่ม ADL อยู่แล้ว','success'); return; }
+  showConfirm('ปรับจำนวนครั้งเยี่ยม/เดือนตามกลุ่ม ADL?', `พบ ${candidates.length} คนที่จำนวนครั้งไม่ตรงกับเกณฑ์ (กลุ่ม 1=1, กลุ่ม 2=2, กลุ่ม 3=4, กลุ่ม 4=6 ครั้ง/เดือน) ต้องการปรับให้ตรงกันหรือไม่?`, ()=>{
+    const updates = {};
+    candidates.forEach(id=>{
+      const e = STATE.elderly[id];
+      updates['elderly/'+id+'/visitsPerMonth'] = ADL_VISIT_REQUIREMENT[String(e.adlGroup)];
+    });
+    db.ref().update(updates).then(()=>{
+      toast(`ปรับจำนวนครั้งเยี่ยม/เดือนให้ ${candidates.length} คนเรียบร้อยแล้ว`,'success');
+    });
+  });
+});
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
@@ -3398,8 +3458,8 @@ function buildPdfPageHTML(elderly, cg, visitsChunk, monthLabel, yearBE){
       </div>
       <div style="width:47%;">
         <div>ลงชื่อ ..................................................... </div>
-        <div style="margin-top:4px;">( นางศศิธร ภิญญะพงษ์ )</div>
-        <div>ตำแหน่ง พยาบาลวิชาชีพชำนาญการ (ผู้รับรองผลงาน)</div>
+        <div style="margin-top:4px;">( ${STATE.reportCertifier.name || 'นางศศิธร ภิญญะพงษ์'} )</div>
+        <div>ตำแหน่ง ${STATE.reportCertifier.position || 'พยาบาลวิชาชีพชำนาญการ'} (ผู้รับรองผลงาน)</div>
         <div style="margin-top:4px;">วันที่ ......... / ......... / .........</div>
       </div>
     </div>
