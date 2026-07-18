@@ -145,7 +145,9 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .toast.error{background:var(--danger);}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:10px 0;}
 .calendar-grid .dow{font-size:11px;text-align:center;color:var(--muted);font-weight:700;}
-.calendar-grid .day{text-align:center;padding:8px 0;border-radius:8px;background:#f4f6f8;cursor:pointer;font-size:13px;}
+.calendar-grid .day{text-align:center;padding:6px 2px;border-radius:8px;background:#f4f6f8;cursor:pointer;font-size:13px;line-height:1.25;}
+.calendar-grid .day .day-sub{display:block;font-size:9px;opacity:.7;margin-top:1px;}
+.calendar-grid .day.selected .day-sub{opacity:.92;}
 .calendar-grid .day.selected{background:var(--primary);color:#fff;font-weight:700;}
 .calendar-grid .day.empty{visibility:hidden;}
 .checkbox-group{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
@@ -467,8 +469,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>ผู้สูงอายุกลุ่มติดเตียงและติดบ้าน ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
-    <p class="muted">คัดกรองจากคะแนน ADL (Barthel): กลุ่มติดเตียง (ADL 0-4) และกลุ่มติดบ้าน (ADL 5-11) ซึ่งมีภาวะพึ่งพิงสูง แยกกลุ่มให้ดูง่าย พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
+    <h3>ผู้สูงอายุกลุ่มติดเตียง ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
+    <p class="muted">คัดกรองจากคะแนน ADL (Barthel): กลุ่มติดเตียง (ADL 0-4) ซึ่งมีภาวะพึ่งพิงสูงสุด พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
@@ -504,13 +506,13 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="card">
     <h3>3. การวัดสัญญาณชีพ (Vital signs)</h3>
     <div class="row">
-      <div class="field"><label>BP - ค่าบน (Systolic)</label><input type="number" id="recBpSys" placeholder="เช่น 120"></div>
-      <div class="field"><label>BP - ค่าล่าง (Diastolic)</label><input type="number" id="recBpDia" placeholder="เช่น 80"></div>
+      <div class="field"><label>ความดันโลหิต - ค่าบน (Systolic)</label><input type="number" id="recBpSys" placeholder="เช่น 120"></div>
+      <div class="field"><label>ความดันโลหิต - ค่าล่าง (Diastolic)</label><input type="number" id="recBpDia" placeholder="เช่น 80"></div>
     </div>
     <div class="row" style="margin-top:8px;">
-      <div class="field"><label>PR (ครั้ง/นาที)</label><input type="number" id="recPr" placeholder="เช่น 78"></div>
-      <div class="field"><label>RR (ครั้ง/นาที)</label><input type="number" id="recRr" placeholder="เช่น 20"></div>
-      <div class="field"><label>T (°C)</label><input type="number" step="0.1" id="recTemp" placeholder="เช่น 36.5"></div>
+      <div class="field"><label>ชีพจร (ครั้ง/นาที)</label><input type="number" id="recPr" placeholder="เช่น 78"></div>
+      <div class="field"><label>อัตราการหายใจ (ครั้ง/นาที)</label><input type="number" id="recRr" placeholder="เช่น 20"></div>
+      <div class="field"><label>อุณหภูมิร่างกาย (°C)</label><input type="number" step="0.1" id="recTemp" placeholder="เช่น 36.5"></div>
     </div>
   </div>
 
@@ -847,12 +849,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
   <div class="card">
     <h3>⚙️ ตั้งค่าผู้รับรองรายงาน</h3>
-    <p class="muted">กำหนดชื่อและตำแหน่งผู้ลงนามรับรองผลงาน ที่จะแสดงในช่องลงชื่อท้ายรายงาน PDF สรุปการเยี่ยมบ้านผู้สูงอายุของ CG แต่ละคน — เปลี่ยนแปลงได้ตลอดเวลา มีผลกับรายงานที่สร้างครั้งถัดไปทันที</p>
+    <p class="muted">เพิ่มรายชื่อผู้ที่สามารถลงนามรับรองผลงานได้หลายคน แล้วเลือกว่าใครเป็น "ผู้รับรองปัจจุบัน" ที่จะแสดงในช่องลงชื่อท้ายรายงาน PDF สรุปการเยี่ยมบ้านผู้สูงอายุของ CG แต่ละคน — เปลี่ยนแปลงได้ตลอดเวลา มีผลกับรายงานที่สร้างครั้งถัดไปทันที</p>
     <div class="row">
       <div class="field"><label>ชื่อผู้รับรองรายงาน</label><input type="text" id="reportCertifierName" placeholder="เช่น นางศศิธร ภิญญะพงษ์"></div>
       <div class="field"><label>ตำแหน่ง</label><input type="text" id="reportCertifierPosition" placeholder="เช่น พยาบาลวิชาชีพชำนาญการ"></div>
+      <button class="btn btn-primary btn-sm" id="addReportCertifierBtn" style="align-self:flex-end;">➕ เพิ่มผู้รับรอง</button>
     </div>
-    <button class="btn btn-primary btn-sm" id="saveReportCertifierBtn" style="margin-top:10px;">💾 บันทึกผู้รับรองรายงาน</button>
+    <table style="margin-top:12px;"><thead><tr><th>ชื่อ</th><th>ตำแหน่ง</th><th>สถานะ</th><th></th></tr></thead>
+    <tbody id="reportCertifierTable"></tbody></table>
   </div>
 </section>
 
@@ -1210,7 +1214,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifier:{ name:'นางศศิธร ภิญญะพงษ์', position:'พยาบาลวิชาชีพชำนาญการ' }, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -1258,12 +1262,18 @@ db.ref('visits').on('value', snap=>{ STATE.visits = snap.val()||{}; onDataChange
 db.ref('equipment').on('value', snap=>{ STATE.equipment = snap.val()||{}; onDataChange(); });
 db.ref('visitPlans').on('value', snap=>{ STATE.visitPlans = snap.val()||{}; });
 db.ref('cgTransferHistory').on('value', snap=>{ STATE.cgTransferHistory = snap.val()||{}; });
-db.ref('systemSettings/reportCertifier').on('value', snap=>{
-  STATE.reportCertifier = snap.val() || { name:'นางศศิธร ภิญญะพงษ์', position:'พยาบาลวิชาชีพชำนาญการ' };
-  const nameInput = document.getElementById('reportCertifierName');
-  const posInput = document.getElementById('reportCertifierPosition');
-  if(nameInput && document.activeElement!==nameInput) nameInput.value = STATE.reportCertifier.name || '';
-  if(posInput && document.activeElement!==posInput) posInput.value = STATE.reportCertifier.position || '';
+db.ref('systemSettings/reportCertifiers').on('value', snap=>{
+  STATE.reportCertifiers = snap.val() || {};
+  if(Object.keys(STATE.reportCertifiers).length === 0){
+    const defaultId = 'CERT_DEFAULT';
+    db.ref('systemSettings/reportCertifiers/'+defaultId).set({ name:'นางศศิธร ภิญญะพงษ์', position:'พยาบาลวิชาชีพชำนาญการ' });
+    db.ref('systemSettings/activeCertifierId').set(defaultId);
+  }
+  renderReportCertifierTable();
+});
+db.ref('systemSettings/activeCertifierId').on('value', snap=>{
+  STATE.activeCertifierId = snap.val() || '';
+  renderReportCertifierTable();
 });
 
 /* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
@@ -1824,6 +1834,7 @@ function openAdminResetPw(uid){
   openModal('adminResetPwModal');
 }
 document.getElementById('arpSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
   const uid = document.getElementById('arpUserId').value;
   const newPwd = document.getElementById('arpNewPassword').value;
   const confirmPwd = document.getElementById('arpConfirmPassword').value;
@@ -2056,12 +2067,9 @@ function renderDashboard(){
         </div>`).join('');
     }
     const bedList = buildAdlGroupList('bed');
-    const homeList = buildAdlGroupList('home');
     document.getElementById('attentionList').innerHTML = `
       <div style="font-weight:700;color:#D8503A;margin-bottom:6px;"><span class="adl-dot adl-bed"></span>กลุ่มติดเตียง (ADL 0-4) — ${bedList.length} คน</div>
       ${renderAdlGroupSection(bedList,'bed')}
-      <div style="font-weight:700;color:#8A6100;margin:14px 0 6px;"><span class="adl-dot adl-home"></span>กลุ่มติดบ้าน (ADL 5-11) — ${homeList.length} คน</div>
-      ${renderAdlGroupSection(homeList,'home')}
     `;
   } else {
     attentionCard.style.display = 'none';
@@ -2158,9 +2166,9 @@ function renderDrill(){
       let assessHtml = '';
       if(a){
         const parts = [];
-        if(a.vitals && (a.vitals.bpSys||a.vitals.bpDia)) parts.push(`BP ${a.vitals.bpSys||'-'}/${a.vitals.bpDia||'-'}`);
-        if(a.vitals && a.vitals.pr) parts.push(`PR ${a.vitals.pr}`);
-        if(a.vitals && a.vitals.temp) parts.push(`T ${a.vitals.temp}°C`);
+        if(a.vitals && (a.vitals.bpSys||a.vitals.bpDia)) parts.push(`ความดัน ${a.vitals.bpSys||'-'}/${a.vitals.bpDia||'-'}`);
+        if(a.vitals && a.vitals.pr) parts.push(`ชีพจร ${a.vitals.pr}`);
+        if(a.vitals && a.vitals.temp) parts.push(`อุณหภูมิ ${a.vitals.temp}°C`);
         if(a.adlScore!==undefined && a.adlScore!=='') parts.push(`ADL ${a.adlScore}`);
         if(a.mentalHealth) parts.push(`จิตใจ: ${MENTAL_HEALTH_LABELS[a.mentalHealth]||'-'}`);
         if(parts.length) assessHtml = `<br><span class="muted">${parts.join(' | ')}</span>`;
@@ -2295,12 +2303,13 @@ document.getElementById('openCalendarBtn').addEventListener('click', ()=>{
     ? `แนะนำให้เลือก ${remaining} วัน (คงเหลือจากเป้าหมาย ${required} ครั้ง/เดือน) - ${TH_MONTHS_FULL[m-1]} ${yBE}`
     : `เยี่ยมครบตามเป้าหมาย ${required} ครั้ง/เดือนแล้ว แต่ยังเลือกวันที่เพิ่มได้หากต้องการ - ${TH_MONTHS_FULL[m-1]} ${yBE}`;
   const grid = document.getElementById('calendarGrid');
+  const beYr2 = String(yBE).slice(-2);
   let html = TH_DOW.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html += `<div class="day empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const ds = dateStr(y, m-1, d);
     const sel = STATE.selectedDates.includes(ds) ? 'selected' : '';
-    html += `<div class="day ${sel}" data-date="${ds}" onclick="toggleDate('${ds}')">${d}</div>`;
+    html += `<div class="day ${sel}" data-date="${ds}" onclick="toggleDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${beYr2}</span></div>`;
   }
   grid.innerHTML = html;
   openModal('calendarModal');
@@ -2963,15 +2972,48 @@ document.getElementById('visitPlanRegistryBtn').addEventListener('click', async 
   }
 });
 
-document.getElementById('saveReportCertifierBtn').addEventListener('click', ()=>{
+function renderReportCertifierTable(){
+  const tbody = document.getElementById('reportCertifierTable');
+  if(!tbody) return;
+  const ids = Object.keys(STATE.reportCertifiers);
+  tbody.innerHTML = ids.length ? ids.map(id=>{
+    const c = STATE.reportCertifiers[id];
+    const isActive = id === STATE.activeCertifierId;
+    return `<tr>
+      <td>${c.name}</td><td>${c.position||'-'}</td>
+      <td>${isActive ? '<span class="status-tag approved">ใช้งานอยู่</span>' : '<span class="muted">-</span>'}</td>
+      <td style="white-space:nowrap;">
+        ${!isActive ? `<button class="btn btn-primary btn-sm" onclick="setActiveCertifier('${id}')">ตั้งเป็นผู้รับรองปัจจุบัน</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteReportCertifier('${id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4" class="muted">ยังไม่มีผู้รับรองรายงาน</td></tr>';
+}
+document.getElementById('addReportCertifierBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const name = document.getElementById('reportCertifierName').value.trim();
   const position = document.getElementById('reportCertifierPosition').value.trim();
   if(!name){ toast('กรุณากรอกชื่อผู้รับรองรายงาน','error'); return; }
-  db.ref('systemSettings/reportCertifier').set({ name, position }).then(()=>{
-    toast('บันทึกผู้รับรองรายงานสำเร็จ','success');
+  const id = 'CERT' + Date.now();
+  db.ref('systemSettings/reportCertifiers/'+id).set({ name, position }).then(()=>{
+    toast('เพิ่มผู้รับรองรายงานสำเร็จ','success');
+    document.getElementById('reportCertifierName').value = '';
+    document.getElementById('reportCertifierPosition').value = '';
   });
 });
+function setActiveCertifier(id){
+  if(blockIfReadOnly()) return;
+  db.ref('systemSettings/activeCertifierId').set(id).then(()=>{
+    toast('ตั้งผู้รับรองรายงานปัจจุบันสำเร็จ','success');
+  });
+}
+function deleteReportCertifier(id){
+  if(blockIfReadOnly()) return;
+  const c = STATE.reportCertifiers[id];
+  showConfirm('ลบผู้รับรองรายงานนี้?', c ? c.name : id, ()=>{
+    db.ref('systemSettings/reportCertifiers/'+id).remove().then(()=>toast('ลบสำเร็จ','success'));
+  });
+}
 document.getElementById('viewTransferHistoryBtn').addEventListener('click', ()=>{
   const entries = Object.values(STATE.cgTransferHistory||{}).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const listEl = document.getElementById('transferHistoryList');
@@ -3599,7 +3641,7 @@ function buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale){
     <div style="flex:1;font-size:${baseFont}px;line-height:1.55;color:#1B2E3B;">
       <div style="font-weight:700;font-size:${titleFont}px;color:#0F5590;">${elderly.name} <span style="font-weight:400;color:#5B7A8C;font-size:${baseFont}px;">(วันที่ ${formatThaiDate(v.visitDate)})</span></div>
       <div>CG ผู้เยี่ยม: ${cg?cg.name:'-'}</div>
-      <div>BP ${bpText} mmHg &nbsp;|&nbsp; PR ${prText} &nbsp;|&nbsp; RR ${rrText} &nbsp;|&nbsp; T ${tText}°C &nbsp;|&nbsp; ADL ${adlText} คะแนน</div>
+      <div>ความดัน ${bpText} mmHg &nbsp;|&nbsp; ชีพจร ${prText} &nbsp;|&nbsp; อัตราหายใจ ${rrText} &nbsp;|&nbsp; อุณหภูมิ ${tText}°C &nbsp;|&nbsp; ADL ${adlText} คะแนน</div>
       <div>ยา: ${medLabel} &nbsp;|&nbsp; กิจวัตร: ${dailyLabel} &nbsp;|&nbsp; ขับถ่าย: ${elimLabel}</div>
       <div>อาหาร: ${feedLabel} (${foodLabel}${foodDetailText})</div>
       ${mentalLabel ? `<div>สุขภาพจิตและอารมณ์: ${mentalLabel}</div>` : ''}
@@ -3656,8 +3698,8 @@ function buildPdfPageHTML(elderly, cg, visitsChunk, monthLabel, yearBE){
       </div>
       <div style="width:47%;">
         <div>ลงชื่อ ..................................................... </div>
-        <div style="margin-top:4px;">( ${STATE.reportCertifier.name || 'นางศศิธร ภิญญะพงษ์'} )</div>
-        <div>ตำแหน่ง ${STATE.reportCertifier.position || 'พยาบาลวิชาชีพชำนาญการ'} (ผู้รับรองผลงาน)</div>
+        <div style="margin-top:4px;">( ${(STATE.reportCertifiers[STATE.activeCertifierId]||{}).name || 'นางศศิธร ภิญญะพงษ์'} )</div>
+        <div>ตำแหน่ง ${(STATE.reportCertifiers[STATE.activeCertifierId]||{}).position || 'พยาบาลวิชาชีพชำนาญการ'} (ผู้รับรองผลงาน)</div>
         <div style="margin-top:4px;">วันที่ ......... / ......... / .........</div>
       </div>
     </div>
