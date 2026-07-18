@@ -649,7 +649,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-ghost btn-sm" id="syncAdlVisitsBtn" style="align-self:flex-end;">🔄 ปรับจำนวนครั้งเยี่ยมตามกลุ่ม ADL (ทั้งหมด)</button>
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
-    <p class="muted" style="margin-top:6px;">เกณฑ์: กลุ่ม 1 = 1 ครั้ง/เดือน, กลุ่ม 2 = 2 ครั้ง/เดือน, กลุ่ม 3 = 4 ครั้ง/เดือน, กลุ่ม 4 = 6 ครั้ง/เดือน</p>
+    <p class="muted" style="margin-top:6px;">เกณฑ์: กลุ่ม 1 = 1 ครั้ง/เดือน, กลุ่ม 2 = 2 ครั้ง/เดือน, กลุ่ม 3 = 3 ครั้ง/เดือน, กลุ่ม 4 = 4 ครั้ง/เดือน</p>
     <table style="margin-top:10px;"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
@@ -853,12 +853,12 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>คะแนน ADL</label><input type="number" id="elderlyAdlScore" min="0" max="20" placeholder="เช่น 0-20"></div>
     <div class="field"><label>กลุ่ม ADL</label><input type="text" id="elderlyAdl" placeholder="เช่น 1, 2, 3, 4, B3, C2, I3"></div>
   </div>
-  <p class="muted" id="elderlyAdlVisitHint" style="margin-top:4px;font-size:11.5px;">เกณฑ์แนะนำจำนวนครั้งที่ควรเยี่ยม/เดือน ตามกลุ่ม ADL: กลุ่ม 1 = 1 ครั้ง, กลุ่ม 2 = 2 ครั้ง, กลุ่ม 3 = 4 ครั้ง, กลุ่ม 4 = 6 ครั้ง (ระบบจะเติมให้อัตโนมัติ ปรับแก้เองได้ตามความเหมาะสมรายบุคคล)</p>
+  <p class="muted" id="elderlyAdlVisitHint" style="margin-top:4px;font-size:11.5px;">เกณฑ์แนะนำจำนวนครั้งที่ควรเยี่ยม/เดือน ตามกลุ่ม ADL: กลุ่ม 1 = 1 ครั้ง, กลุ่ม 2 = 2 ครั้ง, กลุ่ม 3 = 3 ครั้ง, กลุ่ม 4 = 4 ครั้ง (ระบบจะเติมให้อัตโนมัติ ปรับแก้เองได้ตามความเหมาะสมรายบุคคล)</p>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
-  <div class="field" style="margin-top:8px;"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="elderlyVisitsPerMonth" min="1" max="10" value="5"></div>
+  <div class="field" style="margin-top:8px;"><label>จำนวนครั้งที่เยี่ยมต่อเดือน</label><input type="number" id="elderlyVisitsPerMonth" min="1" max="10" value="1"></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรศัพท์ญาติ</label><input type="tel" id="elderlyRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>ชื่อ อสม. ใกล้บ้าน</label><input type="text" id="elderlyVhvName"></div>
@@ -981,7 +981,16 @@ const REHAB_ACTIVITY_LABELS = {
 const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2':'ดูแลความสะอาดร่างกายคนไข้','3':'ดูแลสภาพแวดล้อมทั่วไป','4':'ช่วยเหลือญาติทำกิจกรรม','5':'ให้กำลังใจญาติและผู้ป่วย'};
 const ADL_EMOJI = {'1':'🟢','2':'🟡','3':'🟣','4':'🔴'};
 /* เกณฑ์แนะนำจำนวนครั้งที่ควรเยี่ยมต่อเดือน ตามกลุ่ม ADL (ยิ่งพึ่งพิงมาก ยิ่งต้องเยี่ยมถี่ขึ้น) */
-const ADL_VISIT_REQUIREMENT = {'1':1, '2':2, '3':4, '4':6};
+const ADL_VISIT_REQUIREMENT = {'1':1, '2':2, '3':3, '4':4};
+/* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: ถ้ามีการกำหนดจำนวนครั้ง/เดือนไว้ชัดเจนแล้วให้ใช้ค่านั้น
+   ถ้ายังไม่มี (ข้อมูลเก่า/ยังไม่ได้กำหนด) ให้คำนวณจากกลุ่ม ADL ตามเกณฑ์ที่กำหนด ถ้าไม่เข้าเกณฑ์ใดเลยใช้ค่าต่ำสุด 1 ครั้ง */
+function getElderlyVisitTarget(e){
+  if(!e) return 1;
+  const explicit = parseInt(e.visitsPerMonth,10);
+  if(explicit) return explicit;
+  const byAdl = ADL_VISIT_REQUIREMENT[String(e.adlGroup)];
+  return byAdl !== undefined ? byAdl : 1;
+}
 
 function beYear(y){ return y + 543; }
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1202,7 +1211,27 @@ function onDataChange(){
     maybeSeedData();
     /* maybeSeedElderlyImport(); -- ปิดการนำเข้าอัตโนมัติชุดเดิม (ทะเบียน LTC ปีงบประมาณ 68) แล้ว
        เพราะได้ล้างรายชื่อผู้สูงอายุชุดนั้นออกตามคำขอ ให้ใช้ปุ่ม "นำเข้าจาก Excel" ในแท็บจัดการผู้สูงอายุแทน */
+    fixLegacyDefaultVisitsPerMonth();
   }
+}
+
+/* ล้างค่า "จำนวนครั้งที่เยี่ยม/เดือน = 5" ที่เคยเป็นค่าเริ่มต้นแบบตายตัวออกทั้งหมด (ทำครั้งเดียว)
+   แล้วคำนวณใหม่ตามกลุ่ม ADL ของแต่ละคน (กลุ่ม 1=1, กลุ่ม 2=2, กลุ่ม 3=3, กลุ่ม 4=4 ครั้ง/เดือน)
+   ถ้ากลุ่ม ADL ไม่ใช่ 1-4 มาตรฐาน จะปรับเป็นค่าต่ำสุด 1 ครั้ง ให้ไปกำหนดเองอีกครั้ง */
+function fixLegacyDefaultVisitsPerMonth(){
+  db.ref('systemFlags/fixedLegacyDefaultVisits5_20260718').once('value').then(snap=>{
+    if(snap.exists()) return;
+    const updates = {};
+    Object.keys(STATE.elderly).forEach(id=>{
+      const e = STATE.elderly[id];
+      if(parseInt(e.visitsPerMonth,10) === 5){
+        const byAdl = ADL_VISIT_REQUIREMENT[String(e.adlGroup)];
+        updates['elderly/'+id+'/visitsPerMonth'] = byAdl !== undefined ? byAdl : 1;
+      }
+    });
+    updates['systemFlags/fixedLegacyDefaultVisits5_20260718'] = true;
+    db.ref().update(updates);
+  });
 }
 
 function maybeSeedData(){
@@ -1792,7 +1821,7 @@ function renderRecQuotaBadge(){
     return;
   }
   const e = STATE.elderly[id];
-  const required = parseInt(e.visitsPerMonth,10) || 5;
+  const required = getElderlyVisitTarget(e);
   const m = parseInt(recMonthSel.value,10), yBE = parseInt(recYearSel.value,10);
   const visited = visitsInMonth(m,yBE).filter(([vid,v])=>v.elderlyId===id).length;
   const remaining = Math.max(required - visited, 0);
@@ -1854,7 +1883,7 @@ function renderDashboard(){
     const myElderlyIds = elderlyIds.filter(id=>STATE.elderly[id].cgCode===myCode);
     const myVisitedIds = myElderlyIds.filter(id=>monthVisits.some(([vid,v])=>v.elderlyId===id && v.cgCode===myCode));
     const myMetCount = myElderlyIds.filter(id=>{
-      const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
+      const target = getElderlyVisitTarget(STATE.elderly[id]);
       const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===myCode).length;
       return cnt >= target;
     }).length;
@@ -1866,7 +1895,7 @@ function renderDashboard(){
     `;
     const listHtml = myElderlyIds.map(id=>{
       const e = STATE.elderly[id];
-      const target = parseInt(e.visitsPerMonth,10) || 5;
+      const target = getElderlyVisitTarget(e);
       const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===myCode).length;
       const met = cnt >= target;
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
@@ -1887,7 +1916,7 @@ function renderDashboard(){
     const visitedOfCg = elderlyOfCg.filter(id=>monthVisits.some(([vid,v])=>v.elderlyId===id && v.cgCode===code));
     const pct = elderlyOfCg.length ? Math.round(visitedOfCg.length/elderlyOfCg.length*100) : 0;
     const metCount = elderlyOfCg.filter(id=>{
-      const target = parseInt(STATE.elderly[id].visitsPerMonth,10) || 5;
+      const target = getElderlyVisitTarget(STATE.elderly[id]);
       const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===code).length;
       return cnt >= target;
     }).length;
@@ -1911,7 +1940,7 @@ function renderDashboard(){
       return elderlyIds.filter(id=>String(STATE.elderly[id].adlGroup)===groupCode).map(id=>{
         const e = STATE.elderly[id];
         const cnt = monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
-        const target = parseInt(e.visitsPerMonth,10) || 5;
+        const target = getElderlyVisitTarget(e);
         return { id, name: e.name, cgName: STATE.cgs[e.cgCode]?.name || '-', cnt, target };
       }).sort((a,b)=>a.cnt-b.cnt);
     }
@@ -1959,7 +1988,7 @@ function openCgVisitStatus(cgCode){
   const elderlyIds = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cgCode && STATE.elderly[id].status!=='discharged').sort();
   const listHtml = elderlyIds.map(id=>{
     const e = STATE.elderly[id];
-    const target = parseInt(e.visitsPerMonth,10) || 5;
+    const target = getElderlyVisitTarget(e);
     /* นับเฉพาะการเยี่ยมที่บันทึกไว้ว่าทำโดย CG นี้จริง (v.cgCode) ไม่ใช่แค่เพราะ CG นี้เป็นเจ้าของปัจจุบัน
        เพื่อให้ผลตรงกับความเป็นจริงแม้ผู้สูงอายุคนนั้นจะเคยถูกย้าย CG มาระหว่างเดือน */
     const count = monthVisits.filter(([vid,v])=>v.elderlyId===id && v.cgCode===cgCode).length;
@@ -2154,7 +2183,7 @@ document.getElementById('openCalendarBtn').addEventListener('click', ()=>{
   const y = yBE - 543;
   const daysInMonth = new Date(y, m, 0).getDate();
   const firstDow = new Date(y, m-1, 1).getDay();
-  const required = parseInt(e.visitsPerMonth,10) || 5;
+  const required = getElderlyVisitTarget(e);
   const visited = visitsInMonth(m,yBE).filter(([vid,v])=>v.elderlyId===elderlyId).length;
   const remaining = Math.max(required - visited, 0);
   document.getElementById('calendarHint').textContent = remaining>0
@@ -2521,7 +2550,7 @@ document.getElementById('visitPlanAutoFillBtn').addEventListener('click', ()=>{
     const set = visitPlanWorking[elderlyId];
     if(set.size > 0) return; // CG กำหนดเองไว้แล้ว ไม่แตะต้อง
     const e = STATE.elderly[elderlyId];
-    const required = parseInt(e && e.visitsPerMonth, 10) || 5;
+    const required = getElderlyVisitTarget(e);
     const autoDates = distributeDatesEvenly(y, m-1, daysInMonth, required);
     autoDates.forEach(ds=>set.add(ds));
     filledCount++;
@@ -2550,7 +2579,7 @@ function buildVisitPlanReportRows(){
   }).map(elderlyId=>{
     const e = STATE.elderly[elderlyId] || {};
     const dates = Array.from(visitPlanWorking[elderlyId]).sort();
-    const required = parseInt(e.visitsPerMonth,10) || 5;
+    const required = getElderlyVisitTarget(e);
     return {
       elderlyId, name: e.name||'-', age: e.age||'-', required,
       houseNo: e.houseNo||'-', moo: e.moo||'-', villageName: (VILLAGES.find(x=>x.moo===String(e.moo))?.name) || '-',
@@ -2953,15 +2982,17 @@ document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=
         }
         const cgNameRaw = colCg ? String(r[colCg]||'').trim() : '';
         const cgCode = matchCgCodeByName(cgNameRaw);
+        const importedAdlGroup = colAdlGroup ? String(r[colAdlGroup]||'').trim() : '';
+        const fallbackVisits = ADL_VISIT_REQUIREMENT[importedAdlGroup] !== undefined ? ADL_VISIT_REQUIREMENT[importedAdlGroup] : 1;
         return {
           idCard: colIdCard ? String(r[colIdCard]||'').trim() : '',
           name, gender, age,
           adlScore: colAdlScore && r[colAdlScore]!=='' ? parseInt(r[colAdlScore],10) : null,
-          adlGroup: colAdlGroup ? String(r[colAdlGroup]||'').trim() : '',
+          adlGroup: importedAdlGroup,
           houseNo: colHouseNo ? String(r[colHouseNo]||'').trim() : '',
           moo: colMoo ? String(r[colMoo]||'').trim() : '',
           cgNameRaw, cgCode,
-          visitsPerMonth: colVisits && r[colVisits]!=='' ? (parseInt(r[colVisits],10) || 5) : 5,
+          visitsPerMonth: colVisits && r[colVisits]!=='' ? (parseInt(r[colVisits],10) || fallbackVisits) : fallbackVisits,
           relativePhone: colRelPhone ? String(r[colRelPhone]||'').trim() : '',
           vhvName: colVhvName ? String(r[colVhvName]||'').trim() : '',
           vhvPhone: colVhvPhone ? String(r[colVhvPhone]||'').trim() : ''
@@ -3049,7 +3080,7 @@ document.getElementById('syncAdlVisitsBtn').addEventListener('click', ()=>{
     return suggested !== undefined && parseInt(e.visitsPerMonth,10) !== suggested;
   });
   if(candidates.length === 0){ toast('จำนวนครั้งเยี่ยม/เดือนของทุกคนตรงกับเกณฑ์กลุ่ม ADL อยู่แล้ว','success'); return; }
-  showConfirm('ปรับจำนวนครั้งเยี่ยม/เดือนตามกลุ่ม ADL?', `พบ ${candidates.length} คนที่จำนวนครั้งไม่ตรงกับเกณฑ์ (กลุ่ม 1=1, กลุ่ม 2=2, กลุ่ม 3=4, กลุ่ม 4=6 ครั้ง/เดือน) ต้องการปรับให้ตรงกันหรือไม่?`, ()=>{
+  showConfirm('ปรับจำนวนครั้งเยี่ยม/เดือนตามกลุ่ม ADL?', `พบ ${candidates.length} คนที่จำนวนครั้งไม่ตรงกับเกณฑ์ (กลุ่ม 1=1, กลุ่ม 2=2, กลุ่ม 3=3, กลุ่ม 4=4 ครั้ง/เดือน) ต้องการปรับให้ตรงกันหรือไม่?`, ()=>{
     const updates = {};
     candidates.forEach(id=>{
       const e = STATE.elderly[id];
@@ -3067,7 +3098,7 @@ document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyAdl').value = '1';
-  document.getElementById('elderlyVisitsPerMonth').value = '5';
+  document.getElementById('elderlyVisitsPerMonth').value = ADL_VISIT_REQUIREMENT['1'];
   document.getElementById('elderlyPdfMode').value = 'normal';
   openModal('elderlyModal');
 });
@@ -3085,7 +3116,7 @@ function openEditElderly(id){
   document.getElementById('elderlyAdlScore').value = (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '';
   document.getElementById('elderlyAdl').value = e.adlGroup||'1';
   document.getElementById('elderlyCg').value = e.cgCode||'';
-  document.getElementById('elderlyVisitsPerMonth').value = e.visitsPerMonth||'5';
+  document.getElementById('elderlyVisitsPerMonth').value = e.visitsPerMonth||'1';
   document.getElementById('elderlyPdfMode').value = e.pdfMode||'normal';
   document.getElementById('elderlyRelativePhone').value = e.relativePhone||'';
   document.getElementById('elderlyVhvName').value = e.vhvName||'';
@@ -3099,7 +3130,7 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   const cgCode = document.getElementById('elderlyCg').value;
   if(!name){ toast('กรุณากรอกชื่อ','error'); return; }
   if(!cgCode){ toast('กรุณาเลือก CG ผู้ดูแล','error'); return; }
-  let visitsPerMonth = parseInt(document.getElementById('elderlyVisitsPerMonth').value,10) || 5;
+  let visitsPerMonth = parseInt(document.getElementById('elderlyVisitsPerMonth').value,10) || 1;
   if(visitsPerMonth<1) visitsPerMonth = 1;
   if(visitsPerMonth>10) visitsPerMonth = 10;
   const adlScoreRaw = document.getElementById('elderlyAdlScore').value;
@@ -3571,7 +3602,7 @@ function buildElderlyReportRows(){
     const cgName = STATE.cgs[e.cgCode]?.name || e.cgCode || '-';
     const isDischarged = e.status==='discharged';
     const visitedCount = isDischarged ? null : monthVisits.filter(([vid,v])=>v.elderlyId===id).length;
-    const target = parseInt(e.visitsPerMonth,10) || 5;
+    const target = getElderlyVisitTarget(e);
     const quotaMet = (!isDischarged && visitedCount!==null) ? (visitedCount>=target) : null;
     rows.push({
       no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
