@@ -688,14 +688,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
           <td><span class="adl-badge adl-home">🦯 ติดบ้าน</span></td>
           <td>กลุ่มติดบ้าน</td>
           <td>ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล</td>
-          <td>อย่างน้อย 4 ครั้ง/เดือน (สัปดาห์ละ 1 ครั้ง)</td>
+          <td>อย่างน้อย 2 ครั้ง/เดือน</td>
         </tr>
         <tr class="adl-row-bed">
           <td class="adl-score-cell">0–4 คะแนน</td>
           <td><span class="adl-badge adl-bed">🛏️ ติดเตียง</span></td>
           <td>กลุ่มติดเตียง</td>
           <td>ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น</td>
-          <td>อย่างน้อย 8 ครั้ง/เดือน (สัปดาห์ละ 2 ครั้ง)</td>
+          <td>อย่างน้อย 4 ครั้ง/เดือน</td>
         </tr>
       </tbody>
     </table>
@@ -1061,8 +1061,8 @@ const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2'
 const ADL_BARTHEL_TABLE = [
   { min:20, max:20, group:'ปกติ',      desc:'ช่วยเหลือตนเองได้ทั้งหมด',                         minVisits:0, cls:'normal', color:'#2E7D32', icon:'🚶' },
   { min:12, max:19, group:'ติดสังคม',  desc:'ช่วยเหลือตนเองได้เป็นส่วนใหญ่',                    minVisits:1, cls:'social', color:'#185FA5', icon:'🧑‍🦯' },
-  { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:4, cls:'home',   color:'#8E44AD', icon:'🦯' },
-  { min:0,  max:4,  group:'ติดเตียง',  desc:'ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น',           minVisits:8, cls:'bed',    color:'#D8503A', icon:'🛏️' }
+  { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:2, cls:'home',   color:'#8E44AD', icon:'🦯' },
+  { min:0,  max:4,  group:'ติดเตียง',  desc:'ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น',           minVisits:4, cls:'bed',    color:'#D8503A', icon:'🛏️' }
 ];
 function getAdlBarthelInfo(score){
   if(score===null || score===undefined || score==='') return null;
@@ -1305,9 +1305,6 @@ function onDataChange(){
   }
 }
 
-/* ล้างค่า "จำนวนครั้งที่เยี่ยม/เดือน = 5" ที่เคยเป็นค่าเริ่มต้นแบบตายตัวออกทั้งหมด (ทำครั้งเดียว)
-   แล้วคำนวณใหม่ตามกลุ่ม ADL ของแต่ละคน (กลุ่ม 1=1, กลุ่ม 2=2, กลุ่ม 3=3, กลุ่ม 4=4 ครั้ง/เดือน)
-   ถ้ากลุ่ม ADL ไม่ใช่ 1-4 มาตรฐาน จะปรับเป็นค่าต่ำสุด 1 ครั้ง ให้ไปกำหนดเองอีกครั้ง */
 function maybeSeedData(){
   if(Object.keys(STATE.cgs).length>0 || Object.keys(STATE.elderly).length>0) return;
   const now = Date.now();
