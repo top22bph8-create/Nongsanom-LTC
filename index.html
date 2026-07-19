@@ -41,12 +41,22 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot.adl-social{background:#185FA5;}
 .adl-dot.adl-home{background:#8E44AD;}
 .adl-dot.adl-bed{background:#D8503A;}
+.adl-dot.adl-red{background:#D8503A;}
+.adl-dot.adl-yellow{background:#F9A825;}
+.adl-dot.adl-blue{background:#185FA5;}
+.adl-dot.adl-lightgreen{background:#8BC34A;}
+.adl-dot.adl-darkgreen{background:#2E7D32;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
 .adl-badge.adl-normal{background:#E8F5E9;color:#1B5E20;}
 .adl-badge.adl-social{background:#E8F0FB;color:#0F3D6B;}
 .adl-badge.adl-home{background:#F1E9FB;color:#5A2D7A;}
 .adl-badge.adl-bed{background:#FBE9E7;color:#B23A22;}
+.adl-badge.adl-red{background:#FBE9E7;color:#B23A22;}
+.adl-badge.adl-yellow{background:#FFFDE7;color:#8A6100;}
+.adl-badge.adl-blue{background:#E8F0FB;color:#0F3D6B;}
+.adl-badge.adl-lightgreen{background:#F1F8E9;color:#33691E;}
+.adl-badge.adl-darkgreen{background:#E8F5E9;color:#1B5E20;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
 .quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
@@ -1119,6 +1129,24 @@ function getAdlBarthelInfo(score){
   }
   return s > 20 ? ADL_BARTHEL_TABLE[0] : ADL_BARTHEL_TABLE[3];
 }
+/* สถานะสีลูกบอล/ป้าย ตามช่วงคะแนน ADL แบบละเอียด 5 ระดับ (แยกจากการแบ่งกลุ่ม/เกณฑ์เยี่ยมด้านบน)
+   0-4 แดง | 5-6 เหลือง | 7-8 น้ำเงิน | 9-10 เขียวอ่อน | 11-20 เขียวเข้ม */
+const ADL_COLOR_BANDS = [
+  { min:0,  max:4,  cls:'red',        color:'#D8503A' },
+  { min:5,  max:6,  cls:'yellow',     color:'#F9A825' },
+  { min:7,  max:8,  cls:'blue',       color:'#185FA5' },
+  { min:9,  max:10, cls:'lightgreen', color:'#8BC34A' },
+  { min:11, max:20, cls:'darkgreen',  color:'#2E7D32' }
+];
+function getAdlColorInfo(score){
+  if(score===null || score===undefined || score==='') return null;
+  const s = Number(score);
+  if(isNaN(s)) return null;
+  for(const band of ADL_COLOR_BANDS){
+    if(s >= band.min && s <= band.max) return band;
+  }
+  return s > 20 ? ADL_COLOR_BANDS[4] : ADL_COLOR_BANDS[0];
+}
 /* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: คำนวณจำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือนจากคะแนน ADL เสมอ
    (ไม่มีการกำหนดแยกเป็นรายบุคคลอีกต่อไป) ถ้ายังไม่มีคะแนน ADL ให้ใช้ค่าต่ำสุด 1 ครั้งไปก่อน */
 function getElderlyVisitTarget(e){
@@ -1927,8 +1955,8 @@ function renderRecElderlyOptions(){
   } else {
     panel.innerHTML = list.map(id=>{
       const e = STATE.elderly[id];
-      const info = getAdlBarthelInfo(e.adlScore);
-      const dot = info ? `<span class="adl-dot adl-${info.cls}"></span>` : '<span class="adl-dot" style="background:#ddd;border-color:#ccc;"></span>';
+      const colorInfo = getAdlColorInfo(e.adlScore);
+      const dot = colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : '<span class="adl-dot" style="background:#ddd;border-color:#ccc;"></span>';
       return `<div class="ms-option" onclick="selectRecElderly('${id}')">${dot}${e.name}</div>`;
     }).join('');
   }
@@ -1942,8 +1970,8 @@ function selectRecElderly(id){
   const e = STATE.elderly[id];
   if(!e) return;
   document.getElementById('recElderly').value = id;
-  const info = getAdlBarthelInfo(e.adlScore);
-  const dot = info ? `<span class="adl-dot adl-${info.cls}"></span>` : '';
+  const colorInfo = getAdlColorInfo(e.adlScore);
+  const dot = colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : '';
   document.getElementById('recElderlyLabel').innerHTML = `${dot}${e.name}`;
   document.getElementById('recElderlyPanel').classList.remove('open');
   document.getElementById('recElderlyToggle').classList.remove('open');
@@ -1969,8 +1997,9 @@ function renderRecInfoCard(){
   if(!id || !STATE.elderly[id]){ box.innerHTML=''; renderRecQuotaBadge(); return; }
   const e = STATE.elderly[id];
   const info = getAdlBarthelInfo(e.adlScore);
+  const colorInfo = getAdlColorInfo(e.adlScore);
   const adlText = info ? `${info.group} (คะแนน ${e.adlScore})` : 'ยังไม่มีคะแนน ADL';
-  box.innerHTML = `${info ? `<span class="adl-dot adl-${info.cls}"></span>` : ''}อายุ ${e.age||'-'} ปี | ${adlText} | เยี่ยม ${getElderlyVisitTarget(e)} ครั้ง/เดือน | โหมด PDF: <span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span>`;
+  box.innerHTML = `${colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : ''}อายุ ${e.age||'-'} ปี | ${adlText} | เยี่ยม ${getElderlyVisitTarget(e)} ครั้ง/เดือน | โหมด PDF: <span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span>`;
   renderRecQuotaBadge();
 }
 document.getElementById('recCg').addEventListener('change', renderRecElderlyOptions);
@@ -2137,7 +2166,8 @@ function openAttentionDetail(id){
   document.getElementById('attentionDetailTitle').textContent = e.name;
   const cgName = STATE.cgs[e.cgCode]?.name || '-';
   const info = getAdlBarthelInfo(e.adlScore);
-  const adlLine = info ? `<span class="adl-dot adl-${info.cls}"></span>${info.group}` : '-';
+  const colorInfo = getAdlColorInfo(e.adlScore);
+  const adlLine = info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-';
   document.getElementById('attentionDetailBody').innerHTML = `
     <div>CG ผู้ดูแล: <b>${cgName}</b></div>
     <div>อายุ: ${e.age||'-'} ปี &nbsp;|&nbsp; คะแนน ADL: ${(e.adlScore!==undefined && e.adlScore!=='') ? e.adlScore : '-'} &nbsp;|&nbsp; กลุ่ม: ${adlLine}</div>
@@ -3147,7 +3177,8 @@ function renderElderlyTable(){
       ? `<span class="status-tag discharged" title="${e.dischargeReasonLabel||''} (${e.dischargeDate||''})">จำหน่ายแล้ว</span>`
       : `<span class="status-tag approved">ดูแลอยู่</span>`;
     const adlInfo = getAdlBarthelInfo(e.adlScore);
-    const adlDot = adlInfo ? `<span class="adl-dot adl-${adlInfo.cls}"></span>` : '';
+    const adlColorInfo = getAdlColorInfo(e.adlScore);
+    const adlDot = adlColorInfo ? `<span class="adl-dot adl-${adlColorInfo.cls}"></span>` : '';
     const adlGroupCell = adlInfo ? adlInfo.group : '-';
     const visitTarget = adlInfo ? (adlInfo.minVisits===0 ? 'ไม่จำเป็น' : adlInfo.minVisits) : '-';
     return `<tr>
@@ -3298,11 +3329,12 @@ function renderElderlyImportPreview(parsed){
   const unmatchedCg = parsed.filter(r=>r.cgNameRaw && !r.cgCode);
   const rowsHtml = parsed.slice(0,10).map(r=>{
     const info = getAdlBarthelInfo(r.adlScore);
+    const colorInfo = getAdlColorInfo(r.adlScore);
     return `
     <tr>
       <td>${r.name}</td><td>${r.gender||'-'}</td><td>${r.age||'-'}</td>
       <td>${r.cgCode ? (STATE.cgs[r.cgCode]?.name||r.cgCode) : (r.cgNameRaw ? `<span style="color:var(--danger)">ไม่พบ: ${r.cgNameRaw}</span>` : '-')}</td>
-      <td>${r.adlScore!==null?r.adlScore:'-'}</td><td>${info ? `<span class="adl-dot adl-${info.cls}"></span>${info.group}` : '-'}</td><td>${info ? (info.minVisits===0?'ไม่จำเป็น':info.minVisits) : '-'}</td>
+      <td>${r.adlScore!==null?r.adlScore:'-'}</td><td>${info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-'}</td><td>${info ? (info.minVisits===0?'ไม่จำเป็น':info.minVisits) : '-'}</td>
     </tr>`;
   }).join('');
   const warnHtml = unmatchedCg.length
@@ -3351,14 +3383,16 @@ function commitElderlyImport(){
 
 function renderElderlyAdlComputedBox(){
   const scoreRaw = document.getElementById('elderlyAdlScore').value;
+  const scoreVal = scoreRaw === '' ? null : parseInt(scoreRaw,10);
   const box = document.getElementById('elderlyAdlComputedBox');
-  const info = getAdlBarthelInfo(scoreRaw === '' ? null : parseInt(scoreRaw,10));
+  const info = getAdlBarthelInfo(scoreVal);
   if(!info){
     box.innerHTML = 'กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ';
     return;
   }
+  const colorInfo = getAdlColorInfo(scoreVal);
   const visitText = info.minVisits === 0 ? 'ไม่จำเป็นต้องมี CG เยี่ยมเป็นประจำ' : `อย่างน้อย ${info.minVisits} ครั้ง/เดือน`;
-  box.innerHTML = `<span class="adl-badge adl-${info.cls}"><span class="adl-dot adl-${info.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; จำนวนครั้งที่ต้องเยี่ยม: <b>${visitText}</b>`;
+  box.innerHTML = `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; จำนวนครั้งที่ต้องเยี่ยม: <b>${visitText}</b>`;
 }
 document.getElementById('elderlyAdlScore').addEventListener('input', renderElderlyAdlComputedBox);
 
