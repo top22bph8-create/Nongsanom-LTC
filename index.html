@@ -46,6 +46,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot.adl-blue{background:#185FA5;}
 .adl-dot.adl-lightgreen{background:#8BC34A;}
 .adl-dot.adl-darkgreen{background:#2E7D32;}
+.adl-dot.adl-green{background:#2E7D32;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
 .adl-badge.adl-normal{background:#E8F5E9;color:#1B5E20;}
@@ -57,6 +58,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-badge.adl-blue{background:#E8F0FB;color:#0F3D6B;}
 .adl-badge.adl-lightgreen{background:#F1F8E9;color:#33691E;}
 .adl-badge.adl-darkgreen{background:#E8F5E9;color:#1B5E20;}
+.adl-badge.adl-green{background:#E8F5E9;color:#1B5E20;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
 .quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
@@ -186,6 +188,9 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .adl-summary-item.adl-social{background:#185FA5;}
 .adl-summary-item.adl-home{background:#8E44AD;}
 .adl-summary-item.adl-bed{background:#D8503A;}
+.adl-summary-item.adl-red{background:#D8503A;}
+.adl-summary-item.adl-blue{background:#185FA5;}
+.adl-summary-item.adl-green{background:#2E7D32;}
 .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
 .badge.normal{background:#e8f0fb;color:var(--secondary);}
 .badge.obt{background:#fdece5;color:var(--danger);}
@@ -695,55 +700,47 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <section id="tab-elderly" class="tabpanel">
   <div class="card">
     <h3>📊 การแบ่งกลุ่มผู้สูงอายุตามคะแนน ADL</h3>
-    <p class="muted">Barthel Activities of Daily Living — เกณฑ์มาตรฐานที่ใช้กำหนดจำนวนครั้งขั้นต่ำที่ Care Giver (CG) ต้องออกเยี่ยมบ้านต่อเดือน ระบบจะคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยมให้อัตโนมัติจากคะแนน ADL ที่กรอกไว้ในโปรไฟล์ผู้สูงอายุแต่ละคนเสมอ</p>
+    <p class="muted">Barthel Activities of Daily Living — เกณฑ์มาตรฐานที่ใช้กำหนดจำนวนครั้งขั้นต่ำที่ Care Giver (CG) ต้องออกเยี่ยมบ้านต่อเดือน ระบบจะคำนวณสถานะสีและจำนวนครั้งที่ต้องเยี่ยมให้อัตโนมัติจากคะแนน ADL ที่กรอกไว้ในโปรไฟล์ผู้สูงอายุแต่ละคนเสมอ</p>
     <div style="overflow-x:auto;">
     <table class="adl-infographic">
       <thead>
         <tr>
           <th>คะแนน ADL</th>
-          <th>กลุ่ม</th>
+          <th>สถานะสี</th>
           <th>ประเภทผู้สูงอายุ</th>
           <th>ลักษณะการช่วยเหลือตนเอง</th>
           <th>จำนวนครั้งขั้นต่ำที่ CG ต้องเยี่ยม/เดือน</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="adl-row-normal">
-          <td class="adl-score-cell">20 คะแนน</td>
-          <td><span class="adl-badge adl-normal"><span class="adl-dot adl-normal"></span>ปกติ</span></td>
-          <td>กลุ่มปกติ</td>
-          <td>ช่วยเหลือตนเองได้ทั้งหมด</td>
-          <td>ไม่จำเป็นต้องมี CG เยี่ยมเป็นประจำ</td>
-        </tr>
-        <tr class="adl-row-social">
-          <td class="adl-score-cell">12–19 คะแนน</td>
-          <td><span class="adl-badge adl-social"><span class="adl-dot adl-social"></span>ติดสังคม</span></td>
-          <td>กลุ่มติดสังคม</td>
-          <td>ช่วยเหลือตนเองได้เป็นส่วนใหญ่</td>
-          <td>อย่างน้อย 1 ครั้ง/เดือน</td>
-        </tr>
-        <tr class="adl-row-home">
-          <td class="adl-score-cell">5–11 คะแนน</td>
-          <td><span class="adl-badge adl-home"><span class="adl-dot adl-home"></span>ติดบ้าน</span></td>
-          <td>กลุ่มติดบ้าน</td>
-          <td>ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล</td>
-          <td>อย่างน้อย 2 ครั้ง/เดือน</td>
-        </tr>
         <tr class="adl-row-bed">
           <td class="adl-score-cell">0–4 คะแนน</td>
-          <td><span class="adl-badge adl-bed"><span class="adl-dot adl-bed"></span>ติดเตียง</span></td>
+          <td><span class="adl-badge adl-red"><span class="adl-dot adl-red"></span>แดง</span></td>
           <td>กลุ่มติดเตียง</td>
           <td>ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น</td>
-          <td>อย่างน้อย 4 ครั้ง/เดือน</td>
+          <td>เยี่ยม 4 ครั้ง/เดือน</td>
+        </tr>
+        <tr class="adl-row-home">
+          <td class="adl-score-cell">5–6 คะแนน</td>
+          <td><span class="adl-badge adl-blue"><span class="adl-dot adl-blue"></span>น้ำเงิน</span></td>
+          <td>กลุ่มติดบ้าน</td>
+          <td>ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล</td>
+          <td>เยี่ยม 3 ครั้ง/เดือน</td>
+        </tr>
+        <tr class="adl-row-social">
+          <td class="adl-score-cell">7–20 คะแนน</td>
+          <td><span class="adl-badge adl-green"><span class="adl-dot adl-green"></span>เขียว</span></td>
+          <td>กลุ่มติดสังคม / ปกติ</td>
+          <td>ช่วยเหลือตนเองได้เป็นส่วนใหญ่ถึงทั้งหมด</td>
+          <td>เยี่ยม 2 ครั้ง/เดือน</td>
         </tr>
       </tbody>
     </table>
     </div>
     <div class="adl-summary-strip">
-      <div class="adl-summary-item adl-normal">ปกติ : ADL 20</div>
-      <div class="adl-summary-item adl-social">ติดสังคม : ADL 12–19</div>
-      <div class="adl-summary-item adl-home">ติดบ้าน : ADL 5–11</div>
-      <div class="adl-summary-item adl-bed">ติดเตียง : ADL 0–4</div>
+      <div class="adl-summary-item adl-red">แดง : ADL 0–4 (เยี่ยม 4 ครั้ง/เดือน)</div>
+      <div class="adl-summary-item adl-blue">น้ำเงิน : ADL 5–6 (เยี่ยม 3 ครั้ง/เดือน)</div>
+      <div class="adl-summary-item adl-green">เขียว : ADL 7–20 (เยี่ยม 2 ครั้ง/เดือน)</div>
     </div>
   </div>
 
@@ -1129,30 +1126,37 @@ function getAdlBarthelInfo(score){
   }
   return s > 20 ? ADL_BARTHEL_TABLE[0] : ADL_BARTHEL_TABLE[3];
 }
-/* สถานะสีลูกบอล/ป้าย ตามช่วงคะแนน ADL แบบละเอียด 5 ระดับ (แยกจากการแบ่งกลุ่ม/เกณฑ์เยี่ยมด้านบน)
-   0-4 แดง | 5-6 เหลือง | 7-8 น้ำเงิน | 9-10 เขียวอ่อน | 11-20 เขียวเข้ม */
-const ADL_COLOR_BANDS = [
-  { min:0,  max:4,  cls:'red',        color:'#D8503A' },
-  { min:5,  max:6,  cls:'yellow',     color:'#F9A825' },
-  { min:7,  max:8,  cls:'blue',       color:'#185FA5' },
-  { min:9,  max:10, cls:'lightgreen', color:'#8BC34A' },
-  { min:11, max:20, cls:'darkgreen',  color:'#2E7D32' }
+/* จำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือน คำนวณจากคะแนน ADL ตามเกณฑ์ใหม่ล่าสุด:
+   0-4 คะแนน = เยี่ยม 4 ครั้ง/เดือน | 5-6 คะแนน = เยี่ยม 3 ครั้ง/เดือน | 7-20 คะแนน = เยี่ยม 2 ครั้ง/เดือน */
+const ADL_VISIT_BANDS = [
+  { min:0, max:4,  visits:4 },
+  { min:5, max:6,  visits:3 },
+  { min:7, max:20, visits:2 }
 ];
-function getAdlColorInfo(score){
+function getAdlVisitBand(score){
   if(score===null || score===undefined || score==='') return null;
   const s = Number(score);
   if(isNaN(s)) return null;
-  for(const band of ADL_COLOR_BANDS){
+  for(const band of ADL_VISIT_BANDS){
     if(s >= band.min && s <= band.max) return band;
   }
-  return s > 20 ? ADL_COLOR_BANDS[4] : ADL_COLOR_BANDS[0];
+  return s > 20 ? ADL_VISIT_BANDS[2] : ADL_VISIT_BANDS[0];
+}
+/* สถานะสีลูกบอล/ป้าย สัมพันธ์กับจำนวนครั้งที่ต้องออกเยี่ยม/เดือน (ซึ่งคำนวณจากคะแนน ADL ด้านบน):
+   ต้องเยี่ยม 4 ครั้ง = แดง | ต้องเยี่ยม 3 ครั้ง = น้ำเงิน | ต้องเยี่ยม 2 ครั้ง = เขียว */
+function getAdlColorInfo(score){
+  const band = getAdlVisitBand(score);
+  if(!band) return null;
+  if(band.visits === 4) return { cls:'red', color:'#D8503A' };
+  if(band.visits === 3) return { cls:'blue', color:'#185FA5' };
+  return { cls:'green', color:'#2E7D32' };
 }
 /* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: คำนวณจำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือนจากคะแนน ADL เสมอ
    (ไม่มีการกำหนดแยกเป็นรายบุคคลอีกต่อไป) ถ้ายังไม่มีคะแนน ADL ให้ใช้ค่าต่ำสุด 1 ครั้งไปก่อน */
 function getElderlyVisitTarget(e){
   if(!e) return 1;
-  const info = getAdlBarthelInfo(e.adlScore);
-  return info ? info.minVisits : 1;
+  const band = getAdlVisitBand(e.adlScore);
+  return band ? band.visits : 1;
 }
 
 function beYear(y){ return y + 543; }
