@@ -37,14 +37,14 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
   header.app-header img.app-logo{width:34px;height:34px;}
 }
 .adl-dot{display:inline-block;width:15px;height:15px;border-radius:50%;margin-right:6px;vertical-align:middle;flex-shrink:0;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 3px rgba(0,0,0,.25);}
-.adl-dot.adl-normal{background:#FFFFFF;border-color:#B0B0B0;}
-.adl-dot.adl-social{background:#2E7D32;}
+.adl-dot.adl-normal{background:#2E7D32;}
+.adl-dot.adl-social{background:#185FA5;}
 .adl-dot.adl-home{background:#8E44AD;}
 .adl-dot.adl-bed{background:#D8503A;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
-.adl-badge.adl-normal{background:#F0F0F0;color:#555;}
-.adl-badge.adl-social{background:#E8F5E9;color:#1B5E20;}
+.adl-badge.adl-normal{background:#E8F5E9;color:#1B5E20;}
+.adl-badge.adl-social{background:#E8F0FB;color:#0F3D6B;}
 .adl-badge.adl-home{background:#F1E9FB;color:#5A2D7A;}
 .adl-badge.adl-bed{background:#FBE9E7;color:#B23A22;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
@@ -1105,8 +1105,8 @@ const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2'
    ทุกอย่างคำนวณจากคะแนน ADL (0-20) เพียงจุดเดียว เพื่อไม่ให้ข้อมูลไม่ตรงกัน
 ============================================================= */
 const ADL_BARTHEL_TABLE = [
-  { min:20, max:20, group:'ปกติ',      desc:'ช่วยเหลือตนเองได้ทั้งหมด',                         minVisits:0, cls:'normal', color:'#FFFFFF' },
-  { min:12, max:19, group:'ติดสังคม',  desc:'ช่วยเหลือตนเองได้เป็นส่วนใหญ่',                    minVisits:1, cls:'social', color:'#2E7D32' },
+  { min:20, max:20, group:'ปกติ',      desc:'ช่วยเหลือตนเองได้ทั้งหมด',                         minVisits:0, cls:'normal', color:'#2E7D32' },
+  { min:12, max:19, group:'ติดสังคม',  desc:'ช่วยเหลือตนเองได้เป็นส่วนใหญ่',                    minVisits:1, cls:'social', color:'#185FA5' },
   { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:2, cls:'home',   color:'#8E44AD' },
   { min:0,  max:4,  group:'ติดเตียง',  desc:'ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น',           minVisits:4, cls:'bed',    color:'#D8503A' }
 ];
