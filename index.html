@@ -39,13 +39,13 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot{display:inline-block;width:15px;height:15px;border-radius:50%;margin-right:6px;vertical-align:middle;flex-shrink:0;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 3px rgba(0,0,0,.25);}
 .adl-dot.adl-normal{background:#FFFFFF;border-color:#B0B0B0;}
 .adl-dot.adl-social{background:#2E7D32;}
-.adl-dot.adl-home{background:#F9A825;}
+.adl-dot.adl-home{background:#8E44AD;}
 .adl-dot.adl-bed{background:#D8503A;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
 .adl-badge.adl-normal{background:#F0F0F0;color:#555;}
 .adl-badge.adl-social{background:#E8F5E9;color:#1B5E20;}
-.adl-badge.adl-home{background:#FFF8E1;color:#8A6100;}
+.adl-badge.adl-home{background:#F1E9FB;color:#5A2D7A;}
 .adl-badge.adl-bed{background:#FBE9E7;color:#B23A22;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
@@ -82,6 +82,10 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .ms-toggle span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(21,113,186,.18);padding:8px;max-height:280px;overflow-y:auto;}
 .ms-panel.open{display:block;}
+.ms-option{display:flex;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13.5px;transition:background .15s;}
+.ms-option:hover{background:#F4FBFF;}
+.ms-option.empty{color:var(--muted);cursor:default;}
+.ms-option.empty:hover{background:none;}
 .plan-elderly-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
 .plan-elderly-card .plan-elderly-name{font-weight:600;font-size:13.5px;color:var(--primary-dark);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
 .plan-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
@@ -487,7 +491,17 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <h3>1. เลือกผู้ดูแล (CG) และผู้สูงอายุ</h3>
     <div class="row">
       <div class="field"><label>CG</label><select id="recCg"></select></div>
-      <div class="field"><label>ผู้สูงอายุ</label><select id="recElderly"></select></div>
+      <div class="field">
+        <label>ผู้สูงอายุ</label>
+        <div class="ms-dropdown" id="recElderlyDropdown">
+          <button type="button" class="ms-toggle" id="recElderlyToggle">
+            <span id="recElderlyLabel">-- เลือกผู้สูงอายุ --</span>
+            <span class="ms-arrow">▾</span>
+          </button>
+          <div class="ms-panel" id="recElderlyPanel"></div>
+        </div>
+        <input type="hidden" id="recElderly">
+      </div>
     </div>
     <div id="recInfoCard" class="muted" style="margin-top:8px;"></div>
   </div>
@@ -1093,7 +1107,7 @@ const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2'
 const ADL_BARTHEL_TABLE = [
   { min:20, max:20, group:'ปกติ',      desc:'ช่วยเหลือตนเองได้ทั้งหมด',                         minVisits:0, cls:'normal', color:'#FFFFFF' },
   { min:12, max:19, group:'ติดสังคม',  desc:'ช่วยเหลือตนเองได้เป็นส่วนใหญ่',                    minVisits:1, cls:'social', color:'#2E7D32' },
-  { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:2, cls:'home',   color:'#F9A825' },
+  { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:2, cls:'home',   color:'#8E44AD' },
   { min:0,  max:4,  group:'ติดเตียง',  desc:'ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น',           minVisits:4, cls:'bed',    color:'#D8503A' }
 ];
 function getAdlBarthelInfo(score){
@@ -1885,27 +1899,69 @@ document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
 ============================================================= */
 function renderCgSelects(){
   const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
-  ['recCg','elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg'].forEach(id=>{
+  const optsNoCode = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${STATE.cgs[code].name}</option>`).join('');
+  ['elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg'].forEach(id=>{
     const el = document.getElementById(id);
     const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
     const prevVal = el.value;
     el.innerHTML = keepFirst + opts;
     if(prevVal) el.value = prevVal;
   });
+  const recCgEl = document.getElementById('recCg');
+  const prevRecCg = recCgEl.value;
+  recCgEl.innerHTML = optsNoCode;
+  if(prevRecCg) recCgEl.value = prevRecCg;
   renderRecElderlyOptions();
   renderRecManageList();
 }
 
+/* ผู้สูงอายุในหน้าบันทึกการเยี่ยม: ใช้ dropdown แบบกำหนดเอง แสดงลูกบอลสีตามกลุ่ม ADL แทนรหัส
+   (select มาตรฐานของเบราว์เซอร์ไม่รองรับการใส่สี จึงต้องสร้างเป็นปุ่ม+รายการเอง) */
 function renderRecElderlyOptions(){
   const cg = document.getElementById('recCg').value;
-  const sel = document.getElementById('recElderly');
   const list = Object.keys(STATE.elderly).filter(id=>STATE.elderly[id].cgCode===cg && STATE.elderly[id].status!=='discharged').sort();
-  sel.innerHTML = list.map(id=>{
-    const e = STATE.elderly[id];
-    return `<option value="${id}">${id} - ${e.name}</option>`;
-  }).join('');
+  const panel = document.getElementById('recElderlyPanel');
+  const currentVal = document.getElementById('recElderly').value;
+  if(list.length === 0){
+    panel.innerHTML = '<div class="ms-option empty">-- ไม่มีผู้สูงอายุในความดูแลของ CG นี้ --</div>';
+  } else {
+    panel.innerHTML = list.map(id=>{
+      const e = STATE.elderly[id];
+      const info = getAdlBarthelInfo(e.adlScore);
+      const dot = info ? `<span class="adl-dot adl-${info.cls}"></span>` : '<span class="adl-dot" style="background:#ddd;border-color:#ccc;"></span>';
+      return `<div class="ms-option" onclick="selectRecElderly('${id}')">${dot}${e.name}</div>`;
+    }).join('');
+  }
+  if(!list.includes(currentVal)){
+    document.getElementById('recElderly').value = '';
+    document.getElementById('recElderlyLabel').textContent = '-- เลือกผู้สูงอายุ --';
+  }
   renderRecInfoCard();
 }
+function selectRecElderly(id){
+  const e = STATE.elderly[id];
+  if(!e) return;
+  document.getElementById('recElderly').value = id;
+  const info = getAdlBarthelInfo(e.adlScore);
+  const dot = info ? `<span class="adl-dot adl-${info.cls}"></span>` : '';
+  document.getElementById('recElderlyLabel').innerHTML = `${dot}${e.name}`;
+  document.getElementById('recElderlyPanel').classList.remove('open');
+  document.getElementById('recElderlyToggle').classList.remove('open');
+  renderRecInfoCard();
+}
+const recElderlyToggleBtn = document.getElementById('recElderlyToggle');
+const recElderlyPanelEl = document.getElementById('recElderlyPanel');
+recElderlyToggleBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  recElderlyPanelEl.classList.toggle('open');
+  recElderlyToggleBtn.classList.toggle('open');
+});
+document.addEventListener('click', (e)=>{
+  if(!document.getElementById('recElderlyDropdown').contains(e.target)){
+    recElderlyPanelEl.classList.remove('open');
+    recElderlyToggleBtn.classList.remove('open');
+  }
+});
 
 function renderRecInfoCard(){
   const id = document.getElementById('recElderly').value;
@@ -1918,7 +1974,6 @@ function renderRecInfoCard(){
   renderRecQuotaBadge();
 }
 document.getElementById('recCg').addEventListener('change', renderRecElderlyOptions);
-document.getElementById('recElderly').addEventListener('change', renderRecInfoCard);
 
 /* ป้ายสถานะจำนวนครั้งที่ต้องเยี่ยม/เยี่ยมแล้ว/คงเหลือ ของผู้สูงอายุที่เลือก ในเดือน/ปีที่เลือก
    เกณฑ์สี: ครบตามเป้าหมาย = เขียว | <25% = แดง | 25-49% = ส้ม | 50-74% = เหลือง | >=75% = ฟ้า */
