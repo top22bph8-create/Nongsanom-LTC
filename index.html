@@ -745,6 +745,22 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card">
+    <h3>📋 ประเภทผู้สูงอายุตามกลุ่มเป้าหมาย (LTC)</h3>
+    <p class="muted">การจัดกลุ่มตามลักษณะทางคลินิก (ใช้ดุลยพินิจของผู้ประเมินร่วมด้วย โดยเฉพาะกลุ่มที่ 4 ซึ่งเกี่ยวข้องกับระยะสุดท้ายของชีวิต ไม่สามารถคำนวณจากคะแนน ADL เพียงอย่างเดียวได้) เลือกกำหนดได้ในฟอร์มเพิ่ม/แก้ไขผู้สูงอายุแต่ละคน</p>
+    <div style="overflow-x:auto;">
+    <table class="adl-infographic">
+      <thead><tr><th>กลุ่ม</th><th>ลักษณะ / ประเภทผู้สูงอายุ</th></tr></thead>
+      <tbody>
+        <tr><td class="adl-score-cell">กลุ่มที่ 1</td><td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย</td></tr>
+        <tr><td class="adl-score-cell">กลุ่มที่ 2</td><td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน</td></tr>
+        <tr><td class="adl-score-cell">กลุ่มที่ 3</td><td>เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง</td></tr>
+        <tr><td class="adl-score-cell">กลุ่มที่ 4</td><td>เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
     <h3>📥 นำเข้าข้อมูลผู้สูงอายุจากไฟล์ Excel</h3>
     <p class="muted">รองรับไฟล์ .xlsx/.xls ที่มีหัวคอลัมน์ทำนองนี้ (ไม่ต้องเรียงลำดับ ไม่ต้องมีครบทุกคอลัมน์): <b>เลขประจำตัวประชาชน, ชื่อสกุล, คะแนน ADL, เพศอายุ (เช่น "หญิง : 73 ปี"), ที่อยู่/บ้านเลขที่, หมู่, CG รับผิดชอบ, เบอร์โทรศัพท์ญาติ, ชื่ออสม.ใกล้บ้าน, เบอร์โทรศัพท์ อสม.</b> — ชื่อ CG ในไฟล์จะจับคู่กับ CG ที่มีอยู่แล้วในระบบโดยอัตโนมัติจากนามสกุล กลุ่ม ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน จะคำนวณจากคะแนน ADL ให้อัตโนมัติตามตารางด้านบน</p>
     <div class="row">
@@ -762,7 +778,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
     <p class="muted" style="margin-top:6px;">กลุ่ม ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน คำนวณจากคะแนน ADL อัตโนมัติเสมอ (ดูเกณฑ์ได้ในตารางด้านบน) — ติ๊กเลือกได้หลายคนเพื่อลบเป็นกลุ่ม หรือกดปุ่ม 🗑 รายคนได้ตามปกติ</p>
-    <table style="margin-top:10px;"><thead><tr><th><input type="checkbox" id="selectAllElderlyCb"></th><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
+    <table style="margin-top:10px;"><thead><tr><th><input type="checkbox" id="selectAllElderlyCb"></th><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>ประเภทผู้สูงอายุ (LTC)</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
 </section>
@@ -982,6 +998,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
   </div>
   <div class="info-box" id="elderlyAdlComputedBox" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#F7FBFA;border:1px solid var(--border);font-size:13px;">กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ</div>
+  <div class="field" style="margin-top:8px;">
+    <label>ประเภทผู้สูงอายุ (กลุ่มเป้าหมาย LTC)</label>
+    <select id="elderlyLtcGroup">
+      <option value="">-- ไม่ระบุ --</option>
+      <option value="1">กลุ่มที่ 1 — เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย</option>
+      <option value="2">กลุ่มที่ 2 — เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน</option>
+      <option value="3">กลุ่มที่ 3 — เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง</option>
+      <option value="4">กลุ่มที่ 4 — เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต</option>
+    </select>
+  </div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
@@ -3184,12 +3210,15 @@ function renderElderlyTable(){
     const adlColorInfo = getAdlColorInfo(e.adlScore);
     const adlDot = adlColorInfo ? `<span class="adl-dot adl-${adlColorInfo.cls}"></span>` : '';
     const adlGroupCell = adlInfo ? adlInfo.group : '-';
-    const visitTarget = adlInfo ? (adlInfo.minVisits===0 ? 'ไม่จำเป็น' : adlInfo.minVisits) : '-';
+    const visitTargetVal = getElderlyVisitTarget(e);
+    const visitTarget = adlInfo ? (visitTargetVal===0 ? 'ไม่จำเป็น' : visitTargetVal) : '-';
+    const ltcGroupLabels = {'1':'กลุ่มที่ 1','2':'กลุ่มที่ 2','3':'กลุ่มที่ 3','4':'กลุ่มที่ 4'};
+    const ltcGroupCell = ltcGroupLabels[e.ltcGroup] || '-';
     return `<tr>
       <td><input type="checkbox" class="elderly-select-cb" value="${id}" onchange="updateBulkDeleteCount()"></td>
       <td>${id}</td><td>${adlDot}${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td>
       <td>${(e.adlScore!==undefined && e.adlScore!==null && e.adlScore!=='') ? e.adlScore : '-'}</td>
-      <td>${adlGroupCell}</td><td>${visitTarget}</td>
+      <td>${adlGroupCell}</td><td>${ltcGroupCell}</td><td>${visitTarget}</td>
       <td><span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span></td>
       <td>${statusCell}</td>
       <td class="row" style="gap:4px;"><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
@@ -3198,7 +3227,7 @@ function renderElderlyTable(){
       <button class="btn btn-danger btn-sm" onclick="deleteElderly('${id}')">🗑</button></td>
     </tr>`;
   }).join('');
-  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="11" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="12" class="muted">ยังไม่มีข้อมูล</td></tr>';
   document.getElementById('selectAllElderlyCb').checked = false;
   updateBulkDeleteCount();
 }
@@ -3407,6 +3436,7 @@ document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyPdfMode').value = 'normal';
+  document.getElementById('elderlyLtcGroup').value = '';
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 });
@@ -3427,6 +3457,7 @@ function openEditElderly(id){
   document.getElementById('elderlyRelativePhone').value = e.relativePhone||'';
   document.getElementById('elderlyVhvName').value = e.vhvName||'';
   document.getElementById('elderlyVhvPhone').value = e.vhvPhone||'';
+  document.getElementById('elderlyLtcGroup').value = e.ltcGroup||'';
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 }
@@ -3449,6 +3480,7 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     houseNo: document.getElementById('elderlyHouseNo').value.trim(),
     moo: document.getElementById('elderlyMoo').value,
     adlScore: adlScoreRaw==='' ? null : parseInt(adlScoreRaw,10),
+    ltcGroup: document.getElementById('elderlyLtcGroup').value,
     cgCode,
     cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
     pdfMode: document.getElementById('elderlyPdfMode').value,
