@@ -47,6 +47,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot.adl-lightgreen{background:#8BC34A;}
 .adl-dot.adl-darkgreen{background:#2E7D32;}
 .adl-dot.adl-green{background:#2E7D32;}
+.adl-dot.adl-cyan{background:#00ACC1;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
 .adl-badge.adl-normal{background:#E8F5E9;color:#1B5E20;}
@@ -59,6 +60,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-badge.adl-lightgreen{background:#F1F8E9;color:#33691E;}
 .adl-badge.adl-darkgreen{background:#E8F5E9;color:#1B5E20;}
 .adl-badge.adl-green{background:#E8F5E9;color:#1B5E20;}
+.adl-badge.adl-cyan{background:#E0F7FA;color:#00636F;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
 .quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
@@ -181,6 +183,10 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .adl-infographic tr.adl-row-social td:first-child{border-left:6px solid #185FA5;}
 .adl-infographic tr.adl-row-home td:first-child{border-left:6px solid #8E44AD;}
 .adl-infographic tr.adl-row-bed td:first-child{border-left:6px solid #D8503A;}
+.adl-infographic tr.adl-row-green td:first-child{border-left:6px solid #2E7D32;}
+.adl-infographic tr.adl-row-cyan td:first-child{border-left:6px solid #00ACC1;}
+.adl-infographic tr.adl-row-yellow td:first-child{border-left:6px solid #F9A825;}
+.adl-infographic tr.adl-row-red td:first-child{border-left:6px solid #D8503A;}
 .adl-infographic td.adl-score-cell{font-weight:700;font-size:14px;white-space:nowrap;}
 .adl-summary-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
 .adl-summary-item{flex:1 1 170px;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px;color:#fff;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;}
@@ -191,6 +197,8 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .adl-summary-item.adl-red{background:#D8503A;}
 .adl-summary-item.adl-blue{background:#185FA5;}
 .adl-summary-item.adl-green{background:#2E7D32;}
+.adl-summary-item.adl-cyan{background:#00ACC1;}
+.adl-summary-item.adl-yellow{background:#F9A825;}
 .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
 .badge.normal{background:#e8f0fb;color:var(--secondary);}
 .badge.obt{background:#fdece5;color:var(--danger);}
@@ -543,6 +551,9 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <div class="field"><label>อัตราการหายใจ (ครั้ง/นาที)</label><input type="number" id="recRr" placeholder="เช่น 20"></div>
       <div class="field"><label>อุณหภูมิร่างกาย (°C)</label><input type="number" step="0.1" id="recTemp" placeholder="เช่น 36.5"></div>
     </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>น้ำหนัก (กิโลกรัม)</label><input type="number" step="0.1" id="recWeight" placeholder="เช่น 55.5"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -593,8 +604,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
           <option value="3">3. อาหารแยกตามประเภท</option>
         </select>
       </div>
-      <div class="field"><label>คะแนน ADL (0-20)</label><input type="number" id="recAdlScore" min="0" max="20" placeholder="0-20"></div>
+      <div class="field"><label>คะแนนการประเมิน (ADL) การเยี่ยมครั้งนี้ (0-11)</label><input type="number" id="recAdlScore" min="0" max="11" placeholder="0-11"></div>
     </div>
+    <p class="muted" id="recPrevAdlHint" style="margin-top:6px;">ยังไม่มีประวัติการประเมิน ADL ครั้งก่อนหน้าของผู้สูงอายุคนนี้</p>
+    <div class="field" id="recConfusionWrap" style="margin-top:8px;display:none;">
+      <label class="checkbox-item" style="padding-left:0;"><input type="checkbox" id="recHasConfusion"> มีภาวะสับสน</label>
+    </div>
+    <div class="field" id="recEndOfLifeWrap" style="margin-top:8px;display:none;">
+      <label class="checkbox-item" style="padding-left:0;"><input type="checkbox" id="recIsEndOfLife"> อยู่ในระยะสุดท้ายของชีวิต</label>
+    </div>
+    <div class="info-box" id="recHealthStatusBox" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:#F7FBFA;border:1px solid var(--border);font-size:13px;">กรุณากรอกคะแนนการประเมิน ADL ครั้งนี้ เพื่อให้ระบบสรุปภาวะสุขภาพและกลุ่มให้อัตโนมัติ</div>
     <div class="field" id="recFoodTypeDetailWrap" style="margin-top:10px;display:none;">
       <label>ประเภทอาหารผู้ป่วยติดเตียง (เลือกได้มากกว่า 1 ข้อ)</label>
       <div class="checkbox-group">
@@ -699,64 +718,56 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <!-- ===================== ELDERLY MANAGEMENT ===================== -->
 <section id="tab-elderly" class="tabpanel">
   <div class="card">
-    <h3>📊 การแบ่งกลุ่มผู้สูงอายุตามคะแนน ADL</h3>
-    <p class="muted">Barthel Activities of Daily Living — เกณฑ์มาตรฐานที่ใช้กำหนดจำนวนครั้งขั้นต่ำที่ Care Giver (CG) ต้องออกเยี่ยมบ้านต่อเดือน ระบบจะคำนวณสถานะสีและจำนวนครั้งที่ต้องเยี่ยมให้อัตโนมัติจากคะแนน ADL ที่กรอกไว้ในโปรไฟล์ผู้สูงอายุแต่ละคนเสมอ</p>
+    <h3>📊 การแบ่งกลุ่มผู้สูงอายุ (คะแนน ADL + ลักษณะทางคลินิก)</h3>
+    <p class="muted">เกณฑ์มาตรฐานที่ใช้กำหนดจำนวนครั้งขั้นต่ำที่ Care Giver (CG) ต้องออกเยี่ยมบ้านต่อเดือน — ระบบคำนวณกลุ่ม สีสถานะ และจำนวนครั้งที่ต้องเยี่ยมให้อัตโนมัติจากคะแนน ADL (0-11) ที่กรอกไว้ในโปรไฟล์ผู้สูงอายุแต่ละคน ร่วมกับข้อมูลทางคลินิกเพิ่มเติม (คะแนน 5-11 ระบุภาวะสับสนได้ / คะแนน 0-4 ระบุระยะสุดท้ายของชีวิตได้) เนื่องจากบางกรณีคะแนนเพียงอย่างเดียวไม่สามารถบอกกลุ่มที่แท้จริงได้</p>
     <div style="overflow-x:auto;">
     <table class="adl-infographic">
       <thead>
         <tr>
+          <th>กลุ่ม</th>
+          <th>ลักษณะ / ประเภทผู้สูงอายุ</th>
           <th>คะแนน ADL</th>
+          <th>จำนวนครั้งที่ต้องเยี่ยม/เดือน</th>
           <th>สถานะสี</th>
-          <th>ประเภทผู้สูงอายุ</th>
-          <th>ลักษณะการช่วยเหลือตนเอง</th>
-          <th>จำนวนครั้งขั้นต่ำที่ CG ต้องเยี่ยม/เดือน</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="adl-row-bed">
-          <td class="adl-score-cell">0–4 คะแนน</td>
-          <td><span class="adl-badge adl-red"><span class="adl-dot adl-red"></span>แดง</span></td>
-          <td>กลุ่มติดเตียง</td>
-          <td>ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น</td>
-          <td>เยี่ยม 4 ครั้ง/เดือน</td>
-        </tr>
-        <tr class="adl-row-home">
-          <td class="adl-score-cell">5–6 คะแนน</td>
-          <td><span class="adl-badge adl-blue"><span class="adl-dot adl-blue"></span>น้ำเงิน</span></td>
-          <td>กลุ่มติดบ้าน</td>
-          <td>ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล</td>
-          <td>เยี่ยม 3 ครั้ง/เดือน</td>
-        </tr>
-        <tr class="adl-row-social">
-          <td class="adl-score-cell">7–20 คะแนน</td>
-          <td><span class="adl-badge adl-green"><span class="adl-dot adl-green"></span>เขียว</span></td>
-          <td>กลุ่มติดสังคม / ปกติ</td>
-          <td>ช่วยเหลือตนเองได้เป็นส่วนใหญ่ถึงทั้งหมด</td>
+        <tr class="adl-row-green">
+          <td class="adl-score-cell">กลุ่มที่ 1</td>
+          <td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย</td>
+          <td>5–11 คะแนน</td>
           <td>เยี่ยม 2 ครั้ง/เดือน</td>
+          <td><span class="adl-badge adl-green"><span class="adl-dot adl-green"></span>เขียว</span></td>
+        </tr>
+        <tr class="adl-row-cyan">
+          <td class="adl-score-cell">กลุ่มที่ 2</td>
+          <td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน</td>
+          <td>5–11 คะแนน (มีภาวะสับสน)</td>
+          <td>เยี่ยม 4 ครั้ง/เดือน</td>
+          <td><span class="adl-badge adl-cyan"><span class="adl-dot adl-cyan"></span>ฟ้า</span></td>
+        </tr>
+        <tr class="adl-row-yellow">
+          <td class="adl-score-cell">กลุ่มที่ 3</td>
+          <td>เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง</td>
+          <td>0–4 คะแนน</td>
+          <td>เยี่ยม 4 ครั้ง/เดือน</td>
+          <td><span class="adl-badge adl-yellow"><span class="adl-dot adl-yellow"></span>เหลือง</span></td>
+        </tr>
+        <tr class="adl-row-red">
+          <td class="adl-score-cell">กลุ่มที่ 4</td>
+          <td>เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต</td>
+          <td>0–4 คะแนน (ระยะสุดท้ายของชีวิต)</td>
+          <td>เยี่ยม 8 ครั้ง/เดือน</td>
+          <td><span class="adl-badge adl-red"><span class="adl-dot adl-red"></span>แดง</span></td>
         </tr>
       </tbody>
     </table>
     </div>
     <div class="adl-summary-strip">
-      <div class="adl-summary-item adl-red">แดง : ADL 0–4 (เยี่ยม 4 ครั้ง/เดือน)</div>
-      <div class="adl-summary-item adl-blue">น้ำเงิน : ADL 5–6 (เยี่ยม 3 ครั้ง/เดือน)</div>
-      <div class="adl-summary-item adl-green">เขียว : ADL 7–20 (เยี่ยม 2 ครั้ง/เดือน)</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>📋 ประเภทผู้สูงอายุตามกลุ่มเป้าหมาย (LTC)</h3>
-    <p class="muted">การจัดกลุ่มตามลักษณะทางคลินิก (ใช้ดุลยพินิจของผู้ประเมินร่วมด้วย โดยเฉพาะกลุ่มที่ 4 ซึ่งเกี่ยวข้องกับระยะสุดท้ายของชีวิต ไม่สามารถคำนวณจากคะแนน ADL เพียงอย่างเดียวได้) เลือกกำหนดได้ในฟอร์มเพิ่ม/แก้ไขผู้สูงอายุแต่ละคน</p>
-    <div style="overflow-x:auto;">
-    <table class="adl-infographic">
-      <thead><tr><th>กลุ่ม</th><th>ลักษณะ / ประเภทผู้สูงอายุ</th></tr></thead>
-      <tbody>
-        <tr><td class="adl-score-cell">กลุ่มที่ 1</td><td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย</td></tr>
-        <tr><td class="adl-score-cell">กลุ่มที่ 2</td><td>เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน</td></tr>
-        <tr><td class="adl-score-cell">กลุ่มที่ 3</td><td>เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง</td></tr>
-        <tr><td class="adl-score-cell">กลุ่มที่ 4</td><td>เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต</td></tr>
-      </tbody>
-    </table>
+      <div class="adl-summary-item adl-green">กลุ่มที่ 1 : เขียว (เยี่ยม 2 ครั้ง/เดือน)</div>
+      <div class="adl-summary-item adl-cyan">กลุ่มที่ 2 : ฟ้า (เยี่ยม 4 ครั้ง/เดือน)</div>
+      <div class="adl-summary-item adl-yellow">กลุ่มที่ 3 : เหลือง (เยี่ยม 4 ครั้ง/เดือน)</div>
+      <div class="adl-summary-item adl-red">กลุ่มที่ 4 : แดง (เยี่ยม 8 ครั้ง/เดือน)</div>
     </div>
   </div>
 
@@ -778,7 +789,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary btn-sm" id="addElderlyBtn" style="align-self:flex-end;">+ เพิ่มผู้สูงอายุ</button>
     </div>
     <p class="muted" style="margin-top:6px;">กลุ่ม ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน คำนวณจากคะแนน ADL อัตโนมัติเสมอ (ดูเกณฑ์ได้ในตารางด้านบน) — ติ๊กเลือกได้หลายคนเพื่อลบเป็นกลุ่ม หรือกดปุ่ม 🗑 รายคนได้ตามปกติ</p>
-    <table style="margin-top:10px;"><thead><tr><th><input type="checkbox" id="selectAllElderlyCb"></th><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม ADL</th><th>ประเภทผู้สูงอายุ (LTC)</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
+    <table style="margin-top:10px;"><thead><tr><th><input type="checkbox" id="selectAllElderlyCb"></th><th>รหัส</th><th>ชื่อ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม/ประเภทผู้สูงอายุ</th><th>เยี่ยม/เดือน</th><th>โหมด</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="elderlyTable"></tbody></table>
   </div>
 </section>
@@ -994,20 +1005,17 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field"><label>หมู่ที่</label><input type="number" id="elderlyMoo" min="1" max="20"></div>
   </div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>คะแนน ADL (Barthel, 0-20)</label><input type="number" id="elderlyAdlScore" min="0" max="20" placeholder="เช่น 0-20"></div>
+    <div class="field"><label>คะแนน ADL (0-11)</label><input type="number" id="elderlyAdlScore" min="0" max="11" placeholder="เช่น 0-11"></div>
     <div class="field"><label>CG ผู้ดูแล</label><select id="elderlyCg"></select></div>
   </div>
-  <div class="info-box" id="elderlyAdlComputedBox" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#F7FBFA;border:1px solid var(--border);font-size:13px;">กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ</div>
-  <div class="field" style="margin-top:8px;">
-    <label>ประเภทผู้สูงอายุ (กลุ่มเป้าหมาย LTC)</label>
-    <select id="elderlyLtcGroup">
-      <option value="">-- ไม่ระบุ --</option>
-      <option value="1">กลุ่มที่ 1 — เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย</option>
-      <option value="2">กลุ่มที่ 2 — เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน</option>
-      <option value="3">กลุ่มที่ 3 — เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง</option>
-      <option value="4">กลุ่มที่ 4 — เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต</option>
-    </select>
+  <div class="field" id="elderlyConfusionWrap" style="margin-top:8px;display:none;">
+    <label class="checkbox-item" style="padding-left:0;"><input type="checkbox" id="elderlyHasConfusion"> มีภาวะสับสน (จะจัดเป็นกลุ่มที่ 2 แทนกลุ่มที่ 1)</label>
   </div>
+  <div class="field" id="elderlyEndOfLifeWrap" style="margin-top:8px;display:none;">
+    <label class="checkbox-item" style="padding-left:0;"><input type="checkbox" id="elderlyIsEndOfLife"> อยู่ในระยะสุดท้ายของชีวิต (จะจัดเป็นกลุ่มที่ 4 แทนกลุ่มที่ 3)</label>
+  </div>
+  <div class="info-box" id="elderlyAdlComputedBox" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#F7FBFA;border:1px solid var(--border);font-size:13px;">กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ</div>
+  <div class="field" style="margin-top:8px;"><label>ชื่อญาติผู้ดูแลหลัก</label><input type="text" id="elderlyPrimaryRelativeName" placeholder="ชื่อ-สกุลญาติผู้ดูแลหลัก"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
@@ -1133,56 +1141,47 @@ const REHAB_ACTIVITY_LABELS = {
 const CARE_ACTIVITY_LABELS = {'1':'ปฏิบัติตาม care plan','2':'ดูแลความสะอาดร่างกายคนไข้','3':'ดูแลสภาพแวดล้อมทั่วไป','4':'ช่วยเหลือญาติทำกิจกรรม','5':'ให้กำลังใจญาติและผู้ป่วย'};
 
 /* =============================================================
-   การแบ่งกลุ่มผู้สูงอายุตามคะแนน ADL (Barthel Activities of Daily Living)
-   แทนที่ระบบ "กลุ่ม ADL" แบบเดิม (1-4) และจำนวนครั้งเยี่ยม/เดือนที่เคยกำหนดแยกต่างหาก
-   ทุกอย่างคำนวณจากคะแนน ADL (0-20) เพียงจุดเดียว เพื่อไม่ให้ข้อมูลไม่ตรงกัน
+   ระบบจัดกลุ่มผู้สูงอายุแบบรวมศูนย์ (แทนที่ระบบเดิมทั้งหมด: การแบ่งกลุ่มตามคะแนน ADL +
+   ประเภทผู้สูงอายุตามกลุ่มเป้าหมาย LTC ที่เคยแยกกัน) — คำนวณจากคะแนน ADL (0-11) ร่วมกับ
+   ข้อมูลทางคลินิกเพิ่มเติมที่คะแนนเพียงอย่างเดียวบอกไม่ได้ (ภาวะสับสน / ระยะสุดท้ายของชีวิต):
+     คะแนน 5-11 → กลุ่มที่ 1 ปกติ, หรือกลุ่มที่ 2 ถ้ามีภาวะสับสน
+     คะแนน 0-4  → กลุ่มที่ 3 ปกติ, หรือกลุ่มที่ 4 ถ้าอยู่ในระยะสุดท้ายของชีวิต
 ============================================================= */
-const ADL_BARTHEL_TABLE = [
-  { min:20, max:20, group:'ปกติ',      desc:'ช่วยเหลือตนเองได้ทั้งหมด',                         minVisits:0, cls:'normal', color:'#2E7D32' },
-  { min:12, max:19, group:'ติดสังคม',  desc:'ช่วยเหลือตนเองได้เป็นส่วนใหญ่',                    minVisits:1, cls:'social', color:'#185FA5' },
-  { min:5,  max:11, group:'ติดบ้าน',   desc:'ช่วยเหลือตนเองได้บางส่วน ต้องมีผู้ดูแล',           minVisits:2, cls:'home',   color:'#8E44AD' },
-  { min:0,  max:4,  group:'ติดเตียง',  desc:'ช่วยเหลือตนเองไม่ได้ ต้องพึ่งพาผู้อื่น',           minVisits:4, cls:'bed',    color:'#D8503A' }
-];
-function getAdlBarthelInfo(score){
-  if(score===null || score===undefined || score==='') return null;
-  const s = Number(score);
+const LTC_GROUPS = {
+  '1': { id:'1', label:'กลุ่มที่ 1', desc:'เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย', visits:2, cls:'green' },
+  '2': { id:'2', label:'กลุ่มที่ 2', desc:'เคลื่อนไหวได้บ้าง มีปัญหาการกินและการขับถ่าย แต่มีภาวะสับสน', visits:4, cls:'cyan' },
+  '3': { id:'3', label:'กลุ่มที่ 3', desc:'เคลื่อนไหวไม่ได้ และมีอาการเจ็บป่วยรุนแรง', visits:4, cls:'yellow' },
+  '4': { id:'4', label:'กลุ่มที่ 4', desc:'เคลื่อนไหวไม่ได้ มีปัญหาการกินและการขับถ่าย อยู่ในระยะสุดท้ายของชีวิต', visits:8, cls:'red' }
+};
+function computeLtcGroupId(adlScore, hasConfusion, isEndOfLife){
+  if(adlScore===null || adlScore===undefined || adlScore==='') return null;
+  const s = Number(adlScore);
   if(isNaN(s)) return null;
-  for(const row of ADL_BARTHEL_TABLE){
-    if(s >= row.min && s <= row.max) return row;
-  }
-  return s > 20 ? ADL_BARTHEL_TABLE[0] : ADL_BARTHEL_TABLE[3];
+  if(s >= 5) return hasConfusion ? '2' : '1';
+  return isEndOfLife ? '4' : '3';
 }
-/* จำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือน คำนวณจากคะแนน ADL ตามเกณฑ์ใหม่ล่าสุด:
-   0-4 คะแนน = เยี่ยม 4 ครั้ง/เดือน | 5-6 คะแนน = เยี่ยม 3 ครั้ง/เดือน | 7-20 คะแนน = เยี่ยม 2 ครั้ง/เดือน */
-const ADL_VISIT_BANDS = [
-  { min:0, max:4,  visits:4 },
-  { min:5, max:6,  visits:3 },
-  { min:7, max:20, visits:2 }
-];
-function getAdlVisitBand(score){
-  if(score===null || score===undefined || score==='') return null;
-  const s = Number(score);
-  if(isNaN(s)) return null;
-  for(const band of ADL_VISIT_BANDS){
-    if(s >= band.min && s <= band.max) return band;
-  }
-  return s > 20 ? ADL_VISIT_BANDS[2] : ADL_VISIT_BANDS[0];
+function getElderlyLtcGroup(e){
+  if(!e) return null;
+  const gid = computeLtcGroupId(e.adlScore, e.hasConfusion, e.isEndOfLife);
+  return gid ? LTC_GROUPS[gid] : null;
 }
-/* สถานะสีลูกบอล/ป้าย สัมพันธ์กับจำนวนครั้งที่ต้องออกเยี่ยม/เดือน (ซึ่งคำนวณจากคะแนน ADL ด้านบน):
-   ต้องเยี่ยม 4 ครั้ง = แดง | ต้องเยี่ยม 3 ครั้ง = น้ำเงิน | ต้องเยี่ยม 2 ครั้ง = เขียว */
-function getAdlColorInfo(score){
-  const band = getAdlVisitBand(score);
-  if(!band) return null;
-  if(band.visits === 4) return { cls:'red', color:'#D8503A' };
-  if(band.visits === 3) return { cls:'blue', color:'#185FA5' };
-  return { cls:'green', color:'#2E7D32' };
+/* ฟังก์ชันเดิมที่ใช้เรียกทั่วระบบ ปรับให้รับ object ผู้สูงอายุ (หรือ object ที่มี adlScore/hasConfusion/isEndOfLife)
+   แทนคะแนนดิบ เพื่อให้คำนวณกลุ่มได้ครบถ้วนตามเกณฑ์ใหม่ */
+function getAdlBarthelInfo(e){
+  const g = getElderlyLtcGroup(e);
+  if(!g) return null;
+  return { group: g.label, desc: g.desc, minVisits: g.visits, cls: g.cls };
 }
-/* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: คำนวณจำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือนจากคะแนน ADL เสมอ
-   (ไม่มีการกำหนดแยกเป็นรายบุคคลอีกต่อไป) ถ้ายังไม่มีคะแนน ADL ให้ใช้ค่าต่ำสุด 1 ครั้งไปก่อน */
+function getAdlColorInfo(e){
+  const g = getElderlyLtcGroup(e);
+  if(!g) return null;
+  return { cls: g.cls };
+}
+/* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: คำนวณจำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือนจากกลุ่มที่คำนวณได้เสมอ
+   ถ้ายังไม่มีคะแนน ADL ให้ใช้ค่าต่ำสุด 1 ครั้งไปก่อน */
 function getElderlyVisitTarget(e){
-  if(!e) return 1;
-  const band = getAdlVisitBand(e.adlScore);
-  return band ? band.visits : 1;
+  const g = getElderlyLtcGroup(e);
+  return g ? g.visits : 1;
 }
 
 function beYear(y){ return y + 543; }
@@ -1985,7 +1984,7 @@ function renderRecElderlyOptions(){
   } else {
     panel.innerHTML = list.map(id=>{
       const e = STATE.elderly[id];
-      const colorInfo = getAdlColorInfo(e.adlScore);
+      const colorInfo = getAdlColorInfo(e);
       const dot = colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : '<span class="adl-dot" style="background:#ddd;border-color:#ccc;"></span>';
       return `<div class="ms-option" onclick="selectRecElderly('${id}')">${dot}${e.name}</div>`;
     }).join('');
@@ -2000,7 +1999,7 @@ function selectRecElderly(id){
   const e = STATE.elderly[id];
   if(!e) return;
   document.getElementById('recElderly').value = id;
-  const colorInfo = getAdlColorInfo(e.adlScore);
+  const colorInfo = getAdlColorInfo(e);
   const dot = colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : '';
   document.getElementById('recElderlyLabel').innerHTML = `${dot}${e.name}`;
   document.getElementById('recElderlyPanel').classList.remove('open');
@@ -2021,16 +2020,70 @@ document.addEventListener('click', (e)=>{
   }
 });
 
+/* หาคะแนนการประเมิน ADL จากการเยี่ยมครั้งล่าสุดก่อนหน้าของผู้สูงอายุคนนี้ (ถ้ามี) เพื่อใช้เทียบเปรียบเทียบ */
+function getPreviousVisitAdlScore(elderlyId){
+  const entries = Object.values(STATE.visits||{}).filter(v=>v.elderlyId===elderlyId && v.assessment && v.assessment.adlScore!==undefined && v.assessment.adlScore!==null && v.assessment.adlScore!=='')
+    .sort((a,b)=> (b.visitDate||'').localeCompare(a.visitDate||'') || (b.createdAt||0)-(a.createdAt||0));
+  return entries.length ? entries[0] : null;
+}
+function renderRecAdlAssessment(){
+  const id = document.getElementById('recElderly').value;
+  const hint = document.getElementById('recPrevAdlHint');
+  const prev = id ? getPreviousVisitAdlScore(id) : null;
+  if(prev){
+    hint.textContent = `คะแนน ADL จากการประเมินครั้งก่อนหน้า (วันที่ ${formatThaiDate(prev.visitDate)}): ${prev.assessment.adlScore} คะแนน`;
+  } else {
+    hint.textContent = 'ยังไม่มีประวัติการประเมิน ADL ครั้งก่อนหน้าของผู้สูงอายุคนนี้';
+  }
+  renderRecHealthStatusBox();
+}
+function renderRecHealthStatusBox(){
+  const scoreRaw = document.getElementById('recAdlScore').value;
+  const scoreVal = scoreRaw === '' ? null : parseInt(scoreRaw,10);
+  const box = document.getElementById('recHealthStatusBox');
+  const confusionWrap = document.getElementById('recConfusionWrap');
+  const eolWrap = document.getElementById('recEndOfLifeWrap');
+  confusionWrap.style.display = (scoreVal!==null && scoreVal>=5) ? 'block' : 'none';
+  eolWrap.style.display = (scoreVal!==null && scoreVal<5) ? 'block' : 'none';
+  if(scoreVal===null){
+    box.innerHTML = 'กรุณากรอกคะแนนการประเมิน ADL ครั้งนี้ เพื่อให้ระบบสรุปภาวะสุขภาพและกลุ่มให้อัตโนมัติ';
+    return;
+  }
+  const hasConfusion = document.getElementById('recHasConfusion').checked;
+  const isEndOfLife = document.getElementById('recIsEndOfLife').checked;
+  const tempE = { adlScore: scoreVal, hasConfusion, isEndOfLife };
+  const info = getAdlBarthelInfo(tempE);
+  const colorInfo = getAdlColorInfo(tempE);
+  const groupHtml = info ? `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> (เยี่ยม ${info.minVisits} ครั้ง/เดือน)` : '-';
+
+  const id = document.getElementById('recElderly').value;
+  const prev = id ? getPreviousVisitAdlScore(id) : null;
+  let statusHtml = '<span class="muted">ยังไม่มีคะแนนครั้งก่อนหน้าให้เปรียบเทียบ</span>';
+  let healthStatus = '';
+  if(prev){
+    const diff = scoreVal - prev.assessment.adlScore;
+    if(diff > 0){ statusHtml = '<b style="color:#2E7D32;">ดีขึ้น</b> (คะแนนเพิ่มขึ้นจากครั้งก่อน)'; healthStatus = 'ดีขึ้น'; }
+    else if(diff < 0){ statusHtml = '<b style="color:#D8503A;">แย่ลง</b> (คะแนนลดลงจากครั้งก่อน)'; healthStatus = 'แย่ลง'; }
+    else { statusHtml = '<b style="color:#185FA5;">คงที่</b> (คะแนนเท่าเดิม)'; healthStatus = 'คงที่'; }
+  }
+  box.innerHTML = `สรุปภาวะสุขภาพครั้งนี้: ${statusHtml} &nbsp;|&nbsp; กลุ่ม: ${groupHtml}`;
+  box.dataset.healthStatus = healthStatus;
+}
+document.getElementById('recAdlScore').addEventListener('input', renderRecHealthStatusBox);
+document.getElementById('recHasConfusion').addEventListener('change', renderRecHealthStatusBox);
+document.getElementById('recIsEndOfLife').addEventListener('change', renderRecHealthStatusBox);
+
 function renderRecInfoCard(){
   const id = document.getElementById('recElderly').value;
   const box = document.getElementById('recInfoCard');
-  if(!id || !STATE.elderly[id]){ box.innerHTML=''; renderRecQuotaBadge(); return; }
+  if(!id || !STATE.elderly[id]){ box.innerHTML=''; renderRecQuotaBadge(); renderRecAdlAssessment(); return; }
   const e = STATE.elderly[id];
-  const info = getAdlBarthelInfo(e.adlScore);
-  const colorInfo = getAdlColorInfo(e.adlScore);
+  const info = getAdlBarthelInfo(e);
+  const colorInfo = getAdlColorInfo(e);
   const adlText = info ? `${info.group} (คะแนน ${e.adlScore})` : 'ยังไม่มีคะแนน ADL';
   box.innerHTML = `${colorInfo ? `<span class="adl-dot adl-${colorInfo.cls}"></span>` : ''}อายุ ${e.age||'-'} ปี | ${adlText} | เยี่ยม ${getElderlyVisitTarget(e)} ครั้ง/เดือน | โหมด PDF: <span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span>`;
   renderRecQuotaBadge();
+  renderRecAdlAssessment();
 }
 document.getElementById('recCg').addEventListener('change', renderRecElderlyOptions);
 
@@ -2163,7 +2216,7 @@ function renderDashboard(){
     attentionCard.style.display = 'block';
     function buildAdlGroupList(cls){
       return elderlyIds.filter(id=>{
-        const info = getAdlBarthelInfo(STATE.elderly[id].adlScore);
+        const info = getAdlBarthelInfo(STATE.elderly[id]);
         return info && info.cls === cls;
       }).map(id=>{
         const e = STATE.elderly[id];
@@ -2195,8 +2248,8 @@ function openAttentionDetail(id){
   if(!e) return;
   document.getElementById('attentionDetailTitle').textContent = e.name;
   const cgName = STATE.cgs[e.cgCode]?.name || '-';
-  const info = getAdlBarthelInfo(e.adlScore);
-  const colorInfo = getAdlColorInfo(e.adlScore);
+  const info = getAdlBarthelInfo(e);
+  const colorInfo = getAdlColorInfo(e);
   const adlLine = info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-';
   document.getElementById('attentionDetailBody').innerHTML = `
     <div>CG ผู้ดูแล: <b>${cgName}</b></div>
@@ -2284,7 +2337,9 @@ function renderDrill(){
         if(a.vitals && (a.vitals.bpSys||a.vitals.bpDia)) parts.push(`ความดัน ${a.vitals.bpSys||'-'}/${a.vitals.bpDia||'-'}`);
         if(a.vitals && a.vitals.pr) parts.push(`ชีพจร ${a.vitals.pr}`);
         if(a.vitals && a.vitals.temp) parts.push(`อุณหภูมิ ${a.vitals.temp}°C`);
+        if(a.vitals && a.vitals.weight) parts.push(`น้ำหนัก ${a.vitals.weight} กก.`);
         if(a.adlScore!==undefined && a.adlScore!=='') parts.push(`ADL ${a.adlScore}`);
+        if(a.healthStatus) parts.push(`ภาวะสุขภาพ: ${a.healthStatus}`);
         if(a.mentalHealth) parts.push(`จิตใจ: ${MENTAL_HEALTH_LABELS[a.mentalHealth]||'-'}`);
         if(parts.length) assessHtml = `<br><span class="muted">${parts.join(' | ')}</span>`;
       }
@@ -2319,7 +2374,8 @@ function openPhotoView(vid){
   document.getElementById('photoViewImg').src = v.photoUrl;
   let html = `<div><b>${v.elderlyName || e.name || '-'}</b> &nbsp;|&nbsp; CG: ${v.cgName || '-'}</div>
     <div>วันที่เยี่ยม: ${formatThaiDate(v.visitDate)}</div>`;
-  if(a && a.adlScore!==undefined && a.adlScore!==''){ html += `<div>คะแนน ADL ขณะเยี่ยม: ${a.adlScore}</div>`; }
+  if(a && a.adlScore!==undefined && a.adlScore!==''){ html += `<div>คะแนนประเมิน ADL ขณะเยี่ยม: ${a.adlScore}${a.healthStatus ? ` (ภาวะสุขภาพครั้งนี้: ${a.healthStatus})` : ''}</div>`; }
+  if(a && a.vitals && a.vitals.weight){ html += `<div>น้ำหนัก: ${a.vitals.weight} กก.</div>`; }
   if(v.note){ html += `<div style="margin-top:6px;"><b>ปัญหาสำคัญที่บันทึกไว้:</b> ${v.note}</div>`; }
   document.getElementById('photoViewDetails').innerHTML = html;
   openModal('photoViewModal');
@@ -2495,8 +2551,8 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   let adlScore = null;
   if(adlScoreRaw !== ''){
     adlScore = parseInt(adlScoreRaw,10);
-    if(isNaN(adlScore) || adlScore<0 || adlScore>20){
-      toast('คะแนน ADL ต้องอยู่ระหว่าง 0-20 คะแนนเท่านั้น','error'); return;
+    if(isNaN(adlScore) || adlScore<0 || adlScore>11){
+      toast('คะแนน ADL ต้องอยู่ระหว่าง 0-11 คะแนนเท่านั้น','error'); return;
     }
   }
   const careActivities = Array.from(document.querySelectorAll('.recCareActivity:checked')).map(cb=>cb.value);
@@ -2504,13 +2560,18 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   const rehabActivities = Array.from(document.querySelectorAll('.recRehabActivity:checked')).map(cb=>cb.value);
   const rehabOtherChecked = document.getElementById('recRehabOtherCb').checked;
   const rehabOtherText = document.getElementById('recRehabOtherText').value.trim();
+  const recHasConfusion = document.getElementById('recHasConfusion').checked;
+  const recIsEndOfLife = document.getElementById('recIsEndOfLife').checked;
+  const visitLtcGroupInfo = adlScore!==null ? getAdlBarthelInfo({ adlScore, hasConfusion: recHasConfusion, isEndOfLife: recIsEndOfLife }) : null;
+  const healthStatus = document.getElementById('recHealthStatusBox').dataset.healthStatus || '';
   const assessment = {
     vitals: {
       bpSys: document.getElementById('recBpSys').value || '',
       bpDia: document.getElementById('recBpDia').value || '',
       pr: document.getElementById('recPr').value || '',
       rr: document.getElementById('recRr').value || '',
-      temp: document.getElementById('recTemp').value || ''
+      temp: document.getElementById('recTemp').value || '',
+      weight: document.getElementById('recWeight').value || ''
     },
     medication: document.getElementById('recMedication').value || '',
     dailyActivity: document.getElementById('recDailyActivity').value || '',
@@ -2522,7 +2583,11 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     rehabActivities,
     rehabOther: rehabOtherChecked ? rehabOtherText : '',
     careActivities,
-    adlScore: adlScore===null ? '' : adlScore
+    adlScore: adlScore===null ? '' : adlScore,
+    hasConfusion: recHasConfusion,
+    isEndOfLife: recIsEndOfLife,
+    healthStatus,
+    ltcGroup: visitLtcGroupInfo ? visitLtcGroupInfo.group : ''
   };
   const elderly = STATE.elderly[elderlyId];
   const cg = STATE.cgs[cgCode];
@@ -2556,6 +2621,11 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
     document.getElementById('recPr').value='';
     document.getElementById('recRr').value='';
     document.getElementById('recTemp').value='';
+    document.getElementById('recWeight').value='';
+    document.getElementById('recHasConfusion').checked=false;
+    document.getElementById('recIsEndOfLife').checked=false;
+    document.getElementById('recConfusionWrap').style.display='none';
+    document.getElementById('recEndOfLifeWrap').style.display='none';
     document.getElementById('recMedication').value='';
     document.getElementById('recDailyActivity').value='';
     document.getElementById('recElimination').value='';
@@ -3206,19 +3276,17 @@ function renderElderlyTable(){
     const statusCell = isDischarged
       ? `<span class="status-tag discharged" title="${e.dischargeReasonLabel||''} (${e.dischargeDate||''})">จำหน่ายแล้ว</span>`
       : `<span class="status-tag approved">ดูแลอยู่</span>`;
-    const adlInfo = getAdlBarthelInfo(e.adlScore);
-    const adlColorInfo = getAdlColorInfo(e.adlScore);
+    const adlInfo = getAdlBarthelInfo(e);
+    const adlColorInfo = getAdlColorInfo(e);
     const adlDot = adlColorInfo ? `<span class="adl-dot adl-${adlColorInfo.cls}"></span>` : '';
-    const adlGroupCell = adlInfo ? adlInfo.group : '-';
+    const adlGroupCell = adlInfo ? `${adlInfo.group} (${adlInfo.desc})` : '-';
     const visitTargetVal = getElderlyVisitTarget(e);
-    const visitTarget = adlInfo ? (visitTargetVal===0 ? 'ไม่จำเป็น' : visitTargetVal) : '-';
-    const ltcGroupLabels = {'1':'กลุ่มที่ 1','2':'กลุ่มที่ 2','3':'กลุ่มที่ 3','4':'กลุ่มที่ 4'};
-    const ltcGroupCell = ltcGroupLabels[e.ltcGroup] || '-';
+    const visitTarget = adlInfo ? visitTargetVal : '-';
     return `<tr>
       <td><input type="checkbox" class="elderly-select-cb" value="${id}" onchange="updateBulkDeleteCount()"></td>
       <td>${id}</td><td>${adlDot}${e.name}</td><td>${e.age||'-'}</td><td>${cgName}</td>
       <td>${(e.adlScore!==undefined && e.adlScore!==null && e.adlScore!=='') ? e.adlScore : '-'}</td>
-      <td>${adlGroupCell}</td><td>${ltcGroupCell}</td><td>${visitTarget}</td>
+      <td>${adlGroupCell}</td><td>${visitTarget}</td>
       <td><span class="badge ${e.pdfMode}">${e.pdfMode==='obt'?'อบต.':'ปกติ'}</span></td>
       <td>${statusCell}</td>
       <td class="row" style="gap:4px;"><button class="btn btn-ghost btn-sm" onclick="openEditElderly('${id}')">✏️</button>
@@ -3227,7 +3295,7 @@ function renderElderlyTable(){
       <button class="btn btn-danger btn-sm" onclick="deleteElderly('${id}')">🗑</button></td>
     </tr>`;
   }).join('');
-  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="12" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('elderlyTable').innerHTML = rows || '<tr><td colspan="11" class="muted">ยังไม่มีข้อมูล</td></tr>';
   document.getElementById('selectAllElderlyCb').checked = false;
   updateBulkDeleteCount();
 }
@@ -3361,8 +3429,8 @@ document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=
 function renderElderlyImportPreview(parsed){
   const unmatchedCg = parsed.filter(r=>r.cgNameRaw && !r.cgCode);
   const rowsHtml = parsed.slice(0,10).map(r=>{
-    const info = getAdlBarthelInfo(r.adlScore);
-    const colorInfo = getAdlColorInfo(r.adlScore);
+    const info = getAdlBarthelInfo(r);
+    const colorInfo = getAdlColorInfo(r);
     return `
     <tr>
       <td>${r.name}</td><td>${r.gender||'-'}</td><td>${r.age||'-'}</td>
@@ -3418,25 +3486,34 @@ function renderElderlyAdlComputedBox(){
   const scoreRaw = document.getElementById('elderlyAdlScore').value;
   const scoreVal = scoreRaw === '' ? null : parseInt(scoreRaw,10);
   const box = document.getElementById('elderlyAdlComputedBox');
-  const info = getAdlBarthelInfo(scoreVal);
+  const confusionWrap = document.getElementById('elderlyConfusionWrap');
+  const eolWrap = document.getElementById('elderlyEndOfLifeWrap');
+  confusionWrap.style.display = (scoreVal!==null && scoreVal>=5) ? 'block' : 'none';
+  eolWrap.style.display = (scoreVal!==null && scoreVal<5) ? 'block' : 'none';
+  const hasConfusion = document.getElementById('elderlyHasConfusion').checked;
+  const isEndOfLife = document.getElementById('elderlyIsEndOfLife').checked;
+  const tempE = { adlScore: scoreVal, hasConfusion, isEndOfLife };
+  const info = getAdlBarthelInfo(tempE);
   if(!info){
     box.innerHTML = 'กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ';
     return;
   }
-  const colorInfo = getAdlColorInfo(scoreVal);
-  const visitText = info.minVisits === 0 ? 'ไม่จำเป็นต้องมี CG เยี่ยมเป็นประจำ' : `อย่างน้อย ${info.minVisits} ครั้ง/เดือน`;
-  box.innerHTML = `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; จำนวนครั้งที่ต้องเยี่ยม: <b>${visitText}</b>`;
+  const colorInfo = getAdlColorInfo(tempE);
+  box.innerHTML = `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; จำนวนครั้งที่ต้องเยี่ยม: <b>${info.minVisits} ครั้ง/เดือน</b>`;
 }
 document.getElementById('elderlyAdlScore').addEventListener('input', renderElderlyAdlComputedBox);
+document.getElementById('elderlyHasConfusion').addEventListener('change', renderElderlyAdlComputedBox);
+document.getElementById('elderlyIsEndOfLife').addEventListener('change', renderElderlyAdlComputedBox);
 
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyPdfMode').value = 'normal';
-  document.getElementById('elderlyLtcGroup').value = '';
+  document.getElementById('elderlyHasConfusion').checked = false;
+  document.getElementById('elderlyIsEndOfLife').checked = false;
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 });
@@ -3457,7 +3534,9 @@ function openEditElderly(id){
   document.getElementById('elderlyRelativePhone').value = e.relativePhone||'';
   document.getElementById('elderlyVhvName').value = e.vhvName||'';
   document.getElementById('elderlyVhvPhone').value = e.vhvPhone||'';
-  document.getElementById('elderlyLtcGroup').value = e.ltcGroup||'';
+  document.getElementById('elderlyPrimaryRelativeName').value = e.primaryRelativeName||'';
+  document.getElementById('elderlyHasConfusion').checked = !!e.hasConfusion;
+  document.getElementById('elderlyIsEndOfLife').checked = !!e.isEndOfLife;
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 }
@@ -3480,7 +3559,9 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     houseNo: document.getElementById('elderlyHouseNo').value.trim(),
     moo: document.getElementById('elderlyMoo').value,
     adlScore: adlScoreRaw==='' ? null : parseInt(adlScoreRaw,10),
-    ltcGroup: document.getElementById('elderlyLtcGroup').value,
+    hasConfusion: document.getElementById('elderlyHasConfusion').checked,
+    isEndOfLife: document.getElementById('elderlyIsEndOfLife').checked,
+    primaryRelativeName: document.getElementById('elderlyPrimaryRelativeName').value.trim(),
     cgCode,
     cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
     pdfMode: document.getElementById('elderlyPdfMode').value,
@@ -3711,7 +3792,7 @@ if(historyExcelBtn){
       'หมู่': e.moo||'',
       'CG เดิม': STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
       'คะแนน ADL': (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      'กลุ่ม ADL': (getAdlBarthelInfo(e.adlScore)||{}).group || '',
+      'กลุ่ม ADL': (getAdlBarthelInfo(e)||{}).group || '',
       'เหตุผลจำหน่าย': e.dischargeReasonLabel||'',
       'วันที่จำหน่าย': e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '',
       'หมายเหตุ': e.dischargeNote||'',
@@ -3745,6 +3826,7 @@ function buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale){
   const prText = vitals.pr || '-';
   const rrText = vitals.rr || '-';
   const tText = vitals.temp || '-';
+  const wtText = vitals.weight || '-';
   const medLabel = MEDICATION_LABELS[a.medication] || '-';
   const dailyLabel = DAILY_ACTIVITY_LABELS[a.dailyActivity] || '-';
   const elimLabel = ELIMINATION_LABELS[a.elimination] || '-';
@@ -3754,6 +3836,8 @@ function buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale){
   const foodDetailText = foodDetailList.length ? ` [${foodDetailList.join(', ')}]` : '';
   const mentalLabel = a.mentalHealth ? (MENTAL_HEALTH_LABELS[a.mentalHealth] || '-') : '';
   const adlText = (a.adlScore!==undefined && a.adlScore!=='') ? a.adlScore : '-';
+  const healthStatusText = a.healthStatus || '';
+  const ltcGroupText = a.ltcGroup || '';
   const careList = (a.careActivities||[]).map(c=>CARE_ACTIVITY_LABELS[c]).filter(Boolean);
   const careText = careList.length ? careList.join(', ') : '-';
   const rehabList = (a.rehabActivities||[]).map(c=>REHAB_ACTIVITY_LABELS[c]).filter(Boolean);
@@ -3766,7 +3850,8 @@ function buildVisitBlockHTML(v, elderly, cg, imgW, imgH, fontScale){
     <div style="flex:1;font-size:${baseFont}px;line-height:1.55;color:#1B2E3B;">
       <div style="font-weight:700;font-size:${titleFont}px;color:#0F5590;">${elderly.name} <span style="font-weight:400;color:#5B7A8C;font-size:${baseFont}px;">(วันที่ ${formatThaiDate(v.visitDate)})</span></div>
       <div>CG ผู้เยี่ยม: ${cg?cg.name:'-'}</div>
-      <div>ความดัน ${bpText} mmHg &nbsp;|&nbsp; ชีพจร ${prText} &nbsp;|&nbsp; อัตราหายใจ ${rrText} &nbsp;|&nbsp; อุณหภูมิ ${tText}°C &nbsp;|&nbsp; ADL ${adlText} คะแนน</div>
+      <div>ความดัน ${bpText} mmHg &nbsp;|&nbsp; ชีพจร ${prText} &nbsp;|&nbsp; อัตราหายใจ ${rrText} &nbsp;|&nbsp; อุณหภูมิ ${tText}°C &nbsp;|&nbsp; น้ำหนัก ${wtText} กก.</div>
+      <div>คะแนนประเมิน ADL ครั้งนี้: ${adlText}${healthStatusText ? ` &nbsp;|&nbsp; ภาวะสุขภาพครั้งนี้: ${healthStatusText}` : ''}${ltcGroupText ? ` &nbsp;|&nbsp; กลุ่ม: ${ltcGroupText}` : ''}</div>
       <div>ยา: ${medLabel} &nbsp;|&nbsp; กิจวัตร: ${dailyLabel} &nbsp;|&nbsp; ขับถ่าย: ${elimLabel}</div>
       <div>อาหาร: ${feedLabel} (${foodLabel}${foodDetailText})</div>
       ${mentalLabel ? `<div>สุขภาพจิตและอารมณ์: ${mentalLabel}</div>` : ''}
@@ -3942,13 +4027,14 @@ function buildElderlyReportRows(){
       no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e.adlScore)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
       target, visitedCount: visitedCount===null ? '-' : visitedCount,
       quotaLabel: quotaMet===null ? '-' : (quotaMet ? 'ครบตามเกณฑ์' : 'ยังไม่ครบ'),
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
       statusLabel: isDischarged ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})` : 'ดูแลอยู่',
       statusDate: isDischarged ? (e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-') : '-',
-      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||'',
+      primaryRelativeName: e.primaryRelativeName||''
     });
   });
   historyIds.forEach(id=>{
@@ -3958,12 +4044,13 @@ function buildElderlyReportRows(){
       no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e.adlScore)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
       target: getElderlyVisitTarget(e), visitedCount: '-', quotaLabel: '-',
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
       statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
       statusDate: e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-',
-      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||'',
+      primaryRelativeName: e.primaryRelativeName||''
     });
   });
   return { rows, monthLabel, yBE };
@@ -3979,7 +4066,7 @@ document.getElementById('exportElderlyExcelBtn').addEventListener('click', ()=>{
     [`เป้าหมายเยี่ยม/เดือน`]: r.target, [`เยี่ยมแล้วเดือน ${monthLabel} ${yBE}`]: r.visitedCount,
     'สถานะเกณฑ์การเยี่ยม': r.quotaLabel, 'โหมด PDF': r.pdfMode,
     'สถานะการดูแล': r.statusLabel, 'วันที่จำหน่าย/เหตุผล': r.statusDate,
-    'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
+    'ชื่อญาติผู้ดูแลหลัก': r.primaryRelativeName, 'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
   }));
   const ws = XLSX.utils.json_to_sheet(sheetData);
   ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 14) }));
