@@ -194,6 +194,9 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .adl-infographic td.adl-score-cell{font-weight:700;font-size:14px;white-space:nowrap;}
 .adl-summary-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
 .adl-summary-item{flex:1 1 170px;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px;color:#fff;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;}
+.adl-summary-item.clickable{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.adl-summary-item.clickable:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.adl-summary-item.clickable.active{outline:3px solid rgba(0,0,0,.25);}
 .adl-summary-item.adl-normal{background:#2E7D32;}
 .adl-summary-item.adl-social{background:#185FA5;}
 .adl-summary-item.adl-home{background:#8E44AD;}
@@ -501,13 +504,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
   <div class="card" id="groupCountCard" style="display:none;">
     <h3>จำนวนผู้สูงอายุแยกตามกลุ่มสี</h3>
-    <p class="muted">นับจำนวนผู้สูงอายุที่ดูแลอยู่ในแต่ละกลุ่ม ตามคะแนน ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน</p>
-    <div class="stat-grid" id="groupCountGrid"></div>
+    <p class="muted">นับจำนวนผู้สูงอายุที่ดูแลอยู่ในแต่ละกลุ่ม ตามคะแนน ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน (สีตรงกับตารางในแท็บจัดการผู้สูงอายุ) — คลิกที่กล่องกลุ่มเพื่อดูรายชื่อ</p>
+    <div class="adl-summary-strip" id="groupCountGrid"></div>
+    <div id="groupCountNameList" style="margin-top:12px;"></div>
   </div>
 
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>ผู้สูงอายุกลุ่มที่ 4 (สีแดง) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
-    <p class="muted">คัดกรองจากกลุ่มที่ 4 (ADL 0-4 และอยู่ในระยะสุดท้ายของชีวิต — เยี่ยม 8 ครั้ง/เดือน) ซึ่งมีภาวะพึ่งพิงสูงสุด พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
+    <h3>ผู้สูงอายุกลุ่มที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สีเหลืองและสีแดง)</h3>
+    <p class="muted">คัดกรองจากกลุ่มที่ 3 (สีเหลือง) และกลุ่มที่ 4 (สีแดง) ซึ่งมีภาวะพึ่งพิงสูง พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
@@ -1025,6 +1029,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <label class="checkbox-item" style="padding-left:0;"><input type="checkbox" id="elderlyIsEndOfLife"> อยู่ในระยะสุดท้ายของชีวิต (จะจัดเป็นกลุ่มที่ 4 แทนกลุ่มที่ 3)</label>
   </div>
   <div class="info-box" id="elderlyAdlComputedBox" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#F7FBFA;border:1px solid var(--border);font-size:13px;">กรุณากรอกคะแนน ADL เพื่อให้ระบบคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนให้อัตโนมัติ</div>
+  <div class="field" style="margin-top:8px;">
+    <label>จำนวนครั้งที่ต้องเยี่ยม/เดือน (กำหนดเองโดย CM/Admin — เว้นว่างไว้เพื่อใช้ค่าที่คำนวณอัตโนมัติจากกลุ่ม ADL ด้านบน)</label>
+    <input type="number" id="elderlyVisitsPerMonthOverride" min="1" max="31" placeholder="เว้นว่าง = ใช้ค่าอัตโนมัติ">
+  </div>
   <div class="field" style="margin-top:8px;"><label>ชื่อญาติผู้ดูแลหลัก</label><input type="text" id="elderlyPrimaryRelativeName" placeholder="ชื่อ-สกุลญาติผู้ดูแลหลัก"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
@@ -1189,7 +1197,14 @@ function getAdlColorInfo(e){
 }
 /* ใช้จุดเดียวทั่วทั้งระบบเพื่อความสม่ำเสมอ: คำนวณจำนวนครั้งขั้นต่ำที่ต้องเยี่ยม/เดือนจากกลุ่มที่คำนวณได้เสมอ
    ถ้ายังไม่มีคะแนน ADL ให้ใช้ค่าต่ำสุด 1 ครั้งไปก่อน */
+/* CM/Admin กำหนดจำนวนครั้งที่ต้องเยี่ยม/เดือนเองได้เป็นรายบุคคล (visitsPerMonth) ถ้ากำหนดไว้จะใช้ค่านั้นแทนค่าที่คำนวณอัตโนมัติ
+   จากกลุ่ม ADL เสมอ ทุกฟังก์ชันในระบบเรียกผ่านจุดนี้จุดเดียว ทำให้ค่าที่กำหนดสัมพันธ์กันทั่วทั้งระบบ */
 function getElderlyVisitTarget(e){
+  if(!e) return 1;
+  if(e.visitsPerMonth !== undefined && e.visitsPerMonth !== null && e.visitsPerMonth !== ''){
+    const manual = parseInt(e.visitsPerMonth,10);
+    if(!isNaN(manual)) return manual;
+  }
   const g = getElderlyLtcGroup(e);
   return g ? g.visits : 1;
 }
@@ -2220,25 +2235,29 @@ function renderDashboard(){
   }).join('');
   document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
 
-  /* จำนวนผู้สูงอายุแยกตามกลุ่มสี (ทุกคนที่ดูแลอยู่ ไม่จำหน่ายแล้ว) — แสดงให้ CM/Admin เห็นภาพรวมทั้งหมด */
+  /* จำนวนผู้สูงอายุแยกตามกลุ่มสี (ทุกคนที่ดูแลอยู่ ไม่จำหน่ายแล้ว) — แสดงให้ CM/Admin เห็นภาพรวมทั้งหมด
+     ใช้สี .adl-summary-item ชุดเดียวกับตารางในแท็บจัดการผู้สูงอายุ ให้สีตรงกันทุกจุด และคลิกดูรายชื่อได้ */
   const groupCountCard = document.getElementById('groupCountCard');
   if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
     groupCountCard.style.display = 'block';
-    const counts = { '1':0, '2':0, '3':0, '4':0 };
+    STATE.groupCountMembers = { '1':[], '2':[], '3':[], '4':[] };
     elderlyIds.forEach(id=>{
       const gid = computeLtcGroupId(STATE.elderly[id].adlScore, STATE.elderly[id].hasConfusion, STATE.elderly[id].isEndOfLife);
-      if(gid) counts[gid]++;
+      if(gid) STATE.groupCountMembers[gid].push(id);
     });
-    const statClsByGroup = { '1':'stat-success', '2':'stat-cyan', '3':'stat-yellow', '4':'stat-danger' };
     document.getElementById('groupCountGrid').innerHTML = Object.keys(LTC_GROUPS).map(gid=>{
       const g = LTC_GROUPS[gid];
-      return `<div class="stat ${statClsByGroup[gid]}"><b>${counts[gid]}</b><span>${g.label} (เยี่ยม ${g.visits} ครั้ง/เดือน)</span></div>`;
+      const count = STATE.groupCountMembers[gid].length;
+      return `<div class="adl-summary-item clickable adl-${g.cls}" onclick="toggleGroupCountNameList('${gid}', this)">${g.label} : ${count} คน (เยี่ยม ${g.visits} ครั้ง/เดือน)</div>`;
     }).join('');
+    /* ถ้ากำลังเปิดดูรายชื่อกลุ่มใดอยู่ ให้รีเฟรชรายชื่อตามข้อมูลล่าสุด */
+    const openGid = document.getElementById('groupCountNameList').dataset.openGid;
+    if(openGid) renderGroupCountNameList(openGid);
   } else {
     groupCountCard.style.display = 'none';
   }
 
-  /* ผู้สูงอายุกลุ่มที่ 4 (สีแดง) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
+  /* ผู้สูงอายุกลุ่มที่ต้องติดตามเยี่ยมอย่างใกล้ชิด: กลุ่มที่ 3 (สีเหลือง) และกลุ่มที่ 4 (สีแดง) (สำหรับ CM/Admin) */
   const attentionCard = document.getElementById('attentionCard');
   if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
     attentionCard.style.display = 'block';
@@ -2261,14 +2280,50 @@ function renderDashboard(){
           <span class="status-tag ${x.cnt>=x.target?'approved':'disabled'}">เยี่ยมแล้ว ${x.cnt}/${x.target} ครั้งเดือนนี้ ›</span>
         </div>`).join('');
     }
+    const yellowList = buildAdlGroupList('yellow');
     const redList = buildAdlGroupList('red');
     document.getElementById('attentionList').innerHTML = `
-      <div style="font-weight:700;color:#D8503A;margin-bottom:6px;"><span class="adl-dot adl-red"></span>กลุ่มที่ 4 (ADL 0-4, ระยะสุดท้ายของชีวิต) — ${redList.length} คน</div>
+      <div style="font-weight:700;color:#8A6100;margin-bottom:6px;"><span class="adl-dot adl-yellow"></span>กลุ่มที่ 3 (สีเหลือง) — ${yellowList.length} คน</div>
+      ${renderAdlGroupSection(yellowList,'yellow')}
+      <div style="font-weight:700;color:#D8503A;margin:14px 0 6px;"><span class="adl-dot adl-red"></span>กลุ่มที่ 4 (สีแดง) — ${redList.length} คน</div>
       ${renderAdlGroupSection(redList,'red')}
     `;
   } else {
     attentionCard.style.display = 'none';
   }
+}
+
+/* คลิกที่กล่องกลุ่มสีในการ์ด "จำนวนผู้สูงอายุแยกตามกลุ่มสี" เพื่อเปิด/ปิดแถบแสดงรายชื่อ */
+function toggleGroupCountNameList(gid, el){
+  const wrap = document.getElementById('groupCountNameList');
+  const alreadyOpen = wrap.dataset.openGid === gid;
+  document.querySelectorAll('#groupCountGrid .adl-summary-item').forEach(b=>b.classList.remove('active'));
+  if(alreadyOpen){
+    wrap.innerHTML = '';
+    wrap.dataset.openGid = '';
+    return;
+  }
+  el.classList.add('active');
+  wrap.dataset.openGid = gid;
+  renderGroupCountNameList(gid);
+}
+function renderGroupCountNameList(gid){
+  const wrap = document.getElementById('groupCountNameList');
+  const g = LTC_GROUPS[gid];
+  const ids = (STATE.groupCountMembers && STATE.groupCountMembers[gid]) || [];
+  if(ids.length === 0){
+    wrap.innerHTML = `<p class="muted">ไม่มีผู้สูงอายุในกลุ่มนี้ขณะนี้</p>`;
+    return;
+  }
+  const rows = ids.map(id=>{
+    const e = STATE.elderly[id];
+    const cgName = STATE.cgs[e.cgCode]?.name || '-';
+    return `<div class="list-item" onclick="openAttentionDetail('${id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+      <span><span class="adl-dot adl-${g.cls}"></span>${e.name} <span class="muted" style="font-size:12px;">(CG: ${cgName})</span></span>
+      <span class="muted" style="font-size:12px;">คะแนน ADL ${(e.adlScore!==undefined&&e.adlScore!==null)?e.adlScore:'-'} ›</span>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<p class="muted" style="margin-bottom:8px;">รายชื่อ${g.label} (${ids.length} คน)</p>${rows}`;
 }
 
 function openAttentionDetail(id){
@@ -3527,16 +3582,21 @@ function renderElderlyAdlComputedBox(){
     return;
   }
   const colorInfo = getAdlColorInfo(tempE);
-  box.innerHTML = `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; จำนวนครั้งที่ต้องเยี่ยม: <b>${info.minVisits} ครั้ง/เดือน</b>`;
+  const overrideRaw = document.getElementById('elderlyVisitsPerMonthOverride').value;
+  const visitLine = overrideRaw !== ''
+    ? `จำนวนครั้งที่ต้องเยี่ยม: <b>${overrideRaw} ครั้ง/เดือน</b> <span class="muted">(กำหนดเองโดย CM/Admin แทนค่าอัตโนมัติ ${info.minVisits} ครั้ง)</span>`
+    : `จำนวนครั้งที่ต้องเยี่ยม: <b>${info.minVisits} ครั้ง/เดือน</b> <span class="muted">(คำนวณอัตโนมัติ)</span>`;
+  box.innerHTML = `<span class="adl-badge adl-${colorInfo.cls}"><span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}</span> &nbsp; ${info.desc} &nbsp;|&nbsp; ${visitLine}`;
 }
 document.getElementById('elderlyAdlScore').addEventListener('input', renderElderlyAdlComputedBox);
+document.getElementById('elderlyVisitsPerMonthOverride').addEventListener('input', renderElderlyAdlComputedBox);
 document.getElementById('elderlyHasConfusion').addEventListener('change', renderElderlyAdlComputedBox);
 document.getElementById('elderlyIsEndOfLife').addEventListener('change', renderElderlyAdlComputedBox);
 
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName','elderlyVisitsPerMonthOverride'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyPdfMode').value = 'normal';
@@ -3565,6 +3625,7 @@ function openEditElderly(id){
   document.getElementById('elderlyPrimaryRelativeName').value = e.primaryRelativeName||'';
   document.getElementById('elderlyHasConfusion').checked = !!e.hasConfusion;
   document.getElementById('elderlyIsEndOfLife').checked = !!e.isEndOfLife;
+  document.getElementById('elderlyVisitsPerMonthOverride').value = (e.visitsPerMonth!==undefined && e.visitsPerMonth!==null) ? e.visitsPerMonth : '';
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 }
@@ -3576,6 +3637,7 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   if(!name){ toast('กรุณากรอกชื่อ','error'); return; }
   if(!cgCode){ toast('กรุณาเลือก CG ผู้ดูแล','error'); return; }
   const adlScoreRaw = document.getElementById('elderlyAdlScore').value;
+  const overrideRaw = document.getElementById('elderlyVisitsPerMonthOverride').value;
   const existing = (editId && STATE.elderly[editId]) ? STATE.elderly[editId] : null;
   const cgChanged = existing && existing.cgCode && existing.cgCode !== cgCode;
   const todayIso = new Date().toISOString().slice(0,10);
@@ -3589,6 +3651,7 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     adlScore: adlScoreRaw==='' ? null : parseInt(adlScoreRaw,10),
     hasConfusion: document.getElementById('elderlyHasConfusion').checked,
     isEndOfLife: document.getElementById('elderlyIsEndOfLife').checked,
+    visitsPerMonth: overrideRaw==='' ? null : parseInt(overrideRaw,10),
     primaryRelativeName: document.getElementById('elderlyPrimaryRelativeName').value.trim(),
     cgCode,
     cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
