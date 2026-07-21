@@ -47,7 +47,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-dot.adl-lightgreen{background:#8BC34A;}
 .adl-dot.adl-darkgreen{background:#2E7D32;}
 .adl-dot.adl-green{background:#2E7D32;}
-.adl-dot.adl-cyan{background:#00ACC1;}
+.adl-dot.adl-cyan{background:#039BE5;}
 .adl-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
 .adl-badge .adl-dot{margin-right:0;}
 .adl-badge.adl-normal{background:#E8F5E9;color:#1B5E20;}
@@ -60,7 +60,7 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
 .adl-badge.adl-lightgreen{background:#F1F8E9;color:#33691E;}
 .adl-badge.adl-darkgreen{background:#E8F5E9;color:#1B5E20;}
 .adl-badge.adl-green{background:#E8F5E9;color:#1B5E20;}
-.adl-badge.adl-cyan{background:#E0F7FA;color:#00636F;}
+.adl-badge.adl-cyan{background:#E1F5FE;color:#01579B;}
 .quota-badge{display:inline-block;padding:8px 14px;border-radius:10px;font-size:13.5px;font-weight:700;}
 .quota-badge.quota-green{background:#E8F5E9;color:#2E7D32;}
 .quota-badge.quota-red{background:#FBE9E7;color:#D8503A;}
@@ -118,25 +118,26 @@ textarea{resize:vertical;min-height:60px;}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
 .btn-sm{padding:6px 10px;font-size:12.5px;}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;}
-.stat{background:#EDF8FD;border-radius:10px;padding:10px;text-align:center;}
-.stat b{display:block;font-size:20px;color:var(--primary-dark);}
-.stat span{font-size:11.5px;color:var(--muted);}
-.stat.stat-info{background:#E8F0FB;}
-.stat.stat-info b{color:#185FA5;}
-.stat.stat-success{background:#E8F5E9;}
-.stat.stat-success b{color:#2E7D32;}
-.stat.stat-danger{background:#FDECEA;}
-.stat.stat-danger b{color:#D8503A;}
-.stat.stat-warning{background:#FFF3E0;}
-.stat.stat-warning b{color:#EF6C00;}
-.stat.stat-purple{background:#F1E9FB;}
-.stat.stat-purple b{color:#7B4FA0;}
-.stat.stat-teal{background:#E0F7F5;}
-.stat.stat-teal b{color:#00897B;}
-.stat.stat-cyan{background:#E0F7FA;}
-.stat.stat-cyan b{color:#00636F;}
-.stat.stat-yellow{background:#FFFDE7;}
-.stat.stat-yellow b{color:#8A6100;}
+.stat{background:#EDF8FD;border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:transform .15s,box-shadow .15s;}
+.stat:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.14);}
+.stat b{display:block;font-size:24px;color:var(--primary-dark);font-weight:800;letter-spacing:.3px;}
+.stat span{font-size:11.5px;color:var(--muted);font-weight:600;}
+.stat.stat-info{background:linear-gradient(135deg,#0F5590,#43C1F1);}
+.stat.stat-info b,.stat.stat-info span{color:#fff;}
+.stat.stat-success{background:linear-gradient(135deg,#1B5E20,#4CAF50);}
+.stat.stat-success b,.stat.stat-success span{color:#fff;}
+.stat.stat-danger{background:linear-gradient(135deg,#A6321C,#E8654A);}
+.stat.stat-danger b,.stat.stat-danger span{color:#fff;}
+.stat.stat-warning{background:linear-gradient(135deg,#B85C00,#FF9800);}
+.stat.stat-warning b,.stat.stat-warning span{color:#fff;}
+.stat.stat-purple{background:linear-gradient(135deg,#5A2D82,#9C6ADE);}
+.stat.stat-purple b,.stat.stat-purple span{color:#fff;}
+.stat.stat-teal{background:linear-gradient(135deg,#00594E,#26A69A);}
+.stat.stat-teal b,.stat.stat-teal span{color:#fff;}
+.stat.stat-cyan{background:linear-gradient(135deg,#01579B,#039BE5);}
+.stat.stat-cyan b,.stat.stat-cyan span{color:#fff;}
+.stat.stat-yellow{background:linear-gradient(135deg,#8A6100,#FDB813);}
+.stat.stat-yellow b,.stat.stat-yellow span{color:#fff;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);}
 th{color:var(--muted);font-weight:600;font-size:12px;}
@@ -204,7 +205,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .adl-summary-item.adl-red{background:#D8503A;}
 .adl-summary-item.adl-blue{background:#185FA5;}
 .adl-summary-item.adl-green{background:#2E7D32;}
-.adl-summary-item.adl-cyan{background:#00ACC1;}
+.adl-summary-item.adl-cyan{background:#039BE5;}
 .adl-summary-item.adl-yellow{background:#F9A825;}
 .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
 .badge.normal{background:#e8f0fb;color:var(--secondary);}
@@ -2678,24 +2679,38 @@ document.getElementById('recSaveBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('recSaveBtn');
   btn.disabled = true;
   const progressEl = document.getElementById('recProgress');
+  const failedDates = [];
+  let successCount = 0;
   try{
+    /* อัปโหลดทีละรูป — ถ้ารูปใดรูปหนึ่งอัปโหลดไม่สำเร็จ (เช่น เน็ตหลุดกลางทาง) จะไม่หยุดทั้งชุด
+       แต่จะข้ามไปอัปโหลดรูปถัดไปต่อ แล้วสรุปผลให้ครบว่ารูปไหนสำเร็จ/ไม่สำเร็จเมื่อจบ ป้องกันข้อมูลหายแบบไม่รู้ตัว */
     for(let i=0;i<files.length;i++){
-      progressEl.textContent = `กำลังอัปโหลด... ${i+1}/${files.length}`;
-      const resized = await resizeImage(files[i], 1200, 0.85);
-      const url = await uploadToImgBB(resized);
-      const vid = 'V' + Date.now() + '_' + i;
-      await db.ref('visits/'+vid).set({
-        visitDate: shuffledDates[i],
-        recordedAt: Date.now(),
-        elderlyId, elderlyName: elderly.name,
-        cgCode, cgName: cg.name,
-        photoUrl: url, note: note||'',
-        pdfMode: elderly.pdfMode||'normal',
-        assessment
-      });
+      progressEl.textContent = `กำลังอัปโหลด... ${i+1}/${files.length} (สำเร็จแล้ว ${successCount} รูป)`;
+      try{
+        const resized = await resizeImage(files[i], 1200, 0.85);
+        const url = await uploadToImgBB(resized);
+        const vid = 'V' + Date.now() + '_' + i;
+        await db.ref('visits/'+vid).set({
+          visitDate: shuffledDates[i],
+          recordedAt: Date.now(),
+          elderlyId, elderlyName: elderly.name,
+          cgCode, cgName: cg.name,
+          photoUrl: url, note: note||'',
+          pdfMode: elderly.pdfMode||'normal',
+          assessment
+        });
+        successCount++;
+      }catch(imgErr){
+        console.error('อัปโหลดรูปที่ '+(i+1)+' ไม่สำเร็จ:', imgErr);
+        failedDates.push(shuffledDates[i]);
+      }
     }
     progressEl.textContent = '';
-    toast('บันทึกการเยี่ยมสำเร็จ','success');
+    if(failedDates.length === 0){
+      toast(`บันทึกการเยี่ยมสำเร็จครบทั้ง ${successCount} รูป`,'success');
+    } else {
+      toast(`บันทึกสำเร็จ ${successCount}/${files.length} รูป — ไม่สำเร็จ ${failedDates.length} รูป (วันที่: ${failedDates.map(d=>formatThaiDate(d,true)).join(', ')}) กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอัปโหลดรูปที่เหลือใหม่อีกครั้ง`,'error');
+    }
     document.getElementById('recPhotos').value='';
     document.getElementById('recPhotoCount').textContent='';
     document.getElementById('recNote').value='';
