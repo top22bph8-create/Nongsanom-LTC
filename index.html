@@ -133,6 +133,10 @@ textarea{resize:vertical;min-height:60px;}
 .stat.stat-purple b{color:#7B4FA0;}
 .stat.stat-teal{background:#E0F7F5;}
 .stat.stat-teal b{color:#00897B;}
+.stat.stat-cyan{background:#E0F7FA;}
+.stat.stat-cyan b{color:#00636F;}
+.stat.stat-yellow{background:#FFFDE7;}
+.stat.stat-yellow b{color:#8A6100;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);}
 th{color:var(--muted);font-weight:600;font-size:12px;}
@@ -495,9 +499,15 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <tbody id="cgStatusTable"></tbody></table>
   </div>
 
+  <div class="card" id="groupCountCard" style="display:none;">
+    <h3>จำนวนผู้สูงอายุแยกตามกลุ่มสี</h3>
+    <p class="muted">นับจำนวนผู้สูงอายุที่ดูแลอยู่ในแต่ละกลุ่ม ตามคะแนน ADL และจำนวนครั้งที่ต้องเยี่ยม/เดือน</p>
+    <div class="stat-grid" id="groupCountGrid"></div>
+  </div>
+
   <div class="card" id="attentionCard" style="display:none;">
-    <h3>ผู้สูงอายุกลุ่มติดเตียง ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
-    <p class="muted">คัดกรองจากคะแนน ADL (Barthel): กลุ่มติดเตียง (ADL 0-4) ซึ่งมีภาวะพึ่งพิงสูงสุด พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
+    <h3>ผู้สูงอายุกลุ่มที่ 4 (สีแดง) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด</h3>
+    <p class="muted">คัดกรองจากกลุ่มที่ 4 (ADL 0-4 และอยู่ในระยะสุดท้ายของชีวิต — เยี่ยม 8 ครั้ง/เดือน) ซึ่งมีภาวะพึ่งพิงสูงสุด พร้อมชื่อ CG ที่รับผิดชอบ คลิกที่รายชื่อเพื่อดูเบอร์โทรญาติและ อสม. ผู้รับผิดชอบ</p>
     <div id="attentionList"></div>
   </div>
 
@@ -2210,7 +2220,25 @@ function renderDashboard(){
   }).join('');
   document.getElementById('cgStatusTable').innerHTML = rows || '<tr><td colspan="6" class="muted">ยังไม่มีข้อมูล CG</td></tr>';
 
-  /* ผู้สูงอายุกลุ่มติดบ้านและติดเตียง (คำนวณจากคะแนน ADL) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
+  /* จำนวนผู้สูงอายุแยกตามกลุ่มสี (ทุกคนที่ดูแลอยู่ ไม่จำหน่ายแล้ว) — แสดงให้ CM/Admin เห็นภาพรวมทั้งหมด */
+  const groupCountCard = document.getElementById('groupCountCard');
+  if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
+    groupCountCard.style.display = 'block';
+    const counts = { '1':0, '2':0, '3':0, '4':0 };
+    elderlyIds.forEach(id=>{
+      const gid = computeLtcGroupId(STATE.elderly[id].adlScore, STATE.elderly[id].hasConfusion, STATE.elderly[id].isEndOfLife);
+      if(gid) counts[gid]++;
+    });
+    const statClsByGroup = { '1':'stat-success', '2':'stat-cyan', '3':'stat-yellow', '4':'stat-danger' };
+    document.getElementById('groupCountGrid').innerHTML = Object.keys(LTC_GROUPS).map(gid=>{
+      const g = LTC_GROUPS[gid];
+      return `<div class="stat ${statClsByGroup[gid]}"><b>${counts[gid]}</b><span>${g.label} (เยี่ยม ${g.visits} ครั้ง/เดือน)</span></div>`;
+    }).join('');
+  } else {
+    groupCountCard.style.display = 'none';
+  }
+
+  /* ผู้สูงอายุกลุ่มที่ 4 (สีแดง) ที่ต้องติดตามเยี่ยมอย่างใกล้ชิด (สำหรับ CM/Admin) */
   const attentionCard = document.getElementById('attentionCard');
   if(CURRENT_USER && (CURRENT_USER.role === 'care_manager' || CURRENT_USER.role === 'admin')){
     attentionCard.style.display = 'block';
@@ -2233,10 +2261,10 @@ function renderDashboard(){
           <span class="status-tag ${x.cnt>=x.target?'approved':'disabled'}">เยี่ยมแล้ว ${x.cnt}/${x.target} ครั้งเดือนนี้ ›</span>
         </div>`).join('');
     }
-    const bedList = buildAdlGroupList('bed');
+    const redList = buildAdlGroupList('red');
     document.getElementById('attentionList').innerHTML = `
-      <div style="font-weight:700;color:#D8503A;margin-bottom:6px;"><span class="adl-dot adl-bed"></span>กลุ่มติดเตียง (ADL 0-4) — ${bedList.length} คน</div>
-      ${renderAdlGroupSection(bedList,'bed')}
+      <div style="font-weight:700;color:#D8503A;margin-bottom:6px;"><span class="adl-dot adl-red"></span>กลุ่มที่ 4 (ADL 0-4, ระยะสุดท้ายของชีวิต) — ${redList.length} คน</div>
+      ${renderAdlGroupSection(redList,'red')}
     `;
   } else {
     attentionCard.style.display = 'none';
