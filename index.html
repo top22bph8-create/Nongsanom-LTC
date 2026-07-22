@@ -97,6 +97,9 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(21,113,186,.18);padding:8px;max-height:280px;overflow-y:auto;}
 .ms-panel.open{display:block;}
 .ms-option{display:flex;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13.5px;transition:background .15s;}
+.tai-option-btn{padding:7px 13px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit;}
+.tai-option-btn:hover{border-color:var(--primary);}
+.tai-option-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700;}
 .ms-option:hover{background:#F4FBFF;}
 .ms-option.empty{color:var(--muted);cursor:default;}
 .ms-option.empty:hover{background:none;}
@@ -791,6 +794,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <p class="muted">รองรับไฟล์ .xlsx/.xls ที่มีหัวคอลัมน์ทำนองนี้ (ไม่ต้องเรียงลำดับ ไม่ต้องมีครบทุกคอลัมน์): <b>เลขประจำตัวประชาชน, ชื่อสกุล, กลุ่ม ADL (1-4), คะแนน ADL, เพศอายุ (เช่น "หญิง : 73 ปี"), ที่อยู่/บ้านเลขที่, หมู่, CG รับผิดชอบ, เบอร์โทรศัพท์ญาติ, ชื่ออสม.ใกล้บ้าน, เบอร์โทรศัพท์ อสม.</b> — ชื่อ CG ในไฟล์จะจับคู่กับ CG ที่มีอยู่แล้วในระบบโดยอัตโนมัติจากนามสกุล ถ้าไฟล์มีคอลัมน์ "กลุ่ม ADL" (ค่า 1-4) จะใช้กลุ่มนั้นโดยตรงทันที ถ้าไม่มีจะคำนวณกลุ่มและจำนวนครั้งที่ต้องเยี่ยม/เดือนจากคะแนน ADL แทนตามตารางด้านบน</p>
     <div class="row">
       <div class="field"><label>เลือกไฟล์ Excel</label><input type="file" id="elderlyImportFile" accept=".xlsx,.xls"></div>
+      <button class="btn btn-ghost" id="elderlyImportClearBtn" style="align-self:flex-end;" title="ล้างไฟล์ที่เลือก">🗑 ล้างไฟล์</button>
       <button class="btn btn-secondary" id="elderlyImportPreviewBtn" style="align-self:flex-end;">📄 อ่านไฟล์และแสดงตัวอย่าง</button>
     </div>
     <div id="elderlyImportPreview" style="margin-top:12px;"></div>
@@ -822,6 +826,40 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
     <tbody id="equipmentTable"></tbody></table>
     </div>
+  </div>
+  <div class="card">
+    <h3>📦 คงคลังอุปกรณ์ (วัสดุการแพทย์ / ครุภัณฑ์การแพทย์)</h3>
+    <p class="muted">บันทึกจำนวนคงคลังของวัสดุและครุภัณฑ์การแพทย์ที่มีอยู่ในหน่วยงาน แยกตามประเภท เพื่อควบคุมการเบิกจ่ายและวางแผนจัดซื้อ</p>
+    <div class="row">
+      <div class="field"><label>หมวดหมู่</label>
+        <select id="invCategory">
+          <option value="durable">ครุภัณฑ์การแพทย์</option>
+          <option value="material">วัสดุการแพทย์</option>
+        </select>
+      </div>
+      <div class="field"><label>รายการ</label>
+        <select id="invItemType"></select>
+        <input type="text" id="invItemTypeOther" placeholder="ระบุรายการ" style="display:none;margin-top:6px;">
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>จำนวนคงคลัง</label><input type="number" id="invQuantity" min="0" placeholder="0"></div>
+      <div class="field"><label>หน่วยนับ</label><input type="text" id="invUnit" placeholder="เช่น ชิ้น, ชุด, ห่อ, ม้วน"></div>
+    </div>
+    <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ, วันที่รับเข้า"></div>
+    <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ เพิ่ม/อัปเดตคงคลัง</button>
+    <div style="overflow-x:auto;">
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th>หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <tbody id="inventoryTable"></tbody></table>
+    </div>
+    <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านบน) เพื่อดูยอดคงเหลือสุทธิ</p>
+    <div class="row" style="margin-top:8px;gap:8px;">
+      <button class="btn btn-secondary" id="exportInventoryExcelBtn">📊 รายงานคงคลัง (Excel)</button>
+      <button class="btn btn-secondary" id="exportInventoryPdfBtn">📄 รายงานคงคลัง (PDF)</button>
+      <button class="btn btn-secondary" id="exportControlExcelBtn">📊 รายงานควบคุม (Excel)</button>
+      <button class="btn btn-primary" id="exportControlPdfBtn">📄 รายงานควบคุม (PDF)</button>
+    </div>
+    <div class="upload-progress" id="inventoryReportProgress"></div>
   </div>
   <div class="card">
     <h3>📄 ออกรายงานทะเบียนคุมครุภัณฑ์</h3>
@@ -872,6 +910,26 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary" id="exportElderlyPdfBtn">📄 ออกรายงาน PDF</button>
     </div>
     <div class="upload-progress" id="elderlyReportProgress"></div>
+  </div>
+
+  <div class="card">
+    <h3>รายชื่อและข้อมูลผู้สูงอายุทั้งหมด (ไม่แยกตามเดือน)</h3>
+    <p class="muted">รายงานรายชื่อและข้อมูลโปรไฟล์ผู้สูงอายุทั้งหมดในระบบ ณ ปัจจุบัน (ชื่อ, อายุ, ที่อยู่, CG, กลุ่ม ADL, โรคหลัก/โรคร่วม, TAI, ญาติผู้ดูแลหลัก) โดยไม่ต้องเลือกวัน เดือน ปี — เหมาะสำหรับพิมพ์ทะเบียนรายชื่อทั้งหมด ออกได้ทั้งไฟล์ Excel และ PDF</p>
+    <div class="row">
+      <div class="field"><label>กรอง CG (ถ้าต้องการ)</label><select id="allElderlyReportCgFilter"><option value="">ทุก CG</option></select></div>
+      <div class="field"><label>กรองสถานะ</label>
+        <select id="allElderlyReportStatusFilter">
+          <option value="">ทั้งหมด (ดูแลอยู่ + จำหน่ายแล้ว)</option>
+          <option value="active">เฉพาะที่ดูแลอยู่</option>
+          <option value="discharged">เฉพาะที่จำหน่ายแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:8px;">
+      <button class="btn btn-secondary" id="exportAllElderlyExcelBtn">📊 ออกรายงาน Excel</button>
+      <button class="btn btn-primary" id="exportAllElderlyPdfBtn">📄 ออกรายงาน PDF</button>
+    </div>
+    <div class="upload-progress" id="allElderlyReportProgress"></div>
   </div>
 </section>
 
@@ -1009,10 +1067,13 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="field"><label>ชื่อ-สกุล</label><input type="text" id="elderlyName"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>เลขประจำตัวประชาชน</label><input type="text" id="elderlyIdCard" placeholder="13 หลัก" maxlength="13"></div>
-    <div class="field"><label>HN (ถ้ามี)</label><input type="text" id="elderlyHn"></div>
+    <div class="field"><label>อายุ</label><input type="number" id="elderlyAge" min="0" max="130"></div>
   </div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>อายุ</label><input type="number" id="elderlyAge" min="0" max="130"></div>
+    <div class="field"><label>โรคหลักที่ได้รับการวินิจฉัย</label><input type="text" id="elderlyMainDiagnosis" placeholder="เช่น เบาหวาน, อัมพาตครึ่งซีก"></div>
+    <div class="field"><label>โรคร่วม</label><input type="text" id="elderlyComorbidities" placeholder="เช่น ความดันโลหิตสูง, ไขมันในเลือดสูง"></div>
+  </div>
+  <div class="row" style="margin-top:8px;">
     <div class="field"><label>เพศ</label><select id="elderlyGender"><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select></div>
   </div>
   <div class="row" style="margin-top:8px;">
@@ -1048,6 +1109,13 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <input type="number" id="elderlyVisitsPerMonthOverride" min="1" max="31" placeholder="เว้นว่าง = ใช้ค่าอัตโนมัติ">
   </div>
   <div class="field" style="margin-top:8px;"><label>ชื่อญาติผู้ดูแลหลัก</label><input type="text" id="elderlyPrimaryRelativeName" placeholder="ชื่อ-สกุลญาติผู้ดูแลหลัก"></div>
+
+  <div style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#FAFDFF;">
+    <label style="font-weight:700;font-size:13.5px;color:var(--primary-dark);">แบบประเมิน TAI (Typology of the Aged with Illustration)</label>
+    <p class="muted" style="font-size:11.5px;margin-top:2px;">คลิกเลือกตัวเลือกที่ตรงกับผู้สูงอายุมากที่สุดในแต่ละหัวข้อ (คลิกเลือกอย่างเดียว ไม่ต้องพิมพ์) ระบบจะสรุปผล TAI ให้อัตโนมัติเมื่อเลือกครบทุกข้อ</p>
+    <div id="taiDomainsContainer"></div>
+    <div class="info-box" id="taiResultBox" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:#fff;border:1px solid var(--border);font-size:13px;">กรุณาเลือกให้ครบทุกข้อเพื่อสรุปผล TAI</div>
+  </div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
@@ -1229,6 +1297,75 @@ function getElderlyVisitTarget(e){
   return g ? g.visits : 1;
 }
 
+/* =============================================================
+   แบบประเมิน TAI (Typology of the Aged with Illustration) แบบคลิกเลือก
+   หมายเหตุ: ออกแบบเป็นแบบประเมิน 5 หัวข้อ (คลิกเลือกตัวเลือกเดียวต่อหัวข้อ ไม่ต้องพิมพ์)
+   แล้วรวมคะแนนเพื่อสรุปผลเป็น TAI ประเภทที่ 1-4 โดยอิงแนวคิดทั่วไปของ TAI
+   (ผู้ใช้งานสามารถปรับเกณฑ์ให้ตรงกับเอกสาร TAI ฉบับทางการที่หน่วยงานใช้อยู่ได้ภายหลัง)
+============================================================= */
+const TAI_DOMAINS = [
+  { key:'mobility', label:'1. การเคลื่อนไหวและการทำกิจวัตรประจำวัน', options:[
+    {v:0, label:'ช่วยเหลือตนเองได้ปกติ'},
+    {v:1, label:'เดินได้ แต่ต้องมีคนช่วยหรือใช้อุปกรณ์'},
+    {v:2, label:'เคลื่อนไหวได้บ้าง ต้องมีคนดูแลใกล้ชิด'},
+    {v:3, label:'เคลื่อนไหวไม่ได้ / ติดเตียง'}
+  ]},
+  { key:'cognition', label:'2. สภาพจิตใจและความจำ', options:[
+    {v:0, label:'ปกติ'},
+    {v:1, label:'หลงลืมเล็กน้อย'},
+    {v:2, label:'สับสน / มีภาวะสมองเสื่อม'}
+  ]},
+  { key:'continence', label:'3. การขับถ่ายและการดูแลตนเอง', options:[
+    {v:0, label:'ควบคุมได้ปกติ'},
+    {v:1, label:'มีปัญหาเป็นบางครั้ง'},
+    {v:2, label:'ควบคุมไม่ได้ / ต้องใช้อุปกรณ์ช่วย'}
+  ]},
+  { key:'disease', label:'4. ภาวะโรคและความซับซ้อนในการดูแล', options:[
+    {v:0, label:'ไม่มีโรคเรื้อรัง หรือควบคุมได้ดี'},
+    {v:1, label:'มีโรคเรื้อรังหลายโรคที่ต้องติดตาม'},
+    {v:2, label:'มีภาวะเจ็บป่วยรุนแรง / ระยะท้าย'}
+  ]},
+  { key:'support', label:'5. การสนับสนุนทางสังคมและผู้ดูแล', options:[
+    {v:0, label:'มีผู้ดูแลเพียงพอ'},
+    {v:1, label:'มีผู้ดูแลบางเวลา'},
+    {v:2, label:'ไม่มีผู้ดูแลเพียงพอ'}
+  ]}
+];
+function getTaiTypeFromScore(score){
+  if(score<=2) return { type:1, label:'TAI ประเภทที่ 1 (พึ่งตนเองได้ / ติดสังคม)' };
+  if(score<=5) return { type:2, label:'TAI ประเภทที่ 2 (ติดบ้าน)' };
+  if(score<=8) return { type:3, label:'TAI ประเภทที่ 3 (ติดเตียง)' };
+  return { type:4, label:'TAI ประเภทที่ 4 (ติดเตียง ระยะรุนแรง/ท้าย)' };
+}
+let taiSelections = {};
+function renderTaiDomains(){
+  const container = document.getElementById('taiDomainsContainer');
+  container.innerHTML = TAI_DOMAINS.map(d=>`
+    <div class="field" style="margin-top:10px;">
+      <label style="font-size:12.5px;">${d.label}</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+        ${d.options.map(o=>`<button type="button" class="tai-option-btn ${taiSelections[d.key]===o.v?'selected':''}" onclick="selectTaiOption('${d.key}',${o.v})">${o.label}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  updateTaiResult();
+}
+function selectTaiOption(domainKey, value){
+  taiSelections[domainKey] = value;
+  renderTaiDomains();
+}
+function updateTaiResult(){
+  const box = document.getElementById('taiResultBox');
+  const selectedCount = TAI_DOMAINS.filter(d=>taiSelections[d.key]!==undefined).length;
+  if(selectedCount < TAI_DOMAINS.length){
+    box.innerHTML = `เลือกแล้ว ${selectedCount}/${TAI_DOMAINS.length} ข้อ — กรุณาเลือกให้ครบทุกข้อเพื่อสรุปผล TAI`;
+    return;
+  }
+  const score = TAI_DOMAINS.reduce((sum,d)=>sum+taiSelections[d.key],0);
+  const result = getTaiTypeFromScore(score);
+  box.innerHTML = `<b>${result.label}</b> (คะแนนรวม ${score})`;
+}
+
 function beYear(y){ return y + 543; }
 function pad2(n){ return String(n).padStart(2,'0'); }
 
@@ -1330,7 +1467,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -2002,9 +2139,9 @@ document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
 function renderCgSelects(){
   const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
   const optsNoCode = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${STATE.cgs[code].name}</option>`).join('');
-  ['elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg'].forEach(id=>{
+  ['elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg','allElderlyReportCgFilter'].forEach(id=>{
     const el = document.getElementById(id);
-    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
+    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg' || id==='allElderlyReportCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
     const prevVal = el.value;
     el.innerHTML = keepFirst + opts;
     if(prevVal) el.value = prevVal;
@@ -3478,6 +3615,12 @@ function matchCgCodeByName(cgNameRaw){
   return '';
 }
 
+document.getElementById('elderlyImportClearBtn').addEventListener('click', ()=>{
+  document.getElementById('elderlyImportFile').value = '';
+  document.getElementById('elderlyImportPreview').innerHTML = '';
+  elderlyImportParsedRows = [];
+  toast('ล้างไฟล์ที่เลือกแล้ว','success');
+});
 document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const fileInput = document.getElementById('elderlyImportFile');
@@ -3548,28 +3691,51 @@ document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=
 });
 
 function renderElderlyImportPreview(parsed){
-  const unmatchedCg = parsed.filter(r=>r.cgNameRaw && !r.cgCode);
-  const rowsHtml = parsed.slice(0,10).map(r=>{
+  /* จับคู่แต่ละแถวกับผู้สูงอายุที่มีอยู่ในระบบโดยเลขบัตรประชาชน (ถ้ามี) */
+  const enriched = parsed.map(r=>{
+    const idTrimmed = (r.idCard||'').replace(/\D/g,'');
+    const existingEntry = idTrimmed
+      ? Object.entries(STATE.elderly).find(([,e])=>(e.idCard||'').replace(/\D/g,'')=== idTrimmed)
+      : null;
+    return Object.assign({}, r, {
+      existingId: existingEntry ? existingEntry[0] : null,
+      existingName: existingEntry ? existingEntry[1].name : null
+    });
+  });
+  elderlyImportParsedRows = enriched;
+
+  const toAdd    = enriched.filter(r=>!r.existingId);
+  const toUpdate = enriched.filter(r=>!!r.existingId);
+  const unmatchedCg = enriched.filter(r=>r.cgNameRaw && !r.cgCode);
+
+  const rowsHtml = enriched.slice(0,10).map(r=>{
     const info = getAdlBarthelInfo(r);
     const colorInfo = getAdlColorInfo(r);
+    const action = r.existingId
+      ? `<span style="color:var(--primary);font-size:11px;">🔄 อัปเดต (${r.existingId})</span>`
+      : `<span style="color:#2E7D32;font-size:11px;">➕ เพิ่มใหม่</span>`;
     return `
     <tr>
       <td>${r.name}</td><td>${r.gender||'-'}</td><td>${r.age||'-'}</td>
-      <td>${r.cgCode ? (STATE.cgs[r.cgCode]?.name||r.cgCode) : (r.cgNameRaw ? `<span style="color:var(--danger)">ไม่พบ: ${r.cgNameRaw}</span>` : '-')}</td>
-      <td>${r.adlScore!==null?r.adlScore:'-'}</td><td>${info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-'}</td><td>${info ? (info.minVisits===0?'ไม่จำเป็น':info.minVisits) : '-'}</td>
+      <td>${r.cgCode ? (STATE.cgs[r.cgCode]?.name||r.cgCode) : (r.cgNameRaw ? \`<span style="color:var(--danger)">ไม่พบ: ${r.cgNameRaw}</span>\` : '-')}</td>
+      <td>${r.adlScore!==null?r.adlScore:'-'}</td>
+      <td>${info ? \`<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}\` : '-'}</td>
+      <td>${action}</td>
     </tr>`;
   }).join('');
+
   const warnHtml = unmatchedCg.length
-    ? `<p style="color:var(--danger);font-size:12.5px;margin-top:8px;">⚠️ พบ ${unmatchedCg.length} รายการที่จับคู่ชื่อ CG ในไฟล์กับ CG ที่มีอยู่ในระบบไม่ได้ (จะนำเข้าโดยไม่ระบุ CG ผู้ดูแล กรุณาไปกำหนดภายหลังที่ตาราง หรือใช้ปุ่ม "🔄 ย้าย CG")</p>`
+    ? `<p style="color:var(--danger);font-size:12.5px;margin-top:8px;">⚠️ พบ ${unmatchedCg.length} รายการที่จับคู่ชื่อ CG ในไฟล์กับ CG ที่มีอยู่ในระบบไม่ได้</p>`
     : '';
+
   document.getElementById('elderlyImportPreview').innerHTML = `
-    <p style="font-weight:600;">พบข้อมูลทั้งหมด ${parsed.length} รายการ (แสดงตัวอย่าง ${Math.min(10,parsed.length)} แถวแรก)</p>
+    <p style="font-weight:600;">พบข้อมูลทั้งหมด ${enriched.length} รายการ — <span style="color:#2E7D32;">➕ เพิ่มใหม่ ${toAdd.length} คน</span> &nbsp;|&nbsp; <span style="color:var(--primary);">🔄 อัปเดตข้อมูลเดิม ${toUpdate.length} คน</span> (จับคู่จากเลขบัตรประชาชน) (แสดงตัวอย่าง ${Math.min(10,enriched.length)} แถวแรก)</p>
     <div style="overflow-x:auto;">
-    <table style="min-width:600px;"><thead><tr><th>ชื่อ</th><th>เพศ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม (คำนวณอัตโนมัติ)</th><th>เยี่ยม/เดือน (คำนวณอัตโนมัติ)</th></tr></thead>
+    <table style="min-width:640px;"><thead><tr><th>ชื่อ</th><th>เพศ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม</th><th>การดำเนินการ</th></tr></thead>
     <tbody>${rowsHtml}</tbody></table>
     </div>
     ${warnHtml}
-    <button class="btn btn-primary" id="elderlyImportConfirmBtn" style="margin-top:10px;">✅ ยืนยันนำเข้า ${parsed.length} รายการ</button>
+    <button class="btn btn-primary" id="elderlyImportConfirmBtn" style="margin-top:10px;">✅ ยืนยัน: เพิ่มใหม่ ${toAdd.length} + อัปเดต ${toUpdate.length} รายการ</button>
   `;
   document.getElementById('elderlyImportConfirmBtn').addEventListener('click', commitElderlyImport);
 }
@@ -3578,23 +3744,60 @@ function commitElderlyImport(){
   if(blockIfReadOnly()) return;
   const updates = {};
   const now = Date.now();
+  const todayIso = new Date().toISOString().slice(0,10);
+  let addCount = 0, updateCount = 0;
+
   elderlyImportParsedRows.forEach(r=>{
-    const id = nextCode(STATE.elderly, 'E', 3);
-    // จองรหัสไว้ในตัวแปรชั่วคราวเพื่อไม่ให้ nextCode ซ้ำกันระหว่างวนลูป
-    STATE.elderly = STATE.elderly || {};
-    STATE.elderly[id] = { name: r.name };
-    updates['elderly/'+id] = {
-      name: r.name, idCard: r.idCard, hn:'', age: r.age||0, gender: r.gender,
-      houseNo: r.houseNo, moo: r.moo,
-      adlGroup: r.adlGroup||'', adlScore: r.adlScore,
-      cgCode: r.cgCode, cgAssignedDate: new Date().toISOString().slice(0,10),
-      pdfMode:'normal',
-      relativePhone: r.relativePhone, vhvName: r.vhvName, vhvPhone: r.vhvPhone,
-      status:'active', createdAt: now
-    };
+    if(r.existingId){
+      /* อัปเดตข้อมูลเดิม: รวมข้อมูลที่นำเข้ากับข้อมูลที่มีอยู่
+         ข้อมูลในไฟล์จะเขียนทับเฉพาะช่องที่มีค่าเข้ามา ช่องที่ว่างจะคงค่าเดิมไว้ */
+      const existing = STATE.elderly[r.existingId] || {};
+      const merged = Object.assign({}, existing);
+      if(r.name)          merged.name          = r.name;
+      if(r.idCard)        merged.idCard        = r.idCard;
+      if(r.gender)        merged.gender        = r.gender;
+      if(r.age)           merged.age           = r.age;
+      if(r.houseNo)       merged.houseNo       = r.houseNo;
+      if(r.moo)           merged.moo           = r.moo;
+      if(r.adlGroup)      merged.adlGroup      = r.adlGroup;
+      if(r.adlScore!==null && r.adlScore!==undefined) merged.adlScore = r.adlScore;
+      if(r.relativePhone) merged.relativePhone = r.relativePhone;
+      if(r.vhvName)       merged.vhvName       = r.vhvName;
+      if(r.vhvPhone)      merged.vhvPhone      = r.vhvPhone;
+      if(r.cgCode && r.cgCode !== existing.cgCode){
+        /* บันทึกประวัติการเปลี่ยน CG หาก CG ในไฟล์ต่างจาก CG ปัจจุบัน */
+        const hid = 'CGT'+now+'_'+r.existingId;
+        updates['cgTransferHistory/'+hid] = {
+          elderlyId: r.existingId, elderlyName: merged.name,
+          fromCgCode: existing.cgCode||'', fromCgName: (STATE.cgs[existing.cgCode]||{}).name||'',
+          toCgCode: r.cgCode, toCgName: (STATE.cgs[r.cgCode]||{}).name||r.cgCode,
+          transferDate: todayIso, transferredBy: CURRENT_USER?CURRENT_USER.displayName:'นำเข้า Excel', createdAt: now
+        };
+        merged.cgCode = r.cgCode;
+        merged.cgAssignedDate = todayIso;
+      }
+      updates['elderly/'+r.existingId] = merged;
+      updateCount++;
+    } else {
+      /* เพิ่มใหม่: สร้างรหัสใหม่ จองใน STATE ชั่วคราวเพื่อไม่ให้ nextCode ซ้ำกัน */
+      const id = nextCode(STATE.elderly, 'E', 3);
+      STATE.elderly = STATE.elderly || {};
+      STATE.elderly[id] = { name: r.name };
+      updates['elderly/'+id] = {
+        name: r.name, idCard: r.idCard||'', age: r.age||0, gender: r.gender||'',
+        houseNo: r.houseNo||'', moo: r.moo||'',
+        adlGroup: r.adlGroup||'', adlScore: r.adlScore,
+        cgCode: r.cgCode||'', cgAssignedDate: todayIso,
+        pdfMode:'normal',
+        relativePhone: r.relativePhone||'', vhvName: r.vhvName||'', vhvPhone: r.vhvPhone||'',
+        status:'active', createdAt: now
+      };
+      addCount++;
+    }
   });
+
   db.ref().update(updates).then(()=>{
-    toast(`นำเข้าผู้สูงอายุ ${elderlyImportParsedRows.length} รายการสำเร็จ`,'success');
+    toast(`นำเข้าสำเร็จ: เพิ่มใหม่ ${addCount} คน, อัปเดต ${updateCount} คน`,'success');
     elderlyImportParsedRows = [];
     document.getElementById('elderlyImportPreview').innerHTML = '';
     document.getElementById('elderlyImportFile').value = '';
@@ -3638,13 +3841,15 @@ document.getElementById('elderlyIsEndOfLife').addEventListener('change', renderE
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyIdCard','elderlyHn','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName','elderlyVisitsPerMonthOverride'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyIdCard','elderlyMainDiagnosis','elderlyComorbidities','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName','elderlyVisitsPerMonthOverride'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyPdfMode').value = 'normal';
   document.getElementById('elderlyAdlGroup').value = '';
   document.getElementById('elderlyHasConfusion').checked = false;
   document.getElementById('elderlyIsEndOfLife').checked = false;
+  taiSelections = {};
+  renderTaiDomains();
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 });
@@ -3654,7 +3859,8 @@ function openEditElderly(id){
   document.getElementById('elderlyEditId').value = id;
   document.getElementById('elderlyName').value = e.name||'';
   document.getElementById('elderlyIdCard').value = e.idCard||'';
-  document.getElementById('elderlyHn').value = e.hn||'';
+  document.getElementById('elderlyMainDiagnosis').value = e.mainDiagnosis||'';
+  document.getElementById('elderlyComorbidities').value = e.comorbidities||'';
   document.getElementById('elderlyAge').value = e.age||'';
   document.getElementById('elderlyGender').value = e.gender||'ชาย';
   document.getElementById('elderlyHouseNo').value = e.houseNo||'';
@@ -3670,6 +3876,8 @@ function openEditElderly(id){
   document.getElementById('elderlyHasConfusion').checked = !!e.hasConfusion;
   document.getElementById('elderlyIsEndOfLife').checked = !!e.isEndOfLife;
   document.getElementById('elderlyVisitsPerMonthOverride').value = (e.visitsPerMonth!==undefined && e.visitsPerMonth!==null) ? e.visitsPerMonth : '';
+  taiSelections = e.taiSelections ? Object.assign({}, e.taiSelections) : {};
+  renderTaiDomains();
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
 }
@@ -3686,9 +3894,13 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   const existing = (editId && STATE.elderly[editId]) ? STATE.elderly[editId] : null;
   const cgChanged = existing && existing.cgCode && existing.cgCode !== cgCode;
   const todayIso = new Date().toISOString().slice(0,10);
+  const taiComplete = TAI_DOMAINS.every(d=>taiSelections[d.key]!==undefined);
+  const taiScore = taiComplete ? TAI_DOMAINS.reduce((sum,d)=>sum+taiSelections[d.key],0) : null;
+  const taiResult = taiComplete ? getTaiTypeFromScore(taiScore) : null;
   const data = {
     name, idCard: document.getElementById('elderlyIdCard').value.trim(),
-    hn: document.getElementById('elderlyHn').value.trim(),
+    mainDiagnosis: document.getElementById('elderlyMainDiagnosis').value.trim(),
+    comorbidities: document.getElementById('elderlyComorbidities').value.trim(),
     age: parseInt(document.getElementById('elderlyAge').value,10)||0,
     gender: document.getElementById('elderlyGender').value,
     houseNo: document.getElementById('elderlyHouseNo').value.trim(),
@@ -3699,6 +3911,8 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     isEndOfLife: document.getElementById('elderlyIsEndOfLife').checked,
     visitsPerMonth: overrideRaw==='' ? null : parseInt(overrideRaw,10),
     primaryRelativeName: document.getElementById('elderlyPrimaryRelativeName').value.trim(),
+    taiSelections: Object.assign({}, taiSelections),
+    taiScore, taiType: taiResult ? taiResult.type : null, taiLabel: taiResult ? taiResult.label : '',
     cgCode,
     cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
     pdfMode: document.getElementById('elderlyPdfMode').value,
@@ -4024,7 +4238,11 @@ function buildPdfPageHTML(elderly, cg, visitsChunk, monthLabel, yearBE){
     </div>
 
     <div style="text-align:center;font-size:16px;font-weight:700;color:#0F5590;padding:10px 0 4px;">${elderly.name}</div>
-    <div style="text-align:center;font-size:11.5px;color:#5B7A8C;padding-bottom:8px;">อายุ ${elderly.age||'-'} ปี &nbsp;|&nbsp; CG ผู้ดูแล: ${cg?cg.name:'-'} &nbsp;|&nbsp; จำนวน ${visitsChunk.length} ครั้งในหน้านี้</div>
+    <div style="text-align:center;font-size:11.5px;color:#5B7A8C;padding-bottom:4px;">อายุ ${elderly.age||'-'} ปี &nbsp;|&nbsp; CG ผู้ดูแล: ${cg?cg.name:'-'} &nbsp;|&nbsp; จำนวน ${visitsChunk.length} ครั้งในหน้านี้</div>
+    <div style="text-align:center;font-size:10.5px;color:#5B7A8C;padding-bottom:8px;line-height:1.6;">
+      โรคหลัก: ${elderly.mainDiagnosis||'-'} ${elderly.comorbidities ? `&nbsp;|&nbsp; โรคร่วม: ${elderly.comorbidities}` : ''}<br>
+      กลุ่ม ADL: ${(getAdlBarthelInfo(elderly)||{}).group||'-'} &nbsp;|&nbsp; TAI: ${elderly.taiLabel||'-'} &nbsp;|&nbsp; ญาติผู้ดูแลหลัก: ${elderly.primaryRelativeName||'-'}
+    </div>
 
     <div style="padding:0 24px;flex:1;display:flex;flex-direction:column;justify-content:center;">
       ${blocks}
@@ -4295,6 +4513,159 @@ document.getElementById('exportElderlyPdfBtn').addEventListener('click', async (
     btn.disabled = false;
   }
 });
+
+/* =============================================================
+   รายชื่อและข้อมูลผู้สูงอายุทั้งหมด (ไม่แยกตามเดือน) — ไม่ต้องเลือกวัน เดือน ปี
+============================================================= */
+function buildAllElderlyReportRows(){
+  const cgFilter = document.getElementById('allElderlyReportCgFilter').value;
+  const statusFilter = document.getElementById('allElderlyReportStatusFilter').value;
+
+  const activeIds = Object.keys(STATE.elderly).filter(id=>{
+    const e = STATE.elderly[id];
+    if(cgFilter && e.cgCode!==cgFilter) return false;
+    if(statusFilter==='active' && e.status==='discharged') return false;
+    if(statusFilter==='discharged' && e.status!=='discharged') return false;
+    return true;
+  }).sort();
+  const historyIds = (statusFilter==='active') ? [] : Object.keys(STATE_ELDERLY_HISTORY).filter(id=>{
+    const e = STATE_ELDERLY_HISTORY[id];
+    if(cgFilter && e.cgCode!==cgFilter) return false;
+    return true;
+  }).sort();
+
+  const rows = [];
+  let no = 1;
+  activeIds.forEach(id=>{
+    const e = STATE.elderly[id];
+    rows.push({
+      no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
+      houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo),
+      cgName: STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
+      adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      target: getElderlyVisitTarget(e),
+      mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
+      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
+      pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
+      statusLabel: e.status==='discharged' ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})` : 'ดูแลอยู่',
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+    });
+  });
+  historyIds.forEach(id=>{
+    const e = STATE_ELDERLY_HISTORY[id];
+    rows.push({
+      no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
+      houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo),
+      cgName: STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
+      adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      target: getElderlyVisitTarget(e),
+      mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
+      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
+      pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
+      statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
+      relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
+    });
+  });
+  return rows;
+}
+document.getElementById('exportAllElderlyExcelBtn').addEventListener('click', ()=>{
+  const rows = buildAllElderlyReportRows();
+  if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
+  const sheetData = rows.map(r=>({
+    'ลำดับ': r.no, 'รหัส': r.id, 'ชื่อ-สกุล': r.name, 'เลขประจำตัวประชาชน': r.idCard,
+    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'หมู่บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
+    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup, 'เป้าหมายเยี่ยม/เดือน': r.target,
+    'โรคหลัก': r.mainDiagnosis, 'โรคร่วม': r.comorbidities, 'ผล TAI': r.taiLabel,
+    'ญาติผู้ดูแลหลัก': r.primaryRelativeName, 'โหมด PDF': r.pdfMode, 'สถานะการดูแล': r.statusLabel,
+    'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
+  }));
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 14) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'รายชื่อผู้สูงอายุทั้งหมด');
+  XLSX.writeFile(wb, `รายชื่อผู้สูงอายุทั้งหมด_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงาน Excel สำเร็จ','success');
+});
+function buildAllElderlyReportPdfPageHTML(rowsChunk, pageNo, totalPages){
+  const rowsHtml = rowsChunk.map(r=>`
+    <tr>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.no}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.name}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.age}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.villageLabel}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.cgName}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;">${r.adlGroup}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;font-size:10px;">${r.mainDiagnosis}</td>
+      <td style="padding:5px 6px;border:1px solid #ddd;font-size:10px;">${r.statusLabel}</td>
+    </tr>`).join('');
+  return `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายชื่อและข้อมูลผู้สูงอายุทั้งหมด</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร | ข้อมูล ณ วันที่ ${formatThaiDate(new Date().toISOString().slice(0,10))}</div>
+      </div>
+      <div style="width:52px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;">
+          <th style="padding:5px 6px;border:1px solid #ddd;">ลำดับ</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">อายุ</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">หมู่บ้าน</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">CG ผู้ดูแล</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">คะแนน ADL</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">กลุ่ม ADL</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">โรคหลัก</th>
+          <th style="padding:5px 6px;border:1px solid #ddd;">สถานะ</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      หน้า ${pageNo}/${totalPages} | ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+  </div>`;
+}
+document.getElementById('exportAllElderlyPdfBtn').addEventListener('click', async ()=>{
+  const rows = buildAllElderlyReportRows();
+  if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
+  const progressEl = document.getElementById('allElderlyReportProgress');
+  const btn = document.getElementById('exportAllElderlyPdfBtn');
+  const ROWS_PER_PAGE = 16;
+  const pages = [];
+  for(let i=0;i<rows.length;i+=ROWS_PER_PAGE) pages.push(rows.slice(i,i+ROWS_PER_PAGE));
+  btn.disabled = true;
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  try{
+    for(let i=0;i<pages.length;i++){
+      progressEl.textContent = `กำลังสร้างหน้า ${i+1}/${pages.length}`;
+      root.innerHTML = buildAllElderlyReportPdfPageHTML(pages[i], i+1, pages.length);
+      await new Promise(r=>setTimeout(r,300));
+      const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,0,297,210);
+    }
+    pdf.save(`รายชื่อผู้สูงอายุทั้งหมด_${new Date().toISOString().slice(0,10)}.pdf`);
+    progressEl.textContent = '';
+    toast('ออกรายงาน PDF สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาดขณะสร้าง PDF: '+err.message,'error');
+  }finally{
+    root.innerHTML = '';
+    btn.disabled = false;
+  }
+});
+
 function renderEquipmentElderlySelect(){
   const sel = document.getElementById('eqElderlyFilter');
   const modalSel = document.getElementById('eqElderly');
@@ -4302,6 +4673,266 @@ function renderEquipmentElderlySelect(){
   if(sel){ const prev = sel.value; sel.innerHTML = '<option value="">ทั้งหมด</option>' + opts; sel.value = prev; }
   if(modalSel){ modalSel.innerHTML = opts; }
 }
+
+/* =============================================================
+   คงคลังอุปกรณ์ (วัสดุการแพทย์ / ครุภัณฑ์การแพทย์)
+   Firebase path: /inventory/{id}
+   Schema: { category, itemType, quantity, unit, note, updatedAt }
+============================================================= */
+const CATEGORY_LABELS_INV = { durable:'ครุภัณฑ์การแพทย์', material:'วัสดุการแพทย์' };
+
+function updateInvItemTypeSelect(){
+  const cat = document.getElementById('invCategory').value;
+  const items = eqCategoryItemList(cat);
+  const sel = document.getElementById('invItemType');
+  sel.innerHTML = items.map(i=>`<option value="${i}">${i}</option>`).join('') + `<option value="__other__">อื่นๆ (ระบุเอง)</option>`;
+  document.getElementById('invItemTypeOther').style.display = 'none';
+}
+document.getElementById('invCategory').addEventListener('change', updateInvItemTypeSelect);
+document.getElementById('invItemType').addEventListener('change', function(){
+  document.getElementById('invItemTypeOther').style.display = (this.value==='__other__') ? 'block' : 'none';
+});
+updateInvItemTypeSelect();
+
+db.ref('inventory').on('value', snap=>{
+  STATE.inventory = snap.val() || {};
+  renderInventoryTable();
+});
+
+function renderInventoryTable(){
+  const tbody = document.getElementById('inventoryTable');
+  if(!tbody) return;
+  const entries = Object.entries(STATE.inventory||{});
+  if(entries.length === 0){
+    tbody.innerHTML = '<tr><td colspan="7" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
+    return;
+  }
+  /* จัดกลุ่มตามหมวดหมู่: ครุภัณฑ์ก่อน วัสดุหลัง */
+  const sorted = entries.sort(([,a],[,b])=>{
+    if(a.category===b.category) return (a.itemType||'').localeCompare(b.itemType||'');
+    return (a.category==='durable') ? -1 : 1;
+  });
+  tbody.innerHTML = sorted.map(([id,inv])=>`
+    <tr>
+      <td><span class="badge ${inv.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
+      <td>${inv.itemType||'-'}</td>
+      <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
+      <td>${inv.unit||'-'}</td>
+      <td>${inv.note||'-'}</td>
+      <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteInventory('${id}')">🗑</button></td>
+    </tr>`).join('');
+}
+function deleteInventory(id){
+  if(blockIfReadOnly()) return;
+  showConfirm('ลบรายการคงคลังนี้?', STATE.inventory[id]?.itemType||id, ()=>{
+    db.ref('inventory/'+id).remove().then(()=>toast('ลบรายการคงคลังสำเร็จ','success'));
+  });
+}
+document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const cat = document.getElementById('invCategory').value;
+  let itemType = document.getElementById('invItemType').value;
+  if(itemType==='__other__') itemType = document.getElementById('invItemTypeOther').value.trim();
+  const quantity = parseInt(document.getElementById('invQuantity').value,10);
+  const unit = document.getElementById('invUnit').value.trim();
+  const note = document.getElementById('invNote').value.trim();
+  if(!itemType){ toast('กรุณาระบุรายการ','error'); return; }
+  if(isNaN(quantity) || quantity<0){ toast('กรุณาระบุจำนวนคงคลัง (0 หรือมากกว่า)','error'); return; }
+  /* ถ้ามีรายการประเภทนี้อยู่แล้วในหมวดหมู่เดียวกัน ให้อัปเดตแทนการเพิ่มใหม่ */
+  const existing = Object.entries(STATE.inventory||{}).find(([,v])=>v.category===cat && v.itemType===itemType);
+  const id = existing ? existing[0] : 'INV'+Date.now();
+  db.ref('inventory/'+id).set({ category:cat, itemType, quantity, unit, note, updatedAt: Date.now() })
+    .then(()=>{
+      toast(`${existing?'อัปเดต':'เพิ่ม'}รายการ "${itemType}" สำเร็จ`,'success');
+      document.getElementById('invQuantity').value='';
+      document.getElementById('invUnit').value='';
+      document.getElementById('invNote').value='';
+    });
+});
+
+/* ---- รายงานคงคลัง (Excel) ---- */
+document.getElementById('exportInventoryExcelBtn').addEventListener('click', ()=>{
+  const entries = Object.entries(STATE.inventory||{});
+  if(!entries.length){ toast('ยังไม่มีรายการคงคลัง','error'); return; }
+  const sorted = entries.sort(([,a],[,b])=>{
+    if(a.category===b.category) return (a.itemType||'').localeCompare(b.itemType||'');
+    return a.category==='durable' ? -1 : 1;
+  });
+  const sheetData = sorted.map(([,inv])=>({
+    'หมวดหมู่': CATEGORY_LABELS_INV[inv.category]||inv.category,
+    'รายการ': inv.itemType||'',
+    'จำนวนคงคลัง': inv.quantity??0,
+    'หน่วย': inv.unit||'',
+    'หมายเหตุ': inv.note||'',
+    'อัปเดตล่าสุด': inv.updatedAt ? new Date(inv.updatedAt).toLocaleDateString('th-TH') : ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = [20,30,18,14,24,18].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'คงคลังอุปกรณ์');
+  XLSX.writeFile(wb, `รายงานคงคลังอุปกรณ์_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงานคงคลัง Excel สำเร็จ','success');
+});
+
+/* ---- รายงานควบคุม (Excel): เปรียบเทียบคงคลัง vs ยอดจ่ายออกให้ผู้สูงอายุ ---- */
+document.getElementById('exportControlExcelBtn').addEventListener('click', ()=>{
+  const invEntries = Object.entries(STATE.inventory||{});
+  if(!invEntries.length){ toast('ยังไม่มีรายการคงคลัง','error'); return; }
+  const dispensed = {};
+  Object.values(STATE.equipment||{}).forEach(eq=>{
+    const key = (eq.category||'') + '|' + (eq.itemType||eq.itemTypeName||'');
+    dispensed[key] = (dispensed[key]||0) + (parseInt(eq.quantity,10)||1);
+  });
+  const sheetData = invEntries.sort(([,a],[,b])=>a.category===b.category?(a.itemType||'').localeCompare(b.itemType||''):(a.category==='durable'?-1:1))
+    .map(([,inv])=>{
+      const key = (inv.category||'') + '|' + (inv.itemType||'');
+      const out = dispensed[key]||0;
+      const balance = (inv.quantity??0) - out;
+      return {
+        'หมวดหมู่': CATEGORY_LABELS_INV[inv.category]||inv.category,
+        'รายการ': inv.itemType||'',
+        'ยอดคงคลัง': inv.quantity??0,
+        'หน่วย': inv.unit||'',
+        'จ่ายออกแล้ว': out,
+        'คงเหลือสุทธิ': balance,
+        'สถานะ': balance<=0 ? 'หมด / ต้องเติม' : (balance<=5 ? 'เหลือน้อย' : 'พอเพียง')
+      };
+    });
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = [20,30,16,12,16,16,18].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'รายงานควบคุมอุปกรณ์');
+  XLSX.writeFile(wb, `รายงานควบคุมอุปกรณ์_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงานควบคุม Excel สำเร็จ','success');
+});
+
+/* ---- รายงานคงคลัง (PDF) ---- */
+document.getElementById('exportInventoryPdfBtn').addEventListener('click', async ()=>{
+  const entries = Object.entries(STATE.inventory||{});
+  if(!entries.length){ toast('ยังไม่มีรายการคงคลัง','error'); return; }
+  const sorted = entries.sort(([,a],[,b])=>a.category===b.category?(a.itemType||'').localeCompare(b.itemType||''):(a.category==='durable'?-1:1));
+  const progress = document.getElementById('inventoryReportProgress');
+  const btn = document.getElementById('exportInventoryPdfBtn');
+  btn.disabled = true; progress.textContent = 'กำลังสร้าง PDF...';
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const rowsHtml = sorted.map(([,inv],i)=>`
+    <tr style="background:${i%2?'#F7FBFF':'#fff'}">
+      <td style="padding:5px 8px;border:1px solid #ddd;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${inv.itemType||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;font-weight:700;">${inv.quantity??0}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${inv.unit||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${inv.note||'-'}</td>
+    </tr>`).join('');
+  root.innerHTML = `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายงานคงคลังอุปกรณ์การแพทย์</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} | ข้อมูล ณ วันที่ ${formatThaiDate(new Date().toISOString().slice(0,10))}</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;font-weight:700;">
+          <th style="padding:7px 8px;border:1px solid #ddd;">หมวดหมู่</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">รายการ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">จำนวนคงคลัง</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">หน่วย</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">หมายเหตุ</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      รายงานคงคลังอุปกรณ์การแพทย์ | ${FACILITY_NAME}
+    </div>
+  </div>`;
+  try{
+    await new Promise(r=>setTimeout(r,300));
+    const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+    const imgData = canvas.toDataURL('image/jpeg',0.92);
+    pdf.addImage(imgData,'JPEG',0,0,297,210);
+    pdf.save(`รายงานคงคลังอุปกรณ์_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('ออกรายงานคงคลัง PDF สำเร็จ','success');
+  }catch(err){ toast('เกิดข้อผิดพลาด: '+err.message,'error'); }
+  finally{ root.innerHTML=''; btn.disabled=false; progress.textContent=''; }
+});
+
+/* ---- รายงานควบคุม (PDF) ---- */
+document.getElementById('exportControlPdfBtn').addEventListener('click', async ()=>{
+  const invEntries = Object.entries(STATE.inventory||{});
+  if(!invEntries.length){ toast('ยังไม่มีรายการคงคลัง','error'); return; }
+  const dispensed = {};
+  Object.values(STATE.equipment||{}).forEach(eq=>{
+    const key = (eq.category||'') + '|' + (eq.itemType||eq.itemTypeName||'');
+    dispensed[key] = (dispensed[key]||0) + (parseInt(eq.quantity,10)||1);
+  });
+  const sorted = invEntries.sort(([,a],[,b])=>a.category===b.category?(a.itemType||'').localeCompare(b.itemType||''):(a.category==='durable'?-1:1));
+  const progress = document.getElementById('inventoryReportProgress');
+  const btn = document.getElementById('exportControlPdfBtn');
+  btn.disabled = true; progress.textContent = 'กำลังสร้าง PDF...';
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const rowsHtml = sorted.map(([,inv],i)=>{
+    const key = (inv.category||'')+'|'+(inv.itemType||'');
+    const out = dispensed[key]||0;
+    const balance = (inv.quantity??0) - out;
+    const statusColor = balance<=0?'#D8503A':(balance<=5?'#F9A825':'#2E7D32');
+    const statusText = balance<=0?'หมด/ต้องเติม':(balance<=5?'เหลือน้อย':'พอเพียง');
+    return `<tr style="background:${i%2?'#F7FBFF':'#fff'}">
+      <td style="padding:5px 8px;border:1px solid #ddd;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${inv.itemType||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;">${inv.quantity??0}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${inv.unit||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;">${out}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;font-weight:700;">${balance}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;color:${statusColor};font-weight:700;">${statusText}</td>
+    </tr>`;
+  }).join('');
+  root.innerHTML = `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายงานควบคุมอุปกรณ์การแพทย์</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} | ข้อมูล ณ วันที่ ${formatThaiDate(new Date().toISOString().slice(0,10))}</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;font-weight:700;">
+          <th style="padding:7px 8px;border:1px solid #ddd;">หมวดหมู่</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">รายการ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">ยอดคงคลัง</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">หน่วย</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">จ่ายออกแล้ว</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">คงเหลือสุทธิ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">สถานะ</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      รายงานควบคุมอุปกรณ์การแพทย์ | ${FACILITY_NAME}
+    </div>
+  </div>`;
+  try{
+    await new Promise(r=>setTimeout(r,300));
+    const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+    const imgData = canvas.toDataURL('image/jpeg',0.92);
+    pdf.addImage(imgData,'JPEG',0,0,297,210);
+    pdf.save(`รายงานควบคุมอุปกรณ์_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('ออกรายงานควบคุม PDF สำเร็จ','success');
+  }catch(err){ toast('เกิดข้อผิดพลาด: '+err.message,'error'); }
+  finally{ root.innerHTML=''; btn.disabled=false; progress.textContent=''; }
+});
 
 function renderEquipmentTable(){
   const filterElderly = document.getElementById('eqElderlyFilter').value;
