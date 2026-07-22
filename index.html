@@ -1108,7 +1108,30 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <label>จำนวนครั้งที่ต้องเยี่ยม/เดือน (กำหนดเองโดย CM/Admin — เว้นว่างไว้เพื่อใช้ค่าที่คำนวณอัตโนมัติจากกลุ่ม ADL ด้านบน)</label>
     <input type="number" id="elderlyVisitsPerMonthOverride" min="1" max="31" placeholder="เว้นว่าง = ใช้ค่าอัตโนมัติ">
   </div>
-  <div class="field" style="margin-top:8px;"><label>ชื่อญาติผู้ดูแลหลัก</label><input type="text" id="elderlyPrimaryRelativeName" placeholder="ชื่อ-สกุลญาติผู้ดูแลหลัก"></div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>ชื่อญาติผู้ดูแลหลัก</label><input type="text" id="elderlyPrimaryRelativeName" placeholder="ชื่อ-สกุลญาติผู้ดูแลหลัก"></div>
+    <div class="field"><label>เบอร์โทรศัพท์ญาติ</label><input type="tel" id="elderlyRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field">
+      <label>ความสัมพันธ์ของผู้ดูแลกับผู้ป่วย</label>
+      <select id="elderlyRelativeRelation">
+        <option value="">-- เลือก --</option>
+        <option value="บิดา">บิดา</option>
+        <option value="มารดา">มารดา</option>
+        <option value="สามี">สามี</option>
+        <option value="ภรรยา">ภรรยา</option>
+        <option value="บุตร">บุตร</option>
+        <option value="หลาน">หลาน</option>
+        <option value="ญาติ">ญาติ</option>
+        <option value="อื่นๆ">อื่นๆ ระบุ...</option>
+      </select>
+    </div>
+    <div class="field" id="elderlyRelativeRelationOtherWrap" style="display:none;">
+      <label>ระบุความสัมพันธ์</label>
+      <input type="text" id="elderlyRelativeRelationOther" placeholder="ระบุความสัมพันธ์">
+    </div>
+  </div>
 
   <div style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#FAFDFF;">
     <label style="font-weight:700;font-size:13.5px;color:var(--primary-dark);">แบบประเมิน TAI (Typology of the Aged with Illustration)</label>
@@ -1120,7 +1143,6 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>โหมด PDF</label><select id="elderlyPdfMode"><option value="normal">ปกติ (normal)</option><option value="obt">อบต. (obt)</option></select></div>
   </div>
-  <div class="field" style="margin-top:8px;"><label>เบอร์โทรศัพท์ญาติ</label><input type="tel" id="elderlyRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>ชื่อ อสม. ใกล้บ้าน</label><input type="text" id="elderlyVhvName"></div>
     <div class="field"><label>เบอร์โทรศัพท์ อสม.</label><input type="tel" id="elderlyVhvPhone" placeholder="เช่น 08xxxxxxxx"></div>
@@ -3894,6 +3916,9 @@ function renderElderlyAdlComputedBox(){
 }
 document.getElementById('elderlyAdlGroup').addEventListener('change', renderElderlyAdlComputedBox);
 document.getElementById('elderlyAdlScore').addEventListener('input', renderElderlyAdlComputedBox);
+document.getElementById('elderlyRelativeRelation').addEventListener('change', function(){
+  document.getElementById('elderlyRelativeRelationOtherWrap').style.display = (this.value==='อื่นๆ') ? 'block' : 'none';
+});
 document.getElementById('elderlyVisitsPerMonthOverride').addEventListener('input', renderElderlyAdlComputedBox);
 document.getElementById('elderlyHasConfusion').addEventListener('change', renderElderlyAdlComputedBox);
 document.getElementById('elderlyIsEndOfLife').addEventListener('change', renderElderlyAdlComputedBox);
@@ -3901,11 +3926,13 @@ document.getElementById('elderlyIsEndOfLife').addEventListener('change', renderE
 document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyModalTitle').textContent = 'เพิ่มผู้สูงอายุ';
   document.getElementById('elderlyEditId').value = '';
-  ['elderlyName','elderlyIdCard','elderlyMainDiagnosis','elderlyComorbidities','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName','elderlyVisitsPerMonthOverride'].forEach(id=>document.getElementById(id).value='');
+  ['elderlyName','elderlyIdCard','elderlyMainDiagnosis','elderlyComorbidities','elderlyAge','elderlyHouseNo','elderlyRelativePhone','elderlyVhvName','elderlyVhvPhone','elderlyAdlScore','elderlyPrimaryRelativeName','elderlyVisitsPerMonthOverride','elderlyRelativeRelationOther'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('elderlyGender').value = 'ชาย';
   document.getElementById('elderlyMoo').value = '';
   document.getElementById('elderlyPdfMode').value = 'normal';
   document.getElementById('elderlyAdlGroup').value = '';
+  document.getElementById('elderlyRelativeRelation').value = '';
+  document.getElementById('elderlyRelativeRelationOtherWrap').style.display = 'none';
   document.getElementById('elderlyHasConfusion').checked = false;
   document.getElementById('elderlyIsEndOfLife').checked = false;
   taiWizard = { mobility:null, confuse:null, feedToilet:null };
@@ -3943,6 +3970,16 @@ function openEditElderly(id){
   document.getElementById('elderlyVhvName').value = e.vhvName||'';
   document.getElementById('elderlyVhvPhone').value = e.vhvPhone||'';
   document.getElementById('elderlyPrimaryRelativeName').value = e.primaryRelativeName||'';
+  const knownRelations = ['บิดา','มารดา','สามี','ภรรยา','บุตร','หลาน','ญาติ'];
+  if(e.relativeRelation && !knownRelations.includes(e.relativeRelation)){
+    document.getElementById('elderlyRelativeRelation').value = 'อื่นๆ';
+    document.getElementById('elderlyRelativeRelationOther').value = e.relativeRelation;
+    document.getElementById('elderlyRelativeRelationOtherWrap').style.display = 'block';
+  } else {
+    document.getElementById('elderlyRelativeRelation').value = e.relativeRelation||'';
+    document.getElementById('elderlyRelativeRelationOther').value = '';
+    document.getElementById('elderlyRelativeRelationOtherWrap').style.display = 'none';
+  }
   document.getElementById('elderlyHasConfusion').checked = !!e.hasConfusion;
   document.getElementById('elderlyIsEndOfLife').checked = !!e.isEndOfLife;
   document.getElementById('elderlyVisitsPerMonthOverride').value = (e.visitsPerMonth!==undefined && e.visitsPerMonth!==null) ? e.visitsPerMonth : '';
@@ -3981,6 +4018,9 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     isEndOfLife: document.getElementById('elderlyIsEndOfLife').checked,
     visitsPerMonth: overrideRaw==='' ? null : parseInt(overrideRaw,10),
     primaryRelativeName: document.getElementById('elderlyPrimaryRelativeName').value.trim(),
+    relativeRelation: (document.getElementById('elderlyRelativeRelation').value==='อื่นๆ')
+      ? document.getElementById('elderlyRelativeRelationOther').value.trim()
+      : document.getElementById('elderlyRelativeRelation').value,
     taiWizard: Object.assign({}, taiWizard),
     taiCode: taiCode, taiMainGroup: taiResult ? taiResult.mainGroupLabel : '', taiLabel: taiResult ? `${taiResult.mainGroupLabel} — รหัส ${taiResult.code} (${taiResult.desc})` : '',
     cgCode,
@@ -4459,7 +4499,7 @@ function buildElderlyReportRows(){
       statusLabel: isDischarged ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})` : 'ดูแลอยู่',
       statusDate: isDischarged ? (e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-') : '-',
       relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||'',
-      primaryRelativeName: e.primaryRelativeName||''
+      primaryRelativeName: e.primaryRelativeName||'', relativeRelation: e.relativeRelation||''
     });
   });
   historyIds.forEach(id=>{
@@ -4475,7 +4515,7 @@ function buildElderlyReportRows(){
       statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
       statusDate: e.dischargeDate ? formatThaiDate(e.dischargeDate,true) : '-',
       relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||'',
-      primaryRelativeName: e.primaryRelativeName||''
+      primaryRelativeName: e.primaryRelativeName||'', relativeRelation: e.relativeRelation||''
     });
   });
   return { rows, monthLabel, yBE };
@@ -4491,7 +4531,7 @@ document.getElementById('exportElderlyExcelBtn').addEventListener('click', ()=>{
     [`เป้าหมายเยี่ยม/เดือน`]: r.target, [`เยี่ยมแล้วเดือน ${monthLabel} ${yBE}`]: r.visitedCount,
     'สถานะเกณฑ์การเยี่ยม': r.quotaLabel, 'โหมด PDF': r.pdfMode,
     'สถานะการดูแล': r.statusLabel, 'วันที่จำหน่าย/เหตุผล': r.statusDate,
-    'ชื่อญาติผู้ดูแลหลัก': r.primaryRelativeName, 'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
+    'ชื่อญาติผู้ดูแลหลัก': r.primaryRelativeName, 'ความสัมพันธ์กับผู้ป่วย': r.relativeRelation, 'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
   }));
   const ws = XLSX.utils.json_to_sheet(sheetData);
   ws['!cols'] = Object.keys(sheetData[0]).map(k=>({ wch: Math.max(k.length+2, 14) }));
@@ -4514,7 +4554,7 @@ function buildElderlyReportPdfPageHTML(rowsChunk, monthLabel, yBE, pageNo, total
       <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.taiCode||'-'}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.visitedCount}/${r.target}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.quotaLabel}</td>
-      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}${r.relativeRelation ? ` (${r.relativeRelation})` : ''}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;">${r.relativePhone||'-'}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;">${r.statusLabel}</td>
     </tr>`).join('');
@@ -4542,7 +4582,7 @@ function buildElderlyReportPdfPageHTML(rowsChunk, monthLabel, yBE, pageNo, total
             <th style="padding:4px 5px;border:1px solid #ddd;">TAI</th>
             <th style="padding:4px 5px;border:1px solid #ddd;">เยี่ยมแล้ว/เป้าหมาย</th>
             <th style="padding:4px 5px;border:1px solid #ddd;">สถานะเกณฑ์เยี่ยม</th>
-            <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก (ความสัมพันธ์)</th>
             <th style="padding:4px 5px;border:1px solid #ddd;">เบอร์โทรญาติ</th>
             <th style="padding:4px 5px;border:1px solid #ddd;">สถานะการดูแล</th>
           </tr>
@@ -4624,7 +4664,7 @@ function buildAllElderlyReportRows(){
       adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target: getElderlyVisitTarget(e),
       mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
-      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
+      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'', relativeRelation: e.relativeRelation||'',
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
       statusLabel: e.status==='discharged' ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})` : 'ดูแลอยู่',
       relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
@@ -4640,7 +4680,7 @@ function buildAllElderlyReportRows(){
       adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target: getElderlyVisitTarget(e),
       mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
-      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
+      taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'', relativeRelation: e.relativeRelation||'',
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
       statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
       relativePhone: e.relativePhone||'', vhvName: e.vhvName||'', vhvPhone: e.vhvPhone||''
@@ -4656,7 +4696,7 @@ document.getElementById('exportAllElderlyExcelBtn').addEventListener('click', ()
     'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
     'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup, 'คะแนน TAI': r.taiCode, 'เป้าหมายเยี่ยม/เดือน': r.target,
     'โรคหลัก': r.mainDiagnosis, 'โรคร่วม': r.comorbidities, 'ผล TAI (รายละเอียด)': r.taiLabel,
-    'ญาติผู้ดูแลหลัก': r.primaryRelativeName, 'โหมด PDF': r.pdfMode, 'สถานะการดูแล': r.statusLabel,
+    'ญาติผู้ดูแลหลัก': r.primaryRelativeName, 'ความสัมพันธ์กับผู้ป่วย': r.relativeRelation, 'โหมด PDF': r.pdfMode, 'สถานะการดูแล': r.statusLabel,
     'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
   }));
   const ws = XLSX.utils.json_to_sheet(sheetData);
@@ -4678,7 +4718,7 @@ function buildAllElderlyReportPdfPageHTML(rowsChunk, pageNo, totalPages){
       <td style="padding:4px 5px;border:1px solid #ddd;">${r.adlGroup}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.taiCode||'-'}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;font-size:9.5px;">${r.mainDiagnosis}</td>
-      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}${r.relativeRelation ? ` (${r.relativeRelation})` : ''}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;">${r.relativePhone||'-'}</td>
       <td style="padding:4px 5px;border:1px solid #ddd;font-size:9.5px;">${r.statusLabel}</td>
     </tr>`).join('');
@@ -4704,7 +4744,7 @@ function buildAllElderlyReportPdfPageHTML(rowsChunk, pageNo, totalPages){
           <th style="padding:4px 5px;border:1px solid #ddd;">กลุ่ม ADL</th>
           <th style="padding:4px 5px;border:1px solid #ddd;">TAI</th>
           <th style="padding:4px 5px;border:1px solid #ddd;">โรคหลัก</th>
-          <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก (ความสัมพันธ์)</th>
           <th style="padding:4px 5px;border:1px solid #ddd;">เบอร์โทรญาติ</th>
           <th style="padding:4px 5px;border:1px solid #ddd;">สถานะ</th>
         </tr></thead>
