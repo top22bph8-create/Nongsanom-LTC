@@ -816,20 +816,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <!-- ===================== EQUIPMENT MANAGEMENT ===================== -->
 <section id="tab-equipment" class="tabpanel">
   <div class="card">
-    <h3>🛠 การจัดการอุปกรณ์ (ครุภัณฑ์การแพทย์ / วัสดุการแพทย์)</h3>
-    <p class="muted">บันทึกรายการครุภัณฑ์การแพทย์หรือวัสดุการแพทย์ที่สนับสนุนผู้สูงอายุแต่ละคน ตั้งแต่วันแรกที่ CG เข้าไปดูแล จนสิ้นสุดการดูแล</p>
-    <div class="row">
-      <div class="field"><label>กรองตามผู้สูงอายุ</label><select id="eqElderlyFilter"><option value="">ทั้งหมด</option></select></div>
-      <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการอุปกรณ์</button>
-    </div>
-    <div style="overflow-x:auto;">
-    <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
-    <tbody id="equipmentTable"></tbody></table>
-    </div>
-  </div>
-  <div class="card">
-    <h3>📦 คงคลังอุปกรณ์ (วัสดุการแพทย์ / ครุภัณฑ์การแพทย์)</h3>
-    <p class="muted">บันทึกจำนวนคงคลังของวัสดุและครุภัณฑ์การแพทย์ที่มีอยู่ในหน่วยงาน แยกตามประเภท เพื่อควบคุมการเบิกจ่ายและวางแผนจัดซื้อ — การกดเพิ่มแต่ละครั้งจะ "รับเข้า" เพิ่มจากยอดคงคลังเดิม ไม่ใช่การเขียนทับ</p>
+    <h3>📦 เพิ่มครุภัณฑ์การแพทย์ / วัสดุการแพทย์เข้าคลัง</h3>
+    <p class="muted">บันทึกจำนวนคงคลังของวัสดุและครุภัณฑ์การแพทย์ที่มีอยู่ในหน่วยงาน แยกตามประเภท เพื่อควบคุมการเบิกจ่ายและวางแผนจัดซื้อ — การกดเพิ่มแต่ละครั้งจะ "รับเข้า" เพิ่มจากยอดคงคลังเดิม ไม่ใช่การเขียนทับ ข้อมูลนี้จะเชื่อมกับระบบควบคุมการยืม-คืนด้านล่างโดยอัตโนมัติ (เลือกเลขครุภัณฑ์ที่มีในคลังตอนให้ยืมได้เลย)</p>
     <div class="row">
       <div class="field"><label>หมวดหมู่</label>
         <select id="invCategory">
@@ -854,17 +842,35 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th>เลขครุภัณฑ์</th><th>หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th>เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th>หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
-    <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านบน) เพื่อดูยอดคงเหลือสุทธิ</p>
+    <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
     <div class="row" style="margin-top:8px;gap:8px;">
-      <button class="btn btn-secondary" id="exportInventoryExcelBtn">📊 รายงานคงคลัง (Excel)</button>
-      <button class="btn btn-secondary" id="exportInventoryPdfBtn">📄 รายงานคงคลัง (PDF)</button>
+      <button class="btn btn-secondary" id="exportInventoryExcelBtn">📊 รายการในคลัง (Excel)</button>
+      <button class="btn btn-secondary" id="exportInventoryPdfBtn">📄 รายการในคลัง (PDF)</button>
       <button class="btn btn-secondary" id="exportControlExcelBtn">📊 รายงานควบคุม (Excel)</button>
       <button class="btn btn-primary" id="exportControlPdfBtn">📄 รายงานควบคุม (PDF)</button>
     </div>
     <div class="upload-progress" id="inventoryReportProgress"></div>
+  </div>
+  <div class="card">
+    <h3>🔄 ระบบควบคุมการยืม-คืนอุปกรณ์ (ครุภัณฑ์การแพทย์ / วัสดุการแพทย์)</h3>
+    <p class="muted">บันทึกรายการครุภัณฑ์การแพทย์หรือวัสดุการแพทย์ที่สนับสนุนผู้สูงอายุแต่ละคน ตั้งแต่วันแรกที่ CG เข้าไปดูแล จนสิ้นสุดการดูแล — เลือกยืมได้หลายรายการพร้อมกันในครั้งเดียว ถ้าเป็นครุภัณฑ์ที่มีเลขควบคุมในคลัง ระบบจะให้เลือกเลขที่ยังว่างอยู่โดยตรง</p>
+    <div class="row">
+      <div class="field"><label>กรองตามผู้สูงอายุ</label><select id="eqElderlyFilter"><option value="">ทั้งหมด</option></select></div>
+      <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการยืม</button>
+    </div>
+    <div style="overflow-x:auto;">
+    <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
+    <tbody id="equipmentTable"></tbody></table>
+    </div>
+    <p class="muted" style="margin-top:10px;">รายการที่ถูกยืมและยังไม่คืน สามารถออกรายงานแยกได้ด้านล่าง</p>
+    <div class="row" style="margin-top:8px;gap:8px;">
+      <button class="btn btn-secondary" id="exportBorrowedExcelBtn">📊 รายการที่ถูกยืม (Excel)</button>
+      <button class="btn btn-primary" id="exportBorrowedPdfBtn">📄 รายการที่ถูกยืม (PDF)</button>
+    </div>
+    <div class="upload-progress" id="borrowedReportProgress"></div>
   </div>
   <div class="card">
     <h3>📄 ออกรายงานทะเบียนคุมครุภัณฑ์</h3>
@@ -4918,7 +4924,8 @@ function renderInventoryTable(){
     return (a.category==='durable') ? -1 : 1;
   });
   tbody.innerHTML = sorted.map(([id,inv])=>{
-    const assetCodesText = (inv.assetCodes && inv.assetCodes.length) ? inv.assetCodes.join(', ') : '-';
+    const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
+    const assetCodesText = availCodes.length ? availCodes.join(', ') : (inv.category==='durable' ? 'ไม่มีเลขว่าง' : '-');
     const otherCat = inv.category==='durable' ? 'material' : 'durable';
     return `
     <tr>
@@ -4952,6 +4959,15 @@ function deleteInventory(id){
     db.ref('inventory/'+id).remove().then(()=>toast('ลบรายการคงคลังสำเร็จ','success'));
   });
 }
+function updates_removeAssetCodeFromInventory(category, itemType, code, updates){
+  if(!code) return;
+  const existing = Object.entries(STATE.inventory||{}).find(([,v])=>v.category===category && v.itemType===itemType);
+  if(!existing) return;
+  const [invId, invData] = existing;
+  const avail = (invData.availableAssetCodes || invData.assetCodes || []).filter(c=>c!==code);
+  updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+}
+
 document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const cat = document.getElementById('invCategory').value;
@@ -4966,17 +4982,19 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   if(isNaN(quantity) || quantity<=0){ toast('กรุณาระบุจำนวนที่รับเข้า (มากกว่า 0)','error'); return; }
   if(!dateReceived){ toast('กรุณาระบุวันที่รับเข้า','error'); return; }
   /* ถ้ามีรายการประเภทนี้อยู่แล้วในหมวดหมู่เดียวกัน ให้ "รับเข้าเพิ่ม" จากยอดเดิม (บวกจำนวน + รวมเลขครุภัณฑ์เดิมกับใหม่)
-     ถ้ายังไม่มีให้สร้างรายการใหม่ */
+     ถ้ายังไม่มีให้สร้างรายการใหม่ — เลขครุภัณฑ์ที่รับเข้าใหม่จะถือว่า "พร้อมให้ยืม" ทันที (availableAssetCodes) */
   const existing = Object.entries(STATE.inventory||{}).find(([,v])=>v.category===cat && v.itemType===itemType);
   const id = existing ? existing[0] : 'INV'+Date.now();
   const prevQty = existing ? (parseInt(existing[1].quantity,10)||0) : 0;
   const prevAssetCodes = existing ? (existing[1].assetCodes||[]) : [];
+  const prevAvailableCodes = existing ? (existing[1].availableAssetCodes||existing[1].assetCodes||[]) : [];
   db.ref('inventory/'+id).set({
     category:cat, itemType,
     quantity: prevQty + quantity,
     unit: unit || (existing ? existing[1].unit : ''),
     note: note || (existing ? existing[1].note : ''),
     assetCodes: cat==='durable' ? [...prevAssetCodes, ...newAssetCodes] : [],
+    availableAssetCodes: cat==='durable' ? [...prevAvailableCodes, ...newAssetCodes] : [],
     dateReceived,
     updatedAt: Date.now()
   }).then(()=>{
@@ -5213,7 +5231,11 @@ function createEqItemRow(prefill){
   wrap.innerHTML = `
     <button type="button" class="btn btn-danger btn-sm eq-remove-row" style="position:absolute;top:8px;right:8px;padding:2px 8px;">✕</button>
     <div class="row">
-      <div class="field"><label>เลขครุภัณฑ์ (ถ้ามี)</label><input type="text" class="eq-item-code" placeholder="เช่น ครภ.001/2569"></div>
+      <div class="field">
+        <label class="eq-code-label">เลขครุภัณฑ์ (ถ้ามี)</label>
+        <select class="eq-item-code-select" style="display:none;"></select>
+        <input type="text" class="eq-item-code" placeholder="เช่น ครภ.001/2569">
+      </div>
       <div class="field"><label>หมวดหมู่</label>
         <select class="eq-item-category">
           <option value="durable">ครุภัณฑ์การแพทย์</option>
@@ -5229,6 +5251,8 @@ function createEqItemRow(prefill){
     <div class="field" style="margin-top:8px;max-width:160px;"><label>จำนวน</label><input type="number" class="eq-item-qty" min="0"></div>
   `;
   const codeInput = wrap.querySelector('.eq-item-code');
+  const codeSelect = wrap.querySelector('.eq-item-code-select');
+  const codeLabel = wrap.querySelector('.eq-code-label');
   const catSel = wrap.querySelector('.eq-item-category');
   const typeSel = wrap.querySelector('.eq-item-type');
   const otherInput = wrap.querySelector('.eq-item-type-other');
@@ -5241,12 +5265,47 @@ function createEqItemRow(prefill){
     else if(selectedValue){ typeSel.value = 'อื่นๆ'; otherInput.style.display='block'; otherInput.value = selectedValue; }
     else{ otherInput.style.display='none'; otherInput.value=''; }
   }
-  catSel.addEventListener('change', ()=>renderTypeOptions());
+  /* ถ้าเป็นครุภัณฑ์ที่มีรายการอยู่ในคลังพร้อมเลขควบคุมว่างอยู่ ให้เปลี่ยนเป็น dropdown เลือกเลขจากคลังโดยตรง
+     แทนการพิมพ์เอง (เลือก "ไม่ใช้เลขจากคลัง" เพื่อพิมพ์เลขเองได้เสมอ) */
+  function refreshCodeField(){
+    const cat = catSel.value;
+    const itemType = (typeSel.value === 'อื่นๆ') ? otherInput.value.trim() : typeSel.value;
+    if(cat === 'durable' && itemType){
+      const inv = Object.values(STATE.inventory||{}).find(v=>v.category==='durable' && v.itemType===itemType);
+      const avail = inv ? (inv.availableAssetCodes || inv.assetCodes || []) : [];
+      if(avail.length > 0){
+        codeLabel.textContent = `เลขครุภัณฑ์ (เลือกจากคลัง — เหลือว่าง ${avail.length} ชิ้น)`;
+        codeSelect.innerHTML = '<option value="">-- เลือกเลขครุภัณฑ์ --</option>' + avail.map(c=>`<option value="${c}">${c}</option>`).join('') + '<option value="__manual__">ไม่ใช้เลขจากคลัง (พิมพ์เอง)</option>';
+        codeSelect.style.display = 'block';
+        codeInput.style.display = 'none';
+        codeInput.dataset.fromInventory = 'true';
+        return;
+      }
+    }
+    codeLabel.textContent = 'เลขครุภัณฑ์ (ถ้ามี)';
+    codeSelect.style.display = 'none';
+    codeInput.style.display = 'block';
+    codeInput.dataset.fromInventory = 'false';
+  }
+  codeSelect.addEventListener('change', ()=>{
+    if(codeSelect.value === '__manual__'){
+      codeSelect.style.display = 'none';
+      codeInput.style.display = 'block';
+      codeInput.value = '';
+      codeInput.dataset.fromInventory = 'false';
+    } else {
+      codeInput.value = codeSelect.value;
+      codeInput.dataset.fromInventory = 'true';
+    }
+  });
+  catSel.addEventListener('change', ()=>{ renderTypeOptions(); refreshCodeField(); });
   typeSel.addEventListener('change', ()=>{
     const isOther = typeSel.value === 'อื่นๆ';
     otherInput.style.display = isOther ? 'block' : 'none';
     if(!isOther) otherInput.value = '';
+    refreshCodeField();
   });
+  otherInput.addEventListener('input', refreshCodeField);
   wrap.querySelector('.eq-remove-row').addEventListener('click', ()=>{
     const rows = document.querySelectorAll('#eqItemRows .eq-item-row');
     if(rows.length <= 1){ toast('ต้องมีอย่างน้อย 1 รายการ','error'); return; }
@@ -5257,6 +5316,7 @@ function createEqItemRow(prefill){
   catSel.value = prefill.category || 'durable';
   renderTypeOptions(prefill.itemType || '');
   qtyInput.value = prefill.quantity || '';
+  refreshCodeField();
   return wrap;
 }
 document.getElementById('eqAddRowBtn').addEventListener('click', ()=>{
@@ -5396,7 +5456,11 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
       relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
       quantity: it.quantity, dateReceived, dateReturned, createdAt: Date.now()
     };
-    db.ref('equipment/'+editId).update(data).then(async ()=>{
+    const invUpdates = {};
+    if(it.category==='durable' && it.itemCode){
+      updates_removeAssetCodeFromInventory(it.category, it.itemType, it.itemCode, invUpdates);
+    }
+    Promise.all([db.ref('equipment/'+editId).update(data), Object.keys(invUpdates).length ? db.ref().update(invUpdates) : Promise.resolve()]).then(async ()=>{
       toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal');
       if(it.category === 'durable'){
         await generateEquipmentLoanContractPDF({
@@ -5415,6 +5479,9 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
         relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
         quantity: it.quantity, dateReceived, dateReturned, createdAt: ts
       };
+      if(it.category==='durable' && it.itemCode){
+        updates_removeAssetCodeFromInventory(it.category, it.itemType, it.itemCode, updates);
+      }
     });
     db.ref().update(updates).then(async ()=>{
       toast(`บันทึกสำเร็จ (${items.length} รายการ)`,'success');
@@ -5436,6 +5503,92 @@ function deleteEquipment(id){
   });
 }
 document.getElementById('eqElderlyFilter').addEventListener('change', renderEquipmentTable);
+
+/* =============================================================
+   รายงาน "รายการที่ถูกยืม" — เฉพาะรายการที่ยังไม่คืน (dateReturned ว่าง)
+============================================================= */
+function buildBorrowedRows(){
+  return Object.entries(STATE.equipment||{})
+    .filter(([,e])=>!e.dateReturned)
+    .sort((a,b)=>(b[1].dateReceived||'').localeCompare(a[1].dateReceived||''))
+    .map(([id,e])=>({
+      id, elderlyName: e.elderlyName||'-', relativePhone: e.relativePhone||'-',
+      itemCode: e.itemCode||'-', category: CATEGORY_LABELS_INV[e.category]||e.category||'-',
+      itemType: e.itemType||'-', dateReceived: e.dateReceived?formatThaiDate(e.dateReceived):'-',
+      quantity: e.quantity||'-'
+    }));
+}
+document.getElementById('exportBorrowedExcelBtn').addEventListener('click', ()=>{
+  const rows = buildBorrowedRows();
+  if(!rows.length){ toast('ไม่มีรายการที่ถูกยืมอยู่ในขณะนี้','error'); return; }
+  const sheetData = rows.map(r=>({
+    'ชื่อผู้สูงอายุ': r.elderlyName, 'เบอร์โทรญาติ': r.relativePhone, 'เลขครุภัณฑ์': r.itemCode,
+    'หมวดหมู่': r.category, 'ประเภท': r.itemType, 'วันที่ได้รับ': r.dateReceived, 'จำนวน': r.quantity
+  }));
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = [20,16,16,20,28,16,10].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'รายการที่ถูกยืม');
+  XLSX.writeFile(wb, `รายการที่ถูกยืม_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงานรายการที่ถูกยืม Excel สำเร็จ','success');
+});
+document.getElementById('exportBorrowedPdfBtn').addEventListener('click', async ()=>{
+  const rows = buildBorrowedRows();
+  if(!rows.length){ toast('ไม่มีรายการที่ถูกยืมอยู่ในขณะนี้','error'); return; }
+  const progress = document.getElementById('borrowedReportProgress');
+  const btn = document.getElementById('exportBorrowedPdfBtn');
+  btn.disabled = true; progress.textContent = 'กำลังสร้าง PDF...';
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const rowsHtml = rows.map((r,i)=>`
+    <tr style="background:${i%2?'#F7FBFF':'#fff'}">
+      <td style="padding:5px 8px;border:1px solid #ddd;">${r.elderlyName}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${r.relativePhone}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${r.itemCode}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${r.category}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${r.itemType}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;">${r.dateReceived}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;">${r.quantity}</td>
+    </tr>`).join('');
+  root.innerHTML = `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายงานรายการอุปกรณ์ที่ถูกยืม (ยังไม่คืน)</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} | ข้อมูล ณ วันที่ ${formatThaiDate(new Date().toISOString().slice(0,10))} | รวม ${rows.length} รายการ</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;font-weight:700;">
+          <th style="padding:7px 8px;border:1px solid #ddd;">ชื่อผู้สูงอายุ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">เบอร์โทรญาติ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">เลขครุภัณฑ์</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">หมวดหมู่</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">ประเภท</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">วันที่ได้รับ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">จำนวน</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">
+      รายงานรายการอุปกรณ์ที่ถูกยืม | ${FACILITY_NAME}
+    </div>
+  </div>`;
+  try{
+    await new Promise(r=>setTimeout(r,300));
+    const canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+    const imgData = canvas.toDataURL('image/jpeg',0.92);
+    pdf.addImage(imgData,'JPEG',0,0,297,210);
+    pdf.save(`รายการที่ถูกยืม_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('ออกรายงานรายการที่ถูกยืม PDF สำเร็จ','success');
+  }catch(err){ toast('เกิดข้อผิดพลาด: '+err.message,'error'); }
+  finally{ root.innerHTML=''; btn.disabled=false; progress.textContent=''; }
+});
 
 /* =============================================================
    รับคืนอุปกรณ์เข้าคลัง — บันทึกสภาพของที่ส่งคืนและการดำเนินการต่อ
@@ -5480,19 +5633,43 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   updates['equipment/'+id+'/returnActionLabel'] = ACTION_LABELS[action];
 
   if(action === 'stock'){
-    /* หากลับเข้าคลังเพื่อให้ยืมต่อ: เพิ่มจำนวนคงคลังของรายการประเภทเดียวกัน ถ้ายังไม่มีในคงคลังจะสร้างรายการใหม่ให้ */
-    const qty = parseInt(e.quantity,10) || 1;
+    /* หากลับเข้าคลังเพื่อให้ยืมต่อ:
+       - ครุภัณฑ์ (durable) ที่มีเลขควบคุม: นำเลขครุภัณฑ์นั้นกลับเข้ารายการ "พร้อมให้ยืม" (ไม่บวกจำนวนคงคลังซ้ำ เพราะเป็นของเดิมที่ยืมออกไป)
+       - วัสดุการแพทย์ (material) หรือครุภัณฑ์ที่ไม่มีเลขควบคุม: เพิ่มจำนวนคงคลังกลับเข้าไป ถ้ายังไม่มีในคงคลังจะสร้างรายการใหม่ให้ */
     const existing = Object.entries(STATE.inventory||{}).find(([,v])=>v.category===e.category && v.itemType===e.itemType);
-    if(existing){
-      const [invId, invData] = existing;
-      updates['inventory/'+invId+'/quantity'] = (parseInt(invData.quantity,10)||0) + qty;
-      updates['inventory/'+invId+'/updatedAt'] = Date.now();
+    if(e.category==='durable' && e.itemCode){
+      if(existing){
+        const [invId, invData] = existing;
+        const avail = invData.availableAssetCodes || invData.assetCodes || [];
+        if(!avail.includes(e.itemCode)) avail.push(e.itemCode);
+        updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+        /* ถ้าเลขนี้ไม่เคยอยู่ในทะเบียนหลักมาก่อน (เช่น เดิมพิมพ์เองไม่ได้เลือกจากคลัง) ให้เพิ่มเข้าทะเบียนหลักและยอดคงคลังด้วย */
+        if(!(invData.assetCodes||[]).includes(e.itemCode)){
+          updates['inventory/'+invId+'/assetCodes'] = [...(invData.assetCodes||[]), e.itemCode];
+          updates['inventory/'+invId+'/quantity'] = (parseInt(invData.quantity,10)||0) + 1;
+        }
+        updates['inventory/'+invId+'/updatedAt'] = Date.now();
+      } else {
+        const newInvId = 'INV'+Date.now();
+        updates['inventory/'+newInvId] = {
+          category: e.category, itemType: e.itemType, quantity: 1, unit: 'ชิ้น',
+          assetCodes: [e.itemCode], availableAssetCodes: [e.itemCode],
+          note: `รับคืนจาก ${e.elderlyName||'-'} เมื่อ ${formatThaiDate(dateReturned)}`, updatedAt: Date.now()
+        };
+      }
     } else {
-      const newInvId = 'INV'+Date.now();
-      updates['inventory/'+newInvId] = {
-        category: e.category, itemType: e.itemType, quantity: qty, unit: 'ชิ้น',
-        note: `รับคืนจาก ${e.elderlyName||'-'} เมื่อ ${formatThaiDate(dateReturned)}`, updatedAt: Date.now()
-      };
+      const qty = parseInt(e.quantity,10) || 1;
+      if(existing){
+        const [invId, invData] = existing;
+        updates['inventory/'+invId+'/quantity'] = (parseInt(invData.quantity,10)||0) + qty;
+        updates['inventory/'+invId+'/updatedAt'] = Date.now();
+      } else {
+        const newInvId = 'INV'+Date.now();
+        updates['inventory/'+newInvId] = {
+          category: e.category, itemType: e.itemType, quantity: qty, unit: 'ชิ้น',
+          note: `รับคืนจาก ${e.elderlyName||'-'} เมื่อ ${formatThaiDate(dateReturned)}`, updatedAt: Date.now()
+        };
+      }
     }
   }
 
