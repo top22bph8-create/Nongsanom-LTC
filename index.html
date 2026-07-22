@@ -1112,7 +1112,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
   <div style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#FAFDFF;">
     <label style="font-weight:700;font-size:13.5px;color:var(--primary-dark);">แบบประเมิน TAI (Typology of the Aged with Illustration)</label>
-    <p class="muted" style="font-size:11.5px;margin-top:2px;">คลิกเลือกตัวเลือกที่ตรงกับผู้สูงอายุมากที่สุดในแต่ละหัวข้อ (คลิกเลือกอย่างเดียว ไม่ต้องพิมพ์) ระบบจะสรุปผล TAI ให้อัตโนมัติเมื่อเลือกครบทุกข้อ</p>
+    <p class="muted" style="font-size:11.5px;margin-top:2px;">ประเมินตามผังการตัดสินใจ TAI ฉบับทางการ (แบ่งเป็นกลุ่ม Border/Confuse/Immobile) คลิกเลือกทีละขั้นตอนตามที่ระบบถามไปเรื่อยๆ ไม่ต้องพิมพ์รหัสเอง ระบบจะสรุปผลเป็นรหัส TAI ให้อัตโนมัติเมื่อเลือกครบ</p>
     <div id="taiDomainsContainer"></div>
     <div class="info-box" id="taiResultBox" style="margin-top:10px;padding:10px 12px;border-radius:8px;background:#fff;border:1px solid var(--border);font-size:13px;">กรุณาเลือกให้ครบทุกข้อเพื่อสรุปผล TAI</div>
   </div>
@@ -1298,72 +1298,115 @@ function getElderlyVisitTarget(e){
 }
 
 /* =============================================================
-   แบบประเมิน TAI (Typology of the Aged with Illustration) แบบคลิกเลือก
-   หมายเหตุ: ออกแบบเป็นแบบประเมิน 5 หัวข้อ (คลิกเลือกตัวเลือกเดียวต่อหัวข้อ ไม่ต้องพิมพ์)
-   แล้วรวมคะแนนเพื่อสรุปผลเป็น TAI ประเภทที่ 1-4 โดยอิงแนวคิดทั่วไปของ TAI
-   (ผู้ใช้งานสามารถปรับเกณฑ์ให้ตรงกับเอกสาร TAI ฉบับทางการที่หน่วยงานใช้อยู่ได้ภายหลัง)
+   แบบประเมิน TAI (Typology of the Aged with Illustration) แบบคลิกเลือกทีละขั้น
+   อ้างอิงตามเอกสาร TAI ทางการ: ประเมิน 4 ด้าน (การเคลื่อนไหว, ความสับสน/Dementia,
+   การรับประทานอาหาร, การขับถ่าย) แบ่งเป็น 3 กลุ่มใหญ่:
+     กลุ่ม Border (B): เคลื่อนไหวได้ดี/ช่วยเหลือได้บ้าง สับสนน้อย → B5, B4, B3
+     กลุ่ม Confuse (C): เคลื่อนไหวได้ดี/ช่วยเหลือได้บ้าง แต่มีภาวะสับสนมาก (Dementia) → C4, C3, C2
+     กลุ่ม Immobile (I): เคลื่อนไหวร่างกายเองไม่ได้ (ติดเตียง) → I3, I2, I1
+   ผู้ใช้งานคลิกเลือกทีละขั้นตอน (ไม่ต้องพิมพ์คะแนนเอง) ระบบจะเดินตามผังการตัดสินใจ
+   ให้ครบแล้วสรุปผลเป็นรหัส TAI ให้อัตโนมัติ
 ============================================================= */
-const TAI_DOMAINS = [
-  { key:'mobility', label:'1. การเคลื่อนไหวและการทำกิจวัตรประจำวัน', options:[
-    {v:0, label:'ช่วยเหลือตนเองได้ปกติ'},
-    {v:1, label:'เดินได้ แต่ต้องมีคนช่วยหรือใช้อุปกรณ์'},
-    {v:2, label:'เคลื่อนไหวได้บ้าง ต้องมีคนดูแลใกล้ชิด'},
-    {v:3, label:'เคลื่อนไหวไม่ได้ / ติดเตียง'}
-  ]},
-  { key:'cognition', label:'2. สภาพจิตใจและความจำ', options:[
-    {v:0, label:'ปกติ'},
-    {v:1, label:'หลงลืมเล็กน้อย'},
-    {v:2, label:'สับสน / มีภาวะสมองเสื่อม'}
-  ]},
-  { key:'continence', label:'3. การขับถ่ายและการดูแลตนเอง', options:[
-    {v:0, label:'ควบคุมได้ปกติ'},
-    {v:1, label:'มีปัญหาเป็นบางครั้ง'},
-    {v:2, label:'ควบคุมไม่ได้ / ต้องใช้อุปกรณ์ช่วย'}
-  ]},
-  { key:'disease', label:'4. ภาวะโรคและความซับซ้อนในการดูแล', options:[
-    {v:0, label:'ไม่มีโรคเรื้อรัง หรือควบคุมได้ดี'},
-    {v:1, label:'มีโรคเรื้อรังหลายโรคที่ต้องติดตาม'},
-    {v:2, label:'มีภาวะเจ็บป่วยรุนแรง / ระยะท้าย'}
-  ]},
-  { key:'support', label:'5. การสนับสนุนทางสังคมและผู้ดูแล', options:[
-    {v:0, label:'มีผู้ดูแลเพียงพอ'},
-    {v:1, label:'มีผู้ดูแลบางเวลา'},
-    {v:2, label:'ไม่มีผู้ดูแลเพียงพอ'}
-  ]}
-];
-function getTaiTypeFromScore(score){
-  if(score<=2) return { type:1, label:'TAI ประเภทที่ 1 (พึ่งตนเองได้ / ติดสังคม)' };
-  if(score<=5) return { type:2, label:'TAI ประเภทที่ 2 (ติดบ้าน)' };
-  if(score<=8) return { type:3, label:'TAI ประเภทที่ 3 (ติดเตียง)' };
-  return { type:4, label:'TAI ประเภทที่ 4 (ติดเตียง ระยะรุนแรง/ท้าย)' };
-}
-let taiSelections = {};
+const TAI_RESULTS = {
+  B5: { code:'B5', mainGroup:'B', mainGroupLabel:'กลุ่ม Border (B) — ปกติ/มีภาวะเสี่ยง', desc:'เคลื่อนไหวได้ดี รับรู้บุคคล เวลา สถานที่ปกติ ไม่มีปัญหาการรับประทานอาหารและการขับถ่าย' },
+  B4: { code:'B4', mainGroup:'B', mainGroupLabel:'กลุ่ม Border (B) — ปกติ/มีภาวะเสี่ยง', desc:'เคลื่อนไหวได้ดี รับรู้บุคคล เวลา สถานที่ปกติ มีปัญหาการรับประทานอาหารและการขับถ่ายปานกลาง' },
+  B3: { code:'B3', mainGroup:'B', mainGroupLabel:'กลุ่ม Border (B) — ปกติ/มีภาวะเสี่ยง', desc:'เคลื่อนไหวได้ดี รับรู้บุคคล เวลา สถานที่ปกติ แต่มีปัญหาการรับประทานอาหารหรือการขับถ่ายมาก' },
+  C4: { code:'C4', mainGroup:'C', mainGroupLabel:'กลุ่ม Confuse (C) — มีความสับสน (Dementia)', desc:'มีภาวะสับสน ไม่รับรู้บุคคล/เวลา/สถานที่ หรือมีปัญหาพฤติกรรม ร่วมกับมีปัญหาการรับประทานอาหารและการขับถ่ายน้อย' },
+  C3: { code:'C3', mainGroup:'C', mainGroupLabel:'กลุ่ม Confuse (C) — มีความสับสน (Dementia)', desc:'มีภาวะสับสน ไม่รับรู้บุคคล/เวลา/สถานที่ หรือมีปัญหาพฤติกรรม ร่วมกับมีปัญหาการรับประทานอาหารและการขับถ่ายปานกลาง' },
+  C2: { code:'C2', mainGroup:'C', mainGroupLabel:'กลุ่ม Confuse (C) — มีความสับสน (Dementia)', desc:'มีภาวะสับสนมาก ไม่รับรู้บุคคล/เวลา/สถานที่ หรือมีปัญหาพฤติกรรมมาก ร่วมกับมีปัญหาการรับประทานอาหารและการขับถ่ายมาก' },
+  I3: { code:'I3', mainGroup:'I', mainGroupLabel:'กลุ่ม Immobile (I) — เคลื่อนไหวร่างกายเองไม่ได้', desc:'เคลื่อนไหวร่างกายเองไม่ได้ (ติดเตียง) มีปัญหาการรับประทานอาหารเล็กน้อย' },
+  I2: { code:'I2', mainGroup:'I', mainGroupLabel:'กลุ่ม Immobile (I) — เคลื่อนไหวร่างกายเองไม่ได้', desc:'เคลื่อนไหวร่างกายเองไม่ได้ (ติดเตียง) มีปัญหาการรับประทานอาหารปานกลาง' },
+  I1: { code:'I1', mainGroup:'I', mainGroupLabel:'กลุ่ม Immobile (I) — เคลื่อนไหวร่างกายเองไม่ได้', desc:'เคลื่อนไหวร่างกายเองไม่ได้ (ติดเตียง) มีปัญหาการรับประทานอาหารมาก' }
+};
+let taiWizard = { mobility:null, confuse:null, feedToilet:null };
+
 function renderTaiDomains(){
   const container = document.getElementById('taiDomainsContainer');
-  container.innerHTML = TAI_DOMAINS.map(d=>`
-    <div class="field" style="margin-top:10px;">
-      <label style="font-size:12.5px;">${d.label}</label>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
-        ${d.options.map(o=>`<button type="button" class="tai-option-btn ${taiSelections[d.key]===o.v?'selected':''}" onclick="selectTaiOption('${d.key}',${o.v})">${o.label}</button>`).join('')}
-      </div>
+  const w = taiWizard;
+  let html = `<div class="field" style="margin-top:10px;">
+    <label style="font-size:12.5px;">1. การเคลื่อนไหวร่างกาย</label>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+      <button type="button" class="tai-option-btn ${w.mobility==='mobile'?'selected':''}" onclick="selectTaiStep('mobility','mobile')">เคลื่อนไหวได้ดี หรือช่วยเหลือตนเองได้บ้าง</button>
+      <button type="button" class="tai-option-btn ${w.mobility==='immobile'?'selected':''}" onclick="selectTaiStep('mobility','immobile')">เคลื่อนไหวร่างกายเองไม่ได้ (ติดเตียง)</button>
     </div>
-  `).join('');
+  </div>`;
+
+  if(w.mobility === 'mobile'){
+    html += `<div class="field" style="margin-top:10px;">
+      <label style="font-size:12.5px;">2. ภาวะสับสน (Confusion)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+        <button type="button" class="tai-option-btn ${w.confuse==='low'?'selected':''}" onclick="selectTaiStep('confuse','low')">ปกติ รับรู้บุคคล เวลา สถานที่ดี (สับสนน้อยหรือไม่มี)</button>
+        <button type="button" class="tai-option-btn ${w.confuse==='high'?'selected':''}" onclick="selectTaiStep('confuse','high')">มีความสับสน ไม่รับรู้บุคคล/เวลา/สถานที่ หรือมีปัญหาพฤติกรรม (Dementia)</button>
+      </div>
+    </div>`;
+
+    if(w.confuse === 'low'){
+      html += `<div class="field" style="margin-top:10px;">
+        <label style="font-size:12.5px;">3. ปัญหาการรับประทานอาหารและการขับถ่าย</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          <button type="button" class="tai-option-btn ${w.feedToilet==='none'?'selected':''}" onclick="selectTaiStep('feedToilet','none')">ไม่มีปัญหาทั้งสองด้าน</button>
+          <button type="button" class="tai-option-btn ${w.feedToilet==='mid'?'selected':''}" onclick="selectTaiStep('feedToilet','mid')">มีปัญหาปานกลางทั้งสองด้าน</button>
+          <button type="button" class="tai-option-btn ${w.feedToilet==='high'?'selected':''}" onclick="selectTaiStep('feedToilet','high')">มีปัญหามากด้านใดด้านหนึ่งหรือทั้งสองด้าน</button>
+        </div>
+      </div>`;
+    } else if(w.confuse === 'high'){
+      html += `<div class="field" style="margin-top:10px;">
+        <label style="font-size:12.5px;">3. ปัญหาการรับประทานอาหารและการขับถ่าย</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          <button type="button" class="tai-option-btn ${w.feedToilet==='low'?'selected':''}" onclick="selectTaiStep('feedToilet','low')">มีปัญหาน้อยทั้งสองด้าน</button>
+          <button type="button" class="tai-option-btn ${w.feedToilet==='mid'?'selected':''}" onclick="selectTaiStep('feedToilet','mid')">มีปัญหาปานกลาง</button>
+          <button type="button" class="tai-option-btn ${w.feedToilet==='high'?'selected':''}" onclick="selectTaiStep('feedToilet','high')">มีปัญหามากทั้งสองด้าน</button>
+        </div>
+      </div>`;
+    }
+  } else if(w.mobility === 'immobile'){
+    html += `<div class="field" style="margin-top:10px;">
+      <label style="font-size:12.5px;">2. ปัญหาการรับประทานอาหาร</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+        <button type="button" class="tai-option-btn ${w.feedToilet==='low'?'selected':''}" onclick="selectTaiStep('feedToilet','low')">มีปัญหาน้อย (รับประทานได้ค่อนข้างดี)</button>
+        <button type="button" class="tai-option-btn ${w.feedToilet==='mid'?'selected':''}" onclick="selectTaiStep('feedToilet','mid')">มีปัญหาปานกลาง</button>
+        <button type="button" class="tai-option-btn ${w.feedToilet==='high'?'selected':''}" onclick="selectTaiStep('feedToilet','high')">มีปัญหามาก</button>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
   updateTaiResult();
 }
-function selectTaiOption(domainKey, value){
-  taiSelections[domainKey] = value;
+function selectTaiStep(step, value){
+  taiWizard[step] = value;
+  /* ล้างคำตอบขั้นถัดไปทุกครั้งที่เปลี่ยนคำตอบขั้นก่อนหน้า เพื่อไม่ให้ค้างค่าที่ไม่สัมพันธ์กัน */
+  if(step === 'mobility'){ taiWizard.confuse = null; taiWizard.feedToilet = null; }
+  if(step === 'confuse'){ taiWizard.feedToilet = null; }
   renderTaiDomains();
+}
+function computeTaiCode(){
+  const w = taiWizard;
+  if(w.mobility === 'mobile' && w.confuse === 'low'){
+    if(w.feedToilet === 'none') return 'B5';
+    if(w.feedToilet === 'mid') return 'B4';
+    if(w.feedToilet === 'high') return 'B3';
+  }
+  if(w.mobility === 'mobile' && w.confuse === 'high'){
+    if(w.feedToilet === 'low') return 'C4';
+    if(w.feedToilet === 'mid') return 'C3';
+    if(w.feedToilet === 'high') return 'C2';
+  }
+  if(w.mobility === 'immobile'){
+    if(w.feedToilet === 'low') return 'I3';
+    if(w.feedToilet === 'mid') return 'I2';
+    if(w.feedToilet === 'high') return 'I1';
+  }
+  return null;
 }
 function updateTaiResult(){
   const box = document.getElementById('taiResultBox');
-  const selectedCount = TAI_DOMAINS.filter(d=>taiSelections[d.key]!==undefined).length;
-  if(selectedCount < TAI_DOMAINS.length){
-    box.innerHTML = `เลือกแล้ว ${selectedCount}/${TAI_DOMAINS.length} ข้อ — กรุณาเลือกให้ครบทุกข้อเพื่อสรุปผล TAI`;
+  const code = computeTaiCode();
+  if(!code){
+    box.innerHTML = 'กรุณาคลิกเลือกให้ครบทุกขั้นตอนเพื่อสรุปผล TAI';
     return;
   }
-  const score = TAI_DOMAINS.reduce((sum,d)=>sum+taiSelections[d.key],0);
-  const result = getTaiTypeFromScore(score);
-  box.innerHTML = `<b>${result.label}</b> (คะแนนรวม ${score})`;
+  const r = TAI_RESULTS[code];
+  box.innerHTML = `<b>${r.mainGroupLabel} — รหัส ${r.code}</b><br><span style="font-size:12px;">${r.desc}</span>`;
 }
 
 function beYear(y){ return y + 543; }
@@ -3691,28 +3734,51 @@ document.getElementById('elderlyImportPreviewBtn').addEventListener('click', ()=
 });
 
 function renderElderlyImportPreview(parsed){
-  const unmatchedCg = parsed.filter(r=>r.cgNameRaw && !r.cgCode);
-  const rowsHtml = parsed.slice(0,10).map(r=>{
+  /* จับคู่แต่ละแถวกับผู้สูงอายุที่มีอยู่ในระบบโดยเลขบัตรประชาชน (ถ้ามี) */
+  const enriched = parsed.map(r=>{
+    const idTrimmed = (r.idCard||'').replace(/\D/g,'');
+    const existingEntry = idTrimmed
+      ? Object.entries(STATE.elderly).find(([,e])=>(e.idCard||'').replace(/\D/g,'')=== idTrimmed)
+      : null;
+    return Object.assign({}, r, {
+      existingId: existingEntry ? existingEntry[0] : null,
+      existingName: existingEntry ? existingEntry[1].name : null
+    });
+  });
+  elderlyImportParsedRows = enriched;
+
+  const toAdd    = enriched.filter(r=>!r.existingId);
+  const toUpdate = enriched.filter(r=>!!r.existingId);
+  const unmatchedCg = enriched.filter(r=>r.cgNameRaw && !r.cgCode);
+
+  const rowsHtml = enriched.slice(0,10).map(r=>{
     const info = getAdlBarthelInfo(r);
     const colorInfo = getAdlColorInfo(r);
+    const action = r.existingId
+      ? `<span style="color:var(--primary);font-size:11px;">🔄 อัปเดต (${r.existingId})</span>`
+      : `<span style="color:#2E7D32;font-size:11px;">➕ เพิ่มใหม่</span>`;
     return `
     <tr>
       <td>${r.name}</td><td>${r.gender||'-'}</td><td>${r.age||'-'}</td>
       <td>${r.cgCode ? (STATE.cgs[r.cgCode]?.name||r.cgCode) : (r.cgNameRaw ? `<span style="color:var(--danger)">ไม่พบ: ${r.cgNameRaw}</span>` : '-')}</td>
-      <td>${r.adlScore!==null?r.adlScore:'-'}</td><td>${info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-'}</td><td>${info ? (info.minVisits===0?'ไม่จำเป็น':info.minVisits) : '-'}</td>
+      <td>${r.adlScore!==null?r.adlScore:'-'}</td>
+      <td>${info ? `<span class="adl-dot adl-${colorInfo.cls}"></span>${info.group}` : '-'}</td>
+      <td>${action}</td>
     </tr>`;
   }).join('');
+
   const warnHtml = unmatchedCg.length
-    ? `<p style="color:var(--danger);font-size:12.5px;margin-top:8px;">⚠️ พบ ${unmatchedCg.length} รายการที่จับคู่ชื่อ CG ในไฟล์กับ CG ที่มีอยู่ในระบบไม่ได้ (จะนำเข้าโดยไม่ระบุ CG ผู้ดูแล กรุณาไปกำหนดภายหลังที่ตาราง หรือใช้ปุ่ม "🔄 ย้าย CG")</p>`
+    ? `<p style="color:var(--danger);font-size:12.5px;margin-top:8px;">⚠️ พบ ${unmatchedCg.length} รายการที่จับคู่ชื่อ CG ในไฟล์กับ CG ที่มีอยู่ในระบบไม่ได้</p>`
     : '';
+
   document.getElementById('elderlyImportPreview').innerHTML = `
-    <p style="font-weight:600;">พบข้อมูลทั้งหมด ${parsed.length} รายการ (แสดงตัวอย่าง ${Math.min(10,parsed.length)} แถวแรก)</p>
+    <p style="font-weight:600;">พบข้อมูลทั้งหมด ${enriched.length} รายการ — <span style="color:#2E7D32;">➕ เพิ่มใหม่ ${toAdd.length} คน</span> &nbsp;|&nbsp; <span style="color:var(--primary);">🔄 อัปเดตข้อมูลเดิม ${toUpdate.length} คน</span> (จับคู่จากเลขบัตรประชาชน) (แสดงตัวอย่าง ${Math.min(10,enriched.length)} แถวแรก)</p>
     <div style="overflow-x:auto;">
-    <table style="min-width:600px;"><thead><tr><th>ชื่อ</th><th>เพศ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม (คำนวณอัตโนมัติ)</th><th>เยี่ยม/เดือน (คำนวณอัตโนมัติ)</th></tr></thead>
+    <table style="min-width:640px;"><thead><tr><th>ชื่อ</th><th>เพศ</th><th>อายุ</th><th>CG</th><th>คะแนน ADL</th><th>กลุ่ม</th><th>การดำเนินการ</th></tr></thead>
     <tbody>${rowsHtml}</tbody></table>
     </div>
     ${warnHtml}
-    <button class="btn btn-primary" id="elderlyImportConfirmBtn" style="margin-top:10px;">✅ ยืนยันนำเข้า ${parsed.length} รายการ</button>
+    <button class="btn btn-primary" id="elderlyImportConfirmBtn" style="margin-top:10px;">✅ ยืนยัน: เพิ่มใหม่ ${toAdd.length} + อัปเดต ${toUpdate.length} รายการ</button>
   `;
   document.getElementById('elderlyImportConfirmBtn').addEventListener('click', commitElderlyImport);
 }
@@ -3721,23 +3787,60 @@ function commitElderlyImport(){
   if(blockIfReadOnly()) return;
   const updates = {};
   const now = Date.now();
+  const todayIso = new Date().toISOString().slice(0,10);
+  let addCount = 0, updateCount = 0;
+
   elderlyImportParsedRows.forEach(r=>{
-    const id = nextCode(STATE.elderly, 'E', 3);
-    // จองรหัสไว้ในตัวแปรชั่วคราวเพื่อไม่ให้ nextCode ซ้ำกันระหว่างวนลูป
-    STATE.elderly = STATE.elderly || {};
-    STATE.elderly[id] = { name: r.name };
-    updates['elderly/'+id] = {
-      name: r.name, idCard: r.idCard, hn:'', age: r.age||0, gender: r.gender,
-      houseNo: r.houseNo, moo: r.moo,
-      adlGroup: r.adlGroup||'', adlScore: r.adlScore,
-      cgCode: r.cgCode, cgAssignedDate: new Date().toISOString().slice(0,10),
-      pdfMode:'normal',
-      relativePhone: r.relativePhone, vhvName: r.vhvName, vhvPhone: r.vhvPhone,
-      status:'active', createdAt: now
-    };
+    if(r.existingId){
+      /* อัปเดตข้อมูลเดิม: รวมข้อมูลที่นำเข้ากับข้อมูลที่มีอยู่
+         ข้อมูลในไฟล์จะเขียนทับเฉพาะช่องที่มีค่าเข้ามา ช่องที่ว่างจะคงค่าเดิมไว้ */
+      const existing = STATE.elderly[r.existingId] || {};
+      const merged = Object.assign({}, existing);
+      if(r.name)          merged.name          = r.name;
+      if(r.idCard)        merged.idCard        = r.idCard;
+      if(r.gender)        merged.gender        = r.gender;
+      if(r.age)           merged.age           = r.age;
+      if(r.houseNo)       merged.houseNo       = r.houseNo;
+      if(r.moo)           merged.moo           = r.moo;
+      if(r.adlGroup)      merged.adlGroup      = r.adlGroup;
+      if(r.adlScore!==null && r.adlScore!==undefined) merged.adlScore = r.adlScore;
+      if(r.relativePhone) merged.relativePhone = r.relativePhone;
+      if(r.vhvName)       merged.vhvName       = r.vhvName;
+      if(r.vhvPhone)      merged.vhvPhone      = r.vhvPhone;
+      if(r.cgCode && r.cgCode !== existing.cgCode){
+        /* บันทึกประวัติการเปลี่ยน CG หาก CG ในไฟล์ต่างจาก CG ปัจจุบัน */
+        const hid = 'CGT'+now+'_'+r.existingId;
+        updates['cgTransferHistory/'+hid] = {
+          elderlyId: r.existingId, elderlyName: merged.name,
+          fromCgCode: existing.cgCode||'', fromCgName: (STATE.cgs[existing.cgCode]||{}).name||'',
+          toCgCode: r.cgCode, toCgName: (STATE.cgs[r.cgCode]||{}).name||r.cgCode,
+          transferDate: todayIso, transferredBy: CURRENT_USER?CURRENT_USER.displayName:'นำเข้า Excel', createdAt: now
+        };
+        merged.cgCode = r.cgCode;
+        merged.cgAssignedDate = todayIso;
+      }
+      updates['elderly/'+r.existingId] = merged;
+      updateCount++;
+    } else {
+      /* เพิ่มใหม่: สร้างรหัสใหม่ จองใน STATE ชั่วคราวเพื่อไม่ให้ nextCode ซ้ำกัน */
+      const id = nextCode(STATE.elderly, 'E', 3);
+      STATE.elderly = STATE.elderly || {};
+      STATE.elderly[id] = { name: r.name };
+      updates['elderly/'+id] = {
+        name: r.name, idCard: r.idCard||'', age: r.age||0, gender: r.gender||'',
+        houseNo: r.houseNo||'', moo: r.moo||'',
+        adlGroup: r.adlGroup||'', adlScore: r.adlScore,
+        cgCode: r.cgCode||'', cgAssignedDate: todayIso,
+        pdfMode:'normal',
+        relativePhone: r.relativePhone||'', vhvName: r.vhvName||'', vhvPhone: r.vhvPhone||'',
+        status:'active', createdAt: now
+      };
+      addCount++;
+    }
   });
+
   db.ref().update(updates).then(()=>{
-    toast(`นำเข้าผู้สูงอายุ ${elderlyImportParsedRows.length} รายการสำเร็จ`,'success');
+    toast(`นำเข้าสำเร็จ: เพิ่มใหม่ ${addCount} คน, อัปเดต ${updateCount} คน`,'success');
     elderlyImportParsedRows = [];
     document.getElementById('elderlyImportPreview').innerHTML = '';
     document.getElementById('elderlyImportFile').value = '';
@@ -3788,7 +3891,7 @@ document.getElementById('addElderlyBtn').addEventListener('click', ()=>{
   document.getElementById('elderlyAdlGroup').value = '';
   document.getElementById('elderlyHasConfusion').checked = false;
   document.getElementById('elderlyIsEndOfLife').checked = false;
-  taiSelections = {};
+  taiWizard = { mobility:null, confuse:null, feedToilet:null };
   renderTaiDomains();
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
@@ -3816,7 +3919,7 @@ function openEditElderly(id){
   document.getElementById('elderlyHasConfusion').checked = !!e.hasConfusion;
   document.getElementById('elderlyIsEndOfLife').checked = !!e.isEndOfLife;
   document.getElementById('elderlyVisitsPerMonthOverride').value = (e.visitsPerMonth!==undefined && e.visitsPerMonth!==null) ? e.visitsPerMonth : '';
-  taiSelections = e.taiSelections ? Object.assign({}, e.taiSelections) : {};
+  taiWizard = e.taiWizard ? Object.assign({mobility:null,confuse:null,feedToilet:null}, e.taiWizard) : { mobility:null, confuse:null, feedToilet:null };
   renderTaiDomains();
   renderElderlyAdlComputedBox();
   openModal('elderlyModal');
@@ -3834,9 +3937,8 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
   const existing = (editId && STATE.elderly[editId]) ? STATE.elderly[editId] : null;
   const cgChanged = existing && existing.cgCode && existing.cgCode !== cgCode;
   const todayIso = new Date().toISOString().slice(0,10);
-  const taiComplete = TAI_DOMAINS.every(d=>taiSelections[d.key]!==undefined);
-  const taiScore = taiComplete ? TAI_DOMAINS.reduce((sum,d)=>sum+taiSelections[d.key],0) : null;
-  const taiResult = taiComplete ? getTaiTypeFromScore(taiScore) : null;
+  const taiCode = computeTaiCode();
+  const taiResult = taiCode ? TAI_RESULTS[taiCode] : null;
   const data = {
     name, idCard: document.getElementById('elderlyIdCard').value.trim(),
     mainDiagnosis: document.getElementById('elderlyMainDiagnosis').value.trim(),
@@ -3851,8 +3953,8 @@ document.getElementById('elderlySaveBtn').addEventListener('click', ()=>{
     isEndOfLife: document.getElementById('elderlyIsEndOfLife').checked,
     visitsPerMonth: overrideRaw==='' ? null : parseInt(overrideRaw,10),
     primaryRelativeName: document.getElementById('elderlyPrimaryRelativeName').value.trim(),
-    taiSelections: Object.assign({}, taiSelections),
-    taiScore, taiType: taiResult ? taiResult.type : null, taiLabel: taiResult ? taiResult.label : '',
+    taiWizard: Object.assign({}, taiWizard),
+    taiCode: taiCode, taiMainGroup: taiResult ? taiResult.mainGroupLabel : '', taiLabel: taiResult ? `${taiResult.mainGroupLabel} — รหัส ${taiResult.code} (${taiResult.desc})` : '',
     cgCode,
     cgAssignedDate: (!existing || cgChanged) ? todayIso : (existing.cgAssignedDate || todayIso),
     pdfMode: document.getElementById('elderlyPdfMode').value,
