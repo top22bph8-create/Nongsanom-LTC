@@ -1197,6 +1197,40 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentModal')">ยกเลิก</button><button class="btn btn-primary" id="eqSaveBtn">บันทึก</button></div>
 </div></div>
 
+<div class="modal-overlay" id="equipmentReturnModal"><div class="modal-box" style="max-width:480px;">
+  <h3>🔙 รับคืนอุปกรณ์เข้าคลัง</h3>
+  <input type="hidden" id="eqReturnId">
+  <p class="muted" id="eqReturnInfo" style="margin-bottom:10px;"></p>
+  <div class="field">
+    <label>วันที่รับคืน</label>
+    <input type="date" id="eqReturnDate">
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>สภาพของที่ส่งคืน</label>
+    <select id="eqReturnCondition">
+      <option value="">-- เลือก --</option>
+      <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
+      <option value="เสื่อมสภาพ">เสื่อมสภาพ</option>
+      <option value="เสียหาย">เสียหาย</option>
+    </select>
+  </div>
+  <div class="field" id="eqReturnDamageWrap" style="margin-top:8px;display:none;">
+    <label>ระบุความเสียหาย</label>
+    <input type="text" id="eqReturnDamageDetail" placeholder="เช่น ล้อหัก, สายขาด, จอแตก">
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>การดำเนินการต่อ</label>
+    <select id="eqReturnAction">
+      <option value="">-- เลือก --</option>
+      <option value="stock">รับกลับเข้าคลังเพื่อให้ยืมต่อ</option>
+      <option value="repair">ส่งซ่อม</option>
+      <option value="dispose">รอจำหน่าย</option>
+    </select>
+  </div>
+  <p class="muted" style="font-size:11.5px;margin-top:6px;">ถ้าเลือก "รับกลับเข้าคลังเพื่อให้ยืมต่อ" ระบบจะเพิ่มจำนวนคงคลังของรายการนี้ให้อัตโนมัติ ถ้าเลือก "ส่งซ่อม" หรือ "รอจำหน่าย" จะไม่เพิ่มจำนวนคงคลัง (ของยังไม่พร้อมให้ยืมต่อ)</p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentReturnModal')">ยกเลิก</button><button class="btn btn-primary" id="eqReturnSaveBtn">ยืนยันรับคืน</button></div>
+</div></div>
+
 <div class="modal-overlay" id="confirmModal"><div class="modal-box">
   <h3 id="confirmTitle">ยืนยันการทำรายการ</h3>
   <p id="confirmMessage"></p>
@@ -4798,6 +4832,18 @@ function renderEquipmentElderlySelect(){
   if(modalSel){ modalSel.innerHTML = opts; }
 }
 
+/* รายการครุภัณฑ์การแพทย์ / วัสดุการแพทย์ ให้เลือกเป็นช้อยสะดวก — เลือก "อื่นๆ" เพื่อพิมพ์เองได้
+   ใช้ร่วมกันทั้งฟอร์ม "ขอรับการสนับสนุนอุปกรณ์" และ "คงคลังอุปกรณ์" ด้านล่าง */
+const EQUIPMENT_DURABLE_ITEMS = [
+  "เตียงฟาวเลอร์","เครื่องผลิตออกซิเจน","ถังออกซิเจน ขนาดใหญ่","ถังออกซิเจน ขนาดเล็ก",
+  "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
+];
+const EQUIPMENT_MATERIAL_ITEMS = [
+  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
+  "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา"
+];
+function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
+
 /* =============================================================
    คงคลังอุปกรณ์ (วัสดุการแพทย์ / ครุภัณฑ์การแพทย์)
    Firebase path: /inventory/{id}
@@ -5065,7 +5111,7 @@ function renderEquipmentTable(){
     .filter(([id,e])=> !filterElderly || e.elderlyId===filterElderly)
     .sort((a,b)=> (b[1].dateReceived||'').localeCompare(a[1].dateReceived||''))
     .map(([id,e])=>{
-      const statusText = e.dateReturned ? `คืนแล้ว (${formatThaiDate(e.dateReturned)})` : 'ยังไม่คืน';
+      const statusText = e.dateReturned ? `คืนแล้ว (${formatThaiDate(e.dateReturned)})${e.returnActionLabel ? ` — ${e.returnCondition||''} / ${e.returnActionLabel}` : ''}` : 'ยังไม่คืน';
       return `
       <tr>
         <td>${e.elderlyName||'-'}</td>
@@ -5077,24 +5123,14 @@ function renderEquipmentTable(){
         <td>${e.quantity||'-'}</td>
         <td>${statusText}</td>
         <td><button class="btn btn-ghost btn-sm" onclick="openEditEquipment('${id}')">✏️</button>
+        ${!e.dateReturned ? `<button class="btn btn-secondary btn-sm" onclick="openEquipmentReturn('${id}')">🔙 รับคืน</button>` : ''}
         <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${id}')">🗑</button></td>
       </tr>`;}).join('');
   document.getElementById('equipmentTable').innerHTML = rows || '<tr><td colspan="9" class="muted">ยังไม่มีข้อมูล</td></tr>';
 }
 
-/* รายการครุภัณฑ์การแพทย์ / วัสดุการแพทย์ ให้เลือกเป็นช้อยสะดวก — เลือก "อื่นๆ" เพื่อพิมพ์เองได้ */
-const EQUIPMENT_DURABLE_ITEMS = [
-  "เตียงฟาวเลอร์","เครื่องผลิตออกซิเจน","ถังออกซิเจน ขนาดใหญ่","ถังออกซิเจน ขนาดเล็ก",
-  "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
-];
-const EQUIPMENT_MATERIAL_ITEMS = [
-  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
-  "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา"
-];
-
 /* ---- แถวรายการอุปกรณ์แบบเพิ่มได้หลายรายการในการขอรับการสนับสนุนครั้งเดียว ---- */
 let eqRowCounter = 0;
-function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
 
 function createEqItemRow(prefill){
   prefill = prefill || {};
@@ -5330,6 +5366,71 @@ function deleteEquipment(id){
 }
 document.getElementById('eqElderlyFilter').addEventListener('change', renderEquipmentTable);
 
+/* =============================================================
+   รับคืนอุปกรณ์เข้าคลัง — บันทึกสภาพของที่ส่งคืนและการดำเนินการต่อ
+   ถ้าเลือก "รับกลับเข้าคลังเพื่อให้ยืมต่อ" จะเพิ่มจำนวนคงคลัง (/inventory) ให้อัตโนมัติ
+============================================================= */
+function openEquipmentReturn(id){
+  const e = STATE.equipment[id];
+  if(!e) return;
+  document.getElementById('eqReturnId').value = id;
+  const catLabel = CATEGORY_LABELS_INV[e.category] || e.category || '-';
+  document.getElementById('eqReturnInfo').textContent = `${e.elderlyName||'-'} — ${catLabel}: ${e.itemType||'-'} (จำนวน ${e.quantity||1})`;
+  document.getElementById('eqReturnDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('eqReturnCondition').value = '';
+  document.getElementById('eqReturnDamageDetail').value = '';
+  document.getElementById('eqReturnDamageWrap').style.display = 'none';
+  document.getElementById('eqReturnAction').value = '';
+  openModal('equipmentReturnModal');
+}
+document.getElementById('eqReturnCondition').addEventListener('change', function(){
+  document.getElementById('eqReturnDamageWrap').style.display = (this.value==='เสียหาย') ? 'block' : 'none';
+});
+document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const id = document.getElementById('eqReturnId').value;
+  const e = STATE.equipment[id];
+  if(!e) return;
+  const dateReturned = document.getElementById('eqReturnDate').value;
+  const condition = document.getElementById('eqReturnCondition').value;
+  const damageDetail = document.getElementById('eqReturnDamageDetail').value.trim();
+  const action = document.getElementById('eqReturnAction').value;
+  if(!dateReturned){ toast('กรุณาระบุวันที่รับคืน','error'); return; }
+  if(!condition){ toast('กรุณาเลือกสภาพของที่ส่งคืน','error'); return; }
+  if(condition==='เสียหาย' && !damageDetail){ toast('กรุณาระบุความเสียหาย','error'); return; }
+  if(!action){ toast('กรุณาเลือกการดำเนินการต่อ','error'); return; }
+
+  const ACTION_LABELS = { stock:'รับกลับเข้าคลังเพื่อให้ยืมต่อ', repair:'ส่งซ่อม', dispose:'รอจำหน่าย' };
+  const updates = {};
+  updates['equipment/'+id+'/dateReturned'] = dateReturned;
+  updates['equipment/'+id+'/returnCondition'] = condition;
+  updates['equipment/'+id+'/returnDamageDetail'] = condition==='เสียหาย' ? damageDetail : '';
+  updates['equipment/'+id+'/returnAction'] = action;
+  updates['equipment/'+id+'/returnActionLabel'] = ACTION_LABELS[action];
+
+  if(action === 'stock'){
+    /* หากลับเข้าคลังเพื่อให้ยืมต่อ: เพิ่มจำนวนคงคลังของรายการประเภทเดียวกัน ถ้ายังไม่มีในคงคลังจะสร้างรายการใหม่ให้ */
+    const qty = parseInt(e.quantity,10) || 1;
+    const existing = Object.entries(STATE.inventory||{}).find(([,v])=>v.category===e.category && v.itemType===e.itemType);
+    if(existing){
+      const [invId, invData] = existing;
+      updates['inventory/'+invId+'/quantity'] = (parseInt(invData.quantity,10)||0) + qty;
+      updates['inventory/'+invId+'/updatedAt'] = Date.now();
+    } else {
+      const newInvId = 'INV'+Date.now();
+      updates['inventory/'+newInvId] = {
+        category: e.category, itemType: e.itemType, quantity: qty, unit: 'ชิ้น',
+        note: `รับคืนจาก ${e.elderlyName||'-'} เมื่อ ${formatThaiDate(dateReturned)}`, updatedAt: Date.now()
+      };
+    }
+  }
+
+  db.ref().update(updates).then(()=>{
+    toast(`รับคืนอุปกรณ์สำเร็จ (${ACTION_LABELS[action]})`,'success');
+    closeModal('equipmentReturnModal');
+  });
+});
+
 /* ---- ทะเบียนคุมครุภัณฑ์ (PDF แยกจากรายงานเยี่ยมบ้าน) ---- */
 function buildEquipmentSummaryPageHTML(stats, filterLabel){
   const pendingRows = stats.pendingList.slice(0,18).map((e,idx)=>`
@@ -5396,7 +5497,7 @@ function buildEquipmentSummaryPageHTML(stats, filterLabel){
 
 function buildEquipmentRegistryPageHTML(rowsChunk, pageNo, totalPages){
   const tableRows = rowsChunk.map((e)=>{
-    const statusText = e.dateReturned ? `คืนแล้ว (${formatThaiDate(e.dateReturned)})` : 'ยังไม่คืน';
+    const statusText = e.dateReturned ? `คืนแล้ว (${formatThaiDate(e.dateReturned)})${e.returnActionLabel ? ` — ${e.returnCondition||''} / ${e.returnActionLabel}` : ''}` : 'ยังไม่คืน';
     return `
     <tr>
       <td style="padding:6px 4px;border-bottom:1px solid #eee;text-align:center;">${e.no}</td>
