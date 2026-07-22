@@ -895,6 +895,21 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
 
   <div class="card">
+    <h3>📋 รายงานข้อมูลส่วนบุคคลผู้สูงอายุ (แยกรายคน)</h3>
+    <p class="muted">รวมข้อมูลทั้งหมดจากฟอร์ม "เพิ่ม/แก้ไขผู้สูงอายุ" (ข้อมูลส่วนตัว, โรคประจำตัว, กลุ่ม ADL, ผล TAI, ญาติผู้ดูแล) พร้อมสรุปประวัติการได้รับการเยี่ยมทุกครั้งที่เคยบันทึกไว้ ของผู้สูงอายุคนที่เลือกเพียงคนเดียว ออกได้ทั้ง PDF, Word และ Excel</p>
+    <div class="row">
+      <div class="field"><label>กรอง CG (ถ้าต้องการ)</label><select id="indivReportCgFilter"><option value="">ทุก CG</option></select></div>
+      <div class="field"><label>เลือกผู้สูงอายุ</label><select id="indivReportElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:8px;">
+      <button class="btn btn-secondary" id="exportIndivExcelBtn">📊 Excel</button>
+      <button class="btn btn-secondary" id="exportIndivWordBtn">📝 Word</button>
+      <button class="btn btn-primary" id="exportIndivPdfBtn">📄 PDF</button>
+    </div>
+    <div class="upload-progress" id="indivReportProgress"></div>
+  </div>
+
+  <div class="card">
     <h3>รายงานข้อมูลผู้สูงอายุ (สถานะทั้งหมด)</h3>
     <p class="muted">รายงานรายชื่อผู้สูงอายุพร้อมข้อมูล ADL, CG ผู้ดูแล, ความคืบหน้าการเยี่ยมเทียบเป้าหมายรายเดือน, และสถานะการดูแล (ดูแลอยู่ / จำหน่ายแล้ว) ออกได้ทั้งไฟล์ Excel และ PDF</p>
     <div class="row">
@@ -2252,9 +2267,9 @@ document.getElementById('cpSaveBtn').addEventListener('click', ()=>{
 function renderCgSelects(){
   const opts = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${code} - ${STATE.cgs[code].name}</option>`).join('');
   const optsNoCode = Object.keys(STATE.cgs).sort().map(code=>`<option value="${code}">${STATE.cgs[code].name}</option>`).join('');
-  ['elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg','allElderlyReportCgFilter'].forEach(id=>{
+  ['elderlyCg','pdfCgFilter','filterElderlyCg','elderlyReportCgFilter','recManageCg','allElderlyReportCgFilter','indivReportCgFilter'].forEach(id=>{
     const el = document.getElementById(id);
-    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg' || id==='allElderlyReportCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
+    const keepFirst = (id==='pdfCgFilter' || id==='elderlyReportCgFilter' || id==='recManageCg' || id==='allElderlyReportCgFilter' || id==='indivReportCgFilter') ? '<option value="">ทุก CG</option>' : (id==='filterElderlyCg' ? '<option value="">ทั้งหมด</option>' : '');
     const prevVal = el.value;
     el.innerHTML = keepFirst + opts;
     if(prevVal) el.value = prevVal;
@@ -2265,7 +2280,23 @@ function renderCgSelects(){
   if(prevRecCg) recCgEl.value = prevRecCg;
   renderRecElderlyOptions();
   renderRecManageList();
+  renderIndivReportElderlyOptions();
 }
+function renderIndivReportElderlyOptions(){
+  const sel = document.getElementById('indivReportElderly');
+  if(!sel) return;
+  const cgFilter = document.getElementById('indivReportCgFilter').value;
+  const prevVal = sel.value;
+  const ids = Object.keys(STATE.elderly).filter(id=>!cgFilter || STATE.elderly[id].cgCode===cgFilter).sort();
+  sel.innerHTML = '<option value="">-- เลือกผู้สูงอายุ --</option>' + ids.map(id=>{
+    const e = STATE.elderly[id];
+    const statusTag = e.status==='discharged' ? ' (จำหน่ายแล้ว)' : '';
+    return `<option value="${id}">${e.name}${statusTag}</option>`;
+  }).join('');
+  if(prevVal && ids.includes(prevVal)) sel.value = prevVal;
+}
+document.getElementById('indivReportCgFilter').addEventListener('change', renderIndivReportElderlyOptions);
+
 
 /* ผู้สูงอายุในหน้าบันทึกการเยี่ยม: ใช้ dropdown แบบกำหนดเอง แสดงลูกบอลสีตามกลุ่ม ADL แทนรหัส
    (select มาตรฐานของเบราว์เซอร์ไม่รองรับการใส่สี จึงต้องสร้างเป็นปุ่ม+รายการเอง) */
@@ -4833,6 +4864,230 @@ document.getElementById('exportAllElderlyPdfBtn').addEventListener('click', asyn
   }catch(err){
     console.error(err);
     toast('เกิดข้อผิดพลาดขณะสร้าง PDF: '+err.message,'error');
+  }finally{
+    root.innerHTML = '';
+    btn.disabled = false;
+  }
+});
+
+/* =============================================================
+   รายงานข้อมูลส่วนบุคคลผู้สูงอายุ (แยกรายคน) — รวมข้อมูลโปรไฟล์ทั้งหมด + ประวัติการเยี่ยมทุกครั้ง
+============================================================= */
+function buildIndivReportData(elderlyId){
+  const e = STATE.elderly[elderlyId] || STATE_ELDERLY_HISTORY[elderlyId];
+  if(!e) return null;
+  const cg = STATE.cgs[e.cgCode];
+  const adlInfo = getAdlBarthelInfo(e);
+  const visits = Object.values(STATE.visits||{})
+    .filter(v=>v.elderlyId===elderlyId)
+    .sort((a,b)=>(a.visitDate||'').localeCompare(b.visitDate||''));
+  return { e, cg, adlInfo, visits };
+}
+function indivProfileRows(data){
+  const { e, cg, adlInfo } = data;
+  return [
+    ['ชื่อ-สกุล', e.name||'-'],
+    ['เลขประจำตัวประชาชน', e.idCard||'-'],
+    ['อายุ', e.age ? `${e.age} ปี` : '-'],
+    ['เพศ', e.gender||'-'],
+    ['ที่อยู่', `บ้านเลขที่ ${e.houseNo||'-'} ${villageLabel(e.moo)}`],
+    ['CG ผู้ดูแล', cg ? cg.name : '-'],
+    ['โรคหลักที่ได้รับการวินิจฉัย', e.mainDiagnosis||'-'],
+    ['โรคร่วม', e.comorbidities||'-'],
+    ['คะแนน ADL', (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '-'],
+    ['กลุ่ม ADL', adlInfo ? adlInfo.group : '-'],
+    ['ลักษณะ/ประเภทผู้สูงอายุ', adlInfo ? adlInfo.desc : '-'],
+    ['จำนวนครั้งที่ต้องเยี่ยม/เดือน', getElderlyVisitTarget(e)],
+    ['ผล TAI', e.taiLabel || (e.taiCode ? `${e.taiCode}` : '-')],
+    ['ชื่อญาติผู้ดูแลหลัก', e.primaryRelativeName||'-'],
+    ['ความสัมพันธ์กับผู้ป่วย', e.relativeRelation||'-'],
+    ['เบอร์โทรศัพท์ญาติ', e.relativePhone||'-'],
+    ['ชื่อ อสม. ใกล้บ้าน', e.vhvName||'-'],
+    ['เบอร์โทรศัพท์ อสม.', e.vhvPhone||'-'],
+    ['โหมด PDF', e.pdfMode==='obt'?'อบต.':'ปกติ'],
+    ['สถานะการดูแล', e.status==='discharged' ? `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'}${e.dischargeDate?' เมื่อ '+formatThaiDate(e.dischargeDate):''})` : 'ดูแลอยู่']
+  ];
+}
+function indivVisitRow(v){
+  const a = v.assessment || {};
+  const vitals = a.vitals || {};
+  const bp = (vitals.bpSys||vitals.bpDia) ? `${vitals.bpSys||'-'}/${vitals.bpDia||'-'}` : '-';
+  return {
+    date: v.visitDate ? formatThaiDate(v.visitDate) : '-',
+    cgName: v.cgName || '-',
+    bp, pr: vitals.pr||'-', temp: vitals.temp||'-', weight: vitals.weight||'-',
+    adlScore: (a.adlScore!==undefined && a.adlScore!=='') ? a.adlScore : '-',
+    healthStatus: a.healthStatus||'-',
+    note: v.note||''
+  };
+}
+
+/* ---- Excel: 2 ชีต (ข้อมูลส่วนบุคคล + ประวัติการเยี่ยม) ---- */
+document.getElementById('exportIndivExcelBtn').addEventListener('click', ()=>{
+  const elderlyId = document.getElementById('indivReportElderly').value;
+  if(!elderlyId){ toast('กรุณาเลือกผู้สูงอายุ','error'); return; }
+  const data = buildIndivReportData(elderlyId);
+  if(!data){ toast('ไม่พบข้อมูลผู้สูงอายุ','error'); return; }
+  const wb = XLSX.utils.book_new();
+  const profileSheetData = indivProfileRows(data).map(([label,value])=>({ 'รายการ':label, 'ข้อมูล':value }));
+  const wsProfile = XLSX.utils.json_to_sheet(profileSheetData);
+  wsProfile['!cols'] = [{wch:28},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, wsProfile, 'ข้อมูลส่วนบุคคล');
+  const visitSheetData = data.visits.map((v,i)=>{
+    const r = indivVisitRow(v);
+    return { 'ลำดับ': i+1, 'วันที่เยี่ยม': r.date, 'CG ผู้เยี่ยม': r.cgName, 'ความดัน': r.bp, 'ชีพจร': r.pr,
+      'อุณหภูมิ': r.temp, 'น้ำหนัก': r.weight, 'คะแนน ADL ครั้งนี้': r.adlScore, 'ภาวะสุขภาพ': r.healthStatus, 'บันทึกปัญหา': r.note };
+  });
+  const wsVisits = XLSX.utils.json_to_sheet(visitSheetData.length ? visitSheetData : [{'หมายเหตุ':'ยังไม่มีประวัติการเยี่ยม'}]);
+  wsVisits['!cols'] = [8,14,20,12,10,10,10,16,14,40].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, wsVisits, 'ประวัติการเยี่ยม');
+  XLSX.writeFile(wb, `ข้อมูลส่วนบุคคล_${data.e.name}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงาน Excel สำเร็จ','success');
+});
+
+/* ---- Word (.doc ใช้ HTML+MIME แบบที่ Microsoft Word/LibreOffice เปิดได้โดยตรง ไม่ต้องพึ่งไลบรารีภายนอก) ---- */
+function buildIndivReportHTML(data){
+  const rows = indivProfileRows(data).map(([label,value])=>`<tr><td style="padding:6px 10px;border:1px solid #999;font-weight:bold;width:35%;">${label}</td><td style="padding:6px 10px;border:1px solid #999;">${value}</td></tr>`).join('');
+  const visitRows = data.visits.map((v,i)=>{
+    const r = indivVisitRow(v);
+    return `<tr><td style="padding:5px 8px;border:1px solid #999;text-align:center;">${i+1}</td><td style="padding:5px 8px;border:1px solid #999;">${r.date}</td><td style="padding:5px 8px;border:1px solid #999;">${r.cgName}</td><td style="padding:5px 8px;border:1px solid #999;">${r.bp}</td><td style="padding:5px 8px;border:1px solid #999;">${r.pr}</td><td style="padding:5px 8px;border:1px solid #999;">${r.temp}</td><td style="padding:5px 8px;border:1px solid #999;">${r.weight}</td><td style="padding:5px 8px;border:1px solid #999;">${r.adlScore}</td><td style="padding:5px 8px;border:1px solid #999;">${r.healthStatus}</td><td style="padding:5px 8px;border:1px solid #999;">${r.note||'-'}</td></tr>`;
+  }).join('');
+  return `
+    <h2 style="text-align:center;">รายงานข้อมูลส่วนบุคคลผู้สูงอายุ</h2>
+    <p style="text-align:center;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</p>
+    <h3>1. ข้อมูลส่วนบุคคล</h3>
+    <table style="border-collapse:collapse;width:100%;">${rows}</table>
+    <h3 style="margin-top:20px;">2. ประวัติการได้รับการเยี่ยม (ทั้งหมด ${data.visits.length} ครั้ง)</h3>
+    <table style="border-collapse:collapse;width:100%;font-size:12px;">
+      <tr style="background:#EAF6FC;">
+        <th style="padding:5px 8px;border:1px solid #999;">ลำดับ</th><th style="padding:5px 8px;border:1px solid #999;">วันที่</th>
+        <th style="padding:5px 8px;border:1px solid #999;">CG ผู้เยี่ยม</th><th style="padding:5px 8px;border:1px solid #999;">ความดัน</th>
+        <th style="padding:5px 8px;border:1px solid #999;">ชีพจร</th><th style="padding:5px 8px;border:1px solid #999;">อุณหภูมิ</th>
+        <th style="padding:5px 8px;border:1px solid #999;">น้ำหนัก</th><th style="padding:5px 8px;border:1px solid #999;">ADL ครั้งนี้</th>
+        <th style="padding:5px 8px;border:1px solid #999;">ภาวะสุขภาพ</th><th style="padding:5px 8px;border:1px solid #999;">บันทึกปัญหา</th>
+      </tr>
+      ${visitRows || '<tr><td colspan="10" style="padding:8px;text-align:center;border:1px solid #999;">ยังไม่มีประวัติการเยี่ยม</td></tr>'}
+    </table>`;
+}
+document.getElementById('exportIndivWordBtn').addEventListener('click', ()=>{
+  const elderlyId = document.getElementById('indivReportElderly').value;
+  if(!elderlyId){ toast('กรุณาเลือกผู้สูงอายุ','error'); return; }
+  const data = buildIndivReportData(elderlyId);
+  if(!data){ toast('ไม่พบข้อมูลผู้สูงอายุ','error'); return; }
+  const bodyHtml = buildIndivReportHTML(data);
+  const preHtml = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>รายงาน</title></head><body style=\"font-family:'Sarabun','Angsana New',sans-serif;\">";
+  const postHtml = "</body></html>";
+  const fullHtml = preHtml + bodyHtml + postHtml;
+  const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ข้อมูลส่วนบุคคล_${data.e.name}_${new Date().toISOString().slice(0,10)}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('ออกรายงาน Word สำเร็จ (ไฟล์ .doc เปิดได้ปกติด้วย Microsoft Word)','success');
+});
+
+/* ---- PDF: หน้าแรกข้อมูลส่วนบุคคล ตามด้วยประวัติการเยี่ยม (แบ่งหน้าถ้ามีหลายครั้ง) ---- */
+function buildIndivProfilePdfPageHTML(data, pageNo, totalPages){
+  const rowsHtml = indivProfileRows(data).map(([label,value])=>`
+    <tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;width:32%;background:#F7FBFF;">${label}</td><td style="padding:6px 10px;border:1px solid #ddd;">${value}</td></tr>`).join('');
+  return `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">รายงานข้อมูลส่วนบุคคลผู้สูงอายุ</div>
+        <div style="font-size:12px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:16px 22px;flex:1;overflow:hidden;">
+      <div style="text-align:center;font-size:18px;font-weight:700;color:#0F5590;margin-bottom:10px;">${data.e.name}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">${rowsHtml}</table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">หน้า ${pageNo}/${totalPages} | ${FACILITY_NAME}</div>
+  </div>`;
+}
+function buildIndivVisitsPdfPageHTML(data, visitsChunk, pageNo, totalPages){
+  const rowsHtml = visitsChunk.map((v,i)=>{
+    const r = indivVisitRow(v);
+    return `<tr style="background:${i%2?'#F7FBFF':'#fff'}">
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${data.visits.indexOf(v)+1}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;">${r.date}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;">${r.cgName}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${r.bp}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${r.pr}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${r.temp}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${r.weight}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;">${r.healthStatus}</td>
+      <td style="padding:4px 6px;border:1px solid #ddd;font-size:10px;">${r.note||'-'}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:16px;font-weight:700;">ประวัติการได้รับการเยี่ยม — ${data.e.name}</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} | รวมทั้งหมด ${data.visits.length} ครั้ง</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:12px 18px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+        <thead><tr style="background:#EAF6FC;color:#0F5590;">
+          <th style="padding:4px 6px;border:1px solid #ddd;">ลำดับ</th><th style="padding:4px 6px;border:1px solid #ddd;">วันที่</th>
+          <th style="padding:4px 6px;border:1px solid #ddd;">CG ผู้เยี่ยม</th><th style="padding:4px 6px;border:1px solid #ddd;">ความดัน</th>
+          <th style="padding:4px 6px;border:1px solid #ddd;">ชีพจร</th><th style="padding:4px 6px;border:1px solid #ddd;">อุณหภูมิ</th>
+          <th style="padding:4px 6px;border:1px solid #ddd;">น้ำหนัก</th><th style="padding:4px 6px;border:1px solid #ddd;">ADL ครั้งนี้</th>
+          <th style="padding:4px 6px;border:1px solid #ddd;">ภาวะสุขภาพ</th><th style="padding:4px 6px;border:1px solid #ddd;">บันทึกปัญหา</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0;">หน้า ${pageNo}/${totalPages} | ${FACILITY_NAME}</div>
+  </div>`;
+}
+document.getElementById('exportIndivPdfBtn').addEventListener('click', async ()=>{
+  const elderlyId = document.getElementById('indivReportElderly').value;
+  if(!elderlyId){ toast('กรุณาเลือกผู้สูงอายุ','error'); return; }
+  const data = buildIndivReportData(elderlyId);
+  if(!data){ toast('ไม่พบข้อมูลผู้สูงอายุ','error'); return; }
+  const progress = document.getElementById('indivReportProgress');
+  const btn = document.getElementById('exportIndivPdfBtn');
+  btn.disabled = true;
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const ROWS_PER_PAGE = 18;
+  const visitPages = [];
+  for(let i=0;i<data.visits.length;i+=ROWS_PER_PAGE) visitPages.push(data.visits.slice(i,i+ROWS_PER_PAGE));
+  const totalPages = 1 + Math.max(visitPages.length,1);
+  try{
+    progress.textContent = `กำลังสร้างหน้า 1/${totalPages}`;
+    root.innerHTML = buildIndivProfilePdfPageHTML(data, 1, totalPages);
+    await new Promise(r=>setTimeout(r,300));
+    let canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);
+    const pagesToRender = visitPages.length ? visitPages : [[]];
+    for(let i=0;i<pagesToRender.length;i++){
+      progress.textContent = `กำลังสร้างหน้า ${i+2}/${totalPages}`;
+      root.innerHTML = buildIndivVisitsPdfPageHTML(data, pagesToRender[i], i+2, totalPages);
+      await new Promise(r=>setTimeout(r,300));
+      canvas = await html2canvas(root.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);
+    }
+    pdf.save(`ข้อมูลส่วนบุคคล_${data.e.name}_${new Date().toISOString().slice(0,10)}.pdf`);
+    progress.textContent = '';
+    toast('ออกรายงาน PDF สำเร็จ','success');
+  }catch(err){
+    console.error(err);
+    toast('เกิดข้อผิดพลาด: '+err.message,'error');
   }finally{
     root.innerHTML = '';
     btn.disabled = false;
