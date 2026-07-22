@@ -4452,7 +4452,7 @@ function buildElderlyReportRows(){
       no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target, visitedCount: visitedCount===null ? '-' : visitedCount,
       quotaLabel: quotaMet===null ? '-' : (quotaMet ? 'ครบตามเกณฑ์' : 'ยังไม่ครบ'),
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
@@ -4469,7 +4469,7 @@ function buildElderlyReportRows(){
       no: no++, id, name: e.name, idCard: e.idCard||'', age: e.age||'', gender: e.gender||'',
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo), cgName,
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target: getElderlyVisitTarget(e), visitedCount: '-', quotaLabel: '-',
       pdfMode: e.pdfMode==='obt' ? 'อบต.' : 'ปกติ',
       statusLabel: `จำหน่ายแล้ว (${e.dischargeReasonLabel||'-'})`,
@@ -4486,8 +4486,8 @@ document.getElementById('exportElderlyExcelBtn').addEventListener('click', ()=>{
   if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
   const sheetData = rows.map(r=>({
     'ลำดับ': r.no, 'รหัส': r.id, 'ชื่อ-สกุล': r.name, 'เลขประจำตัวประชาชน': r.idCard,
-    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'หมู่บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
-    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup,
+    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
+    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup, 'คะแนน TAI': r.taiCode,
     [`เป้าหมายเยี่ยม/เดือน`]: r.target, [`เยี่ยมแล้วเดือน ${monthLabel} ${yBE}`]: r.visitedCount,
     'สถานะเกณฑ์การเยี่ยม': r.quotaLabel, 'โหมด PDF': r.pdfMode,
     'สถานะการดูแล': r.statusLabel, 'วันที่จำหน่าย/เหตุผล': r.statusDate,
@@ -4504,15 +4504,19 @@ document.getElementById('exportElderlyExcelBtn').addEventListener('click', ()=>{
 function buildElderlyReportPdfPageHTML(rowsChunk, monthLabel, yBE, pageNo, totalPages){
   const rowsHtml = rowsChunk.map(r=>`
     <tr>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.no}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.name}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.age}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.cgName}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlGroup}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.visitedCount}/${r.target}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.quotaLabel}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.statusLabel}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.no}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.name}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.age}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.houseNo} ${r.villageLabel}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.cgName}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.adlGroup}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.taiCode||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.visitedCount}/${r.target}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.quotaLabel}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.relativePhone||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.statusLabel}</td>
     </tr>`).join('');
   return `
   <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
@@ -4524,19 +4528,23 @@ function buildElderlyReportPdfPageHTML(rowsChunk, monthLabel, yBE, pageNo, total
       </div>
       <div style="width:52px;flex-shrink:0;"></div>
     </div>
-    <div style="padding:14px 20px;flex:1;">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <div style="padding:12px 16px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
         <thead>
           <tr style="background:#EAF6FC;color:#0F5590;">
-            <th style="padding:5px 6px;border:1px solid #ddd;">ลำดับ</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">ชื่อ-สกุล</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">อายุ</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">CG ผู้ดูแล</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">คะแนน ADL</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">กลุ่ม ADL</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">เยี่ยมแล้ว/เป้าหมาย</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">สถานะเกณฑ์เยี่ยม</th>
-            <th style="padding:5px 6px;border:1px solid #ddd;">สถานะการดูแล</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">ลำดับ</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">อายุ</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">บ้านเลขที่/หมู่บ้าน</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">CG ผู้ดูแล</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">คะแนน ADL</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">กลุ่ม ADL</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">TAI</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">เยี่ยมแล้ว/เป้าหมาย</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">สถานะเกณฑ์เยี่ยม</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">เบอร์โทรญาติ</th>
+            <th style="padding:4px 5px;border:1px solid #ddd;">สถานะการดูแล</th>
           </tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
@@ -4613,7 +4621,7 @@ function buildAllElderlyReportRows(){
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo),
       cgName: STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target: getElderlyVisitTarget(e),
       mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
       taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
@@ -4629,7 +4637,7 @@ function buildAllElderlyReportRows(){
       houseNo: e.houseNo||'', moo: e.moo||'', villageLabel: villageLabel(e.moo),
       cgName: STATE.cgs[e.cgCode]?.name || e.cgCode || '-',
       adlScore: (e.adlScore!==undefined && e.adlScore!==null) ? e.adlScore : '',
-      adlGroup: (getAdlBarthelInfo(e)||{}).group || '',
+      adlGroup: (getAdlBarthelInfo(e)||{}).group || '', taiCode: e.taiCode||'',
       target: getElderlyVisitTarget(e),
       mainDiagnosis: e.mainDiagnosis||'', comorbidities: e.comorbidities||'',
       taiLabel: e.taiLabel||'', primaryRelativeName: e.primaryRelativeName||'',
@@ -4645,9 +4653,9 @@ document.getElementById('exportAllElderlyExcelBtn').addEventListener('click', ()
   if(rows.length===0){ toast('ไม่พบข้อมูลผู้สูงอายุสำหรับออกรายงาน','error'); return; }
   const sheetData = rows.map(r=>({
     'ลำดับ': r.no, 'รหัส': r.id, 'ชื่อ-สกุล': r.name, 'เลขประจำตัวประชาชน': r.idCard,
-    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'หมู่บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
-    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup, 'เป้าหมายเยี่ยม/เดือน': r.target,
-    'โรคหลัก': r.mainDiagnosis, 'โรคร่วม': r.comorbidities, 'ผล TAI': r.taiLabel,
+    'อายุ': r.age, 'เพศ': r.gender, 'บ้านเลขที่': r.houseNo, 'บ้าน': r.villageLabel, 'CG ผู้ดูแล': r.cgName,
+    'คะแนน ADL': r.adlScore, 'กลุ่ม ADL': r.adlGroup, 'คะแนน TAI': r.taiCode, 'เป้าหมายเยี่ยม/เดือน': r.target,
+    'โรคหลัก': r.mainDiagnosis, 'โรคร่วม': r.comorbidities, 'ผล TAI (รายละเอียด)': r.taiLabel,
     'ญาติผู้ดูแลหลัก': r.primaryRelativeName, 'โหมด PDF': r.pdfMode, 'สถานะการดูแล': r.statusLabel,
     'เบอร์โทรญาติ': r.relativePhone, 'ชื่อ อสม.': r.vhvName, 'เบอร์โทร อสม.': r.vhvPhone
   }));
@@ -4661,15 +4669,18 @@ document.getElementById('exportAllElderlyExcelBtn').addEventListener('click', ()
 function buildAllElderlyReportPdfPageHTML(rowsChunk, pageNo, totalPages){
   const rowsHtml = rowsChunk.map(r=>`
     <tr>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.no}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.name}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.age}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.villageLabel}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.cgName}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;">${r.adlGroup}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;font-size:10px;">${r.mainDiagnosis}</td>
-      <td style="padding:5px 6px;border:1px solid #ddd;font-size:10px;">${r.statusLabel}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.no}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.name}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.age}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.houseNo} ${r.villageLabel}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.cgName}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.adlScore}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.adlGroup}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;">${r.taiCode||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;font-size:9.5px;">${r.mainDiagnosis}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.primaryRelativeName||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;">${r.relativePhone||'-'}</td>
+      <td style="padding:4px 5px;border:1px solid #ddd;font-size:9.5px;">${r.statusLabel}</td>
     </tr>`).join('');
   return `
   <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
@@ -4681,18 +4692,21 @@ function buildAllElderlyReportPdfPageHTML(rowsChunk, pageNo, totalPages){
       </div>
       <div style="width:52px;flex-shrink:0;"></div>
     </div>
-    <div style="padding:14px 20px;flex:1;">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <div style="padding:12px 16px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
         <thead><tr style="background:#EAF6FC;color:#0F5590;">
-          <th style="padding:5px 6px;border:1px solid #ddd;">ลำดับ</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">ชื่อ-สกุล</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">อายุ</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">หมู่บ้าน</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">CG ผู้ดูแล</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">คะแนน ADL</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">กลุ่ม ADL</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">โรคหลัก</th>
-          <th style="padding:5px 6px;border:1px solid #ddd;">สถานะ</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">ลำดับ</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">ชื่อ-สกุล</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">อายุ</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">บ้านเลขที่/หมู่บ้าน</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">CG ผู้ดูแล</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">คะแนน ADL</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">กลุ่ม ADL</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">TAI</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">โรคหลัก</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">ญาติผู้ดูแลหลัก</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">เบอร์โทรญาติ</th>
+          <th style="padding:4px 5px;border:1px solid #ddd;">สถานะ</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
