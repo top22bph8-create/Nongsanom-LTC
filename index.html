@@ -98,6 +98,10 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .ms-panel.open{display:block;}
 .ms-option{display:flex;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13.5px;transition:background .15s;}
 .tai-option-btn{padding:7px 13px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit;}
+.eq-txn-toggle{background:#fff;border:1.5px solid var(--border);color:var(--muted);font-weight:600;transition:all .15s;}
+.eq-txn-toggle.active{border-color:transparent;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+.eq-txn-toggle.active#eqTxnBorrowBtn{background:linear-gradient(135deg,#2E7D32,#4CAF50);}
+.eq-txn-toggle.active#eqTxnReturnBtn{background:linear-gradient(135deg,#B8860B,#F0A93B);}
 .tai-option-btn:hover{border-color:var(--primary);}
 .tai-option-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700;}
 .ms-option:hover{background:#F4FBFF;}
@@ -1271,16 +1275,23 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 </div></div>
 
 <div class="modal-overlay" id="equipmentModal"><div class="modal-box" style="max-width:560px;">
-  <h3 id="eqModalTitle">เพิ่มรายการอุปกรณ์</h3>
+  <h3 id="eqModalTitle">ลงทะเบียนยืม-คืนอุปกรณ์</h3>
   <input type="hidden" id="eqEditId">
-  <div class="field"><label>ชื่อผู้สูงอายุ</label><select id="eqElderly"></select></div>
+  <div class="field">
+    <label>ทำรายการ</label>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button type="button" class="btn eq-txn-toggle" id="eqTxnBorrowBtn" style="flex:1;">📤 ทำรายการยืม</button>
+      <button type="button" class="btn eq-txn-toggle" id="eqTxnReturnBtn" style="flex:1;">📥 ทำรายการส่งคืน</button>
+    </div>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>ชื่อผู้สูงอายุ</label><select id="eqElderly"></select></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรญาติ</label><input type="tel" id="eqRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>วันที่ได้รับการสนับสนุน</label>
+    <div class="field"><label>วันที่ยืมอุปกรณ์</label>
       <input type="hidden" id="eqDateReceived">
       <button type="button" class="btn btn-secondary" id="eqDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="eqDateReceivedText">เลือกวันที่</span></button>
     </div>
-    <div class="field"><label>วันที่ส่งคืน (ถ้ายังไม่คืน เว้นว่างไว้)</label>
+    <div class="field" id="eqDateReturnedWrap"><label>วันที่ส่งคืน (ถ้ายังไม่คืน เว้นว่างไว้)</label>
       <input type="hidden" id="eqDateReturned">
       <div class="row" style="gap:6px;">
         <button type="button" class="btn btn-secondary" id="eqDateReturnedBtn" style="flex:1;text-align:left;">🗓 <span id="eqDateReturnedText">เลือกวันที่</span></button>
@@ -5430,10 +5441,10 @@ function computeInventoryRemaining(inv){
 /* สถานะของครุภัณฑ์แต่ละชิ้น (แยกตามเลขครุภัณฑ์) — ตรวจสอบตามลำดับความสำคัญ:
    ส่งซ่อม > ชำรุด/รอจำหน่าย > ถูกยืม > พร้อมใช้งาน */
 const EQ_STATUS_STYLES = {
-  available: { label:'พร้อมใช้งาน', color:'#1B5E20', bg:'#E8F5E9', border:'#C8E6C9', icon:'🟢' },
-  borrowed:  { label:'ถูกยืม',       color:'#8A6100', bg:'#FFF8E1', border:'#FFE0B2', icon:'🟡' },
-  damaged:   { label:'ชำรุด/รอจำหน่าย', color:'#A6321C', bg:'#FFEBEE', border:'#FFCDD2', icon:'🔴' },
-  repair:    { label:'ส่งซ่อม',       color:'#5A2D82', bg:'#F3E5F5', border:'#E1BEE7', icon:'🟣' }
+  available: { label:'พร้อมใช้งาน', color:'#1B5E20', bg:'#E8F5E9', border:'#C8E6C9', icon:'🟢', btnColor:'#4CAF50' },
+  borrowed:  { label:'ถูกยืม',       color:'#8A6100', bg:'#FFF8E1', border:'#FFE0B2', icon:'🟡', btnColor:'#F0A93B' },
+  damaged:   { label:'ชำรุด/รอจำหน่าย', color:'#A6321C', bg:'#FFEBEE', border:'#FFCDD2', icon:'🔴', btnColor:'#E8654A' },
+  repair:    { label:'ส่งซ่อม',       color:'#5A2D82', bg:'#F3E5F5', border:'#E1BEE7', icon:'🟣', btnColor:'#9C6ADE' }
 };
 function getAssetCodeStatus(code){
   const repairEntry = Object.entries(STATE.repairRegistry||{}).find(([,r])=>r.assetCode===code && r.status==='pending');
@@ -5520,9 +5531,9 @@ function renderInventoryTable(){
         statusColumnHtml = lines.map(l=>{
           let actionBtn = '';
           if(l.st.status === 'available'){
-            actionBtn = `<button onclick="quickBorrowCode('${id}','${l.code}')" title="คลิกเพื่อยืม" style="margin-left:8px;border:none;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;background:${l.style.color};color:#fff;cursor:pointer;">📤 ยืม</button>`;
+            actionBtn = `<button onclick="quickBorrowCode('${id}','${l.code}')" title="คลิกเพื่อยืม" style="margin-left:8px;border:none;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;background:${l.style.btnColor};color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);">⇄ ยืม</button>`;
           } else if(l.st.status === 'borrowed'){
-            actionBtn = `<button onclick="quickReturnCode('${l.st.entryId}')" title="คลิกเพื่อส่งคืน" style="margin-left:8px;border:none;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;background:${l.style.color};color:#fff;cursor:pointer;">📥 คืน</button>`;
+            actionBtn = `<button onclick="quickReturnCode('${l.st.entryId}')" title="คลิกเพื่อส่งคืน" style="margin-left:8px;border:none;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;background:${l.style.btnColor};color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);">⇄ คืน</button>`;
           }
           return `<div style="color:${l.style.color};font-weight:700;white-space:nowrap;display:flex;align-items:center;">${l.style.icon} ${l.style.label}${actionBtn}</div>`;
         }).join('');
@@ -6449,8 +6460,33 @@ document.getElementById('eqAddRowBtn').addEventListener('click', ()=>{
   document.getElementById('eqItemRows').appendChild(createEqItemRow());
 });
 
+let eqTxnMode = 'borrow';
+function setEqTxnMode(mode){
+  eqTxnMode = mode;
+  const borrowBtn = document.getElementById('eqTxnBorrowBtn');
+  const returnBtn = document.getElementById('eqTxnReturnBtn');
+  borrowBtn.classList.toggle('active', mode==='borrow');
+  returnBtn.classList.toggle('active', mode==='return');
+  const returnWrap = document.getElementById('eqDateReturnedWrap');
+  if(mode==='return'){
+    /* โหมดส่งคืน: เน้นช่องวันที่ส่งคืน และตั้งวันนี้เป็นค่าเริ่มต้นถ้ายังไม่ได้เลือก */
+    returnWrap.style.background = '#FFF8E1';
+    returnWrap.style.padding = '8px';
+    returnWrap.style.borderRadius = '8px';
+    if(!document.getElementById('eqDateReturned').value){
+      const todayIso = new Date().toISOString().slice(0,10);
+      document.getElementById('eqDateReturned').value = todayIso;
+      document.getElementById('eqDateReturnedText').textContent = formatThaiDate(todayIso);
+    }
+  } else {
+    returnWrap.style.background = '';
+    returnWrap.style.padding = '';
+  }
+}
+document.getElementById('eqTxnBorrowBtn').addEventListener('click', ()=>setEqTxnMode('borrow'));
+document.getElementById('eqTxnReturnBtn').addEventListener('click', ()=>setEqTxnMode('return'));
 document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
-  document.getElementById('eqModalTitle').textContent = 'เพิ่มรายการอุปกรณ์';
+  document.getElementById('eqModalTitle').textContent = 'ลงทะเบียนยืม-คืนอุปกรณ์';
   document.getElementById('eqEditId').value = '';
   document.getElementById('eqRelativePhone').value = '';
   const todayIso = new Date().toISOString().slice(0,10);
@@ -6458,6 +6494,7 @@ document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
   document.getElementById('eqDateReceivedText').textContent = formatThaiDate(todayIso);
   document.getElementById('eqDateReturned').value = '';
   document.getElementById('eqDateReturnedText').textContent = 'เลือกวันที่';
+  setEqTxnMode('borrow');
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
   rowsWrap.appendChild(createEqItemRow());
@@ -6466,7 +6503,7 @@ document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
 });
 function openEditEquipment(id){
   const e = STATE.equipment[id];
-  document.getElementById('eqModalTitle').textContent = 'แก้ไขรายการอุปกรณ์';
+  document.getElementById('eqModalTitle').textContent = 'ลงทะเบียนยืม-คืนอุปกรณ์ (แก้ไข)';
   document.getElementById('eqEditId').value = id;
   document.getElementById('eqElderly').value = e.elderlyId||'';
   document.getElementById('eqRelativePhone').value = e.relativePhone||'';
@@ -6474,6 +6511,7 @@ function openEditEquipment(id){
   document.getElementById('eqDateReceivedText').textContent = e.dateReceived ? formatThaiDate(e.dateReceived) : 'เลือกวันที่';
   document.getElementById('eqDateReturned').value = e.dateReturned||'';
   document.getElementById('eqDateReturnedText').textContent = e.dateReturned ? formatThaiDate(e.dateReturned) : 'เลือกวันที่';
+  setEqTxnMode(e.dateReturned ? 'return' : 'borrow');
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
   rowsWrap.appendChild(createEqItemRow({ itemCode:e.itemCode, category:e.category, itemType:e.itemType, quantity:e.quantity }));
