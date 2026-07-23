@@ -849,7 +849,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th>เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th>หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
@@ -5295,8 +5295,8 @@ function renderInventoryTable(){
       <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
       <td>${inv.unit||'-'}</td>
-      <td style="font-size:11.5px;line-height:1.6;">${assetCodesText}</td>
-      <td>${inv.note||'-'}</td>
+      <td style="font-size:11.5px;line-height:1.6;white-space:nowrap;width:1%;">${assetCodesText}</td>
+      <td style="max-width:110px;overflow-wrap:break-word;font-size:12px;">${inv.note||'-'}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
