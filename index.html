@@ -1299,6 +1299,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       </div>
     </div>
   </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field">
+      <label>📷 ภาพถ่ายอุปกรณ์วันที่ยืม</label>
+      <input type="file" accept="image/*" id="eqPhotoBorrowInput">
+      <div id="eqPhotoBorrowPreview" style="margin-top:6px;"></div>
+    </div>
+    <div class="field">
+      <label>📷 ภาพถ่ายอุปกรณ์วันที่ส่งคืน</label>
+      <input type="file" accept="image/*" id="eqPhotoReturnInput">
+      <div id="eqPhotoReturnPreview" style="margin-top:6px;"></div>
+    </div>
+  </div>
   <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">รายการครุภัณฑ์ / วัสดุการแพทย์ที่ขอรับการสนับสนุน</h4>
   <div id="eqItemRows" style="display:flex;flex-direction:column;gap:10px;"></div>
   <button type="button" class="btn btn-ghost btn-sm" id="eqAddRowBtn" style="margin-top:10px;">➕ เพิ่มอีกรายการ</button>
@@ -1313,6 +1325,11 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <label>วันที่รับคืน</label>
     <input type="hidden" id="eqReturnDate">
     <button type="button" class="btn btn-secondary" id="eqReturnDateBtn" style="width:100%;text-align:left;">🗓 <span id="eqReturnDateText">เลือกวันที่</span></button>
+  </div>
+  <div class="field" style="margin-top:8px;">
+    <label>📷 ภาพถ่ายอุปกรณ์วันที่ส่งคืน</label>
+    <input type="file" accept="image/*" id="eqReturnPhotoInput">
+    <div id="eqReturnPhotoPreview" style="margin-top:6px;"></div>
   </div>
   <div class="field" style="margin-top:8px;">
     <label>สภาพของที่ส่งคืน</label>
@@ -6460,6 +6477,22 @@ document.getElementById('eqAddRowBtn').addEventListener('click', ()=>{
   document.getElementById('eqItemRows').appendChild(createEqItemRow());
 });
 
+/* ---- แสดงตัวอย่างภาพที่เลือกก่อนอัปโหลด ---- */
+function setupPhotoPreview(inputId, previewId){
+  document.getElementById(inputId).addEventListener('change', function(){
+    const preview = document.getElementById(previewId);
+    if(this.files && this.files[0]){
+      const reader = new FileReader();
+      reader.onload = e=>{ preview.innerHTML = `<img src="${e.target.result}" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);">`; };
+      reader.readAsDataURL(this.files[0]);
+    } else {
+      preview.innerHTML = '';
+    }
+  });
+}
+setupPhotoPreview('eqPhotoBorrowInput', 'eqPhotoBorrowPreview');
+setupPhotoPreview('eqPhotoReturnInput', 'eqPhotoReturnPreview');
+
 let eqTxnMode = 'borrow';
 function setEqTxnMode(mode){
   eqTxnMode = mode;
@@ -6494,6 +6527,10 @@ document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
   document.getElementById('eqDateReceivedText').textContent = formatThaiDate(todayIso);
   document.getElementById('eqDateReturned').value = '';
   document.getElementById('eqDateReturnedText').textContent = 'เลือกวันที่';
+  document.getElementById('eqPhotoBorrowInput').value = '';
+  document.getElementById('eqPhotoBorrowPreview').innerHTML = '';
+  document.getElementById('eqPhotoReturnInput').value = '';
+  document.getElementById('eqPhotoReturnPreview').innerHTML = '';
   setEqTxnMode('borrow');
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
@@ -6511,6 +6548,10 @@ function openEditEquipment(id){
   document.getElementById('eqDateReceivedText').textContent = e.dateReceived ? formatThaiDate(e.dateReceived) : 'เลือกวันที่';
   document.getElementById('eqDateReturned').value = e.dateReturned||'';
   document.getElementById('eqDateReturnedText').textContent = e.dateReturned ? formatThaiDate(e.dateReturned) : 'เลือกวันที่';
+  document.getElementById('eqPhotoBorrowInput').value = '';
+  document.getElementById('eqPhotoBorrowPreview').innerHTML = e.photoUrlBorrow ? `<img src="${e.photoUrlBorrow}" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);"><div class="muted" style="font-size:11px;">ภาพเดิม (เลือกไฟล์ใหม่เพื่อเปลี่ยน)</div>` : '';
+  document.getElementById('eqPhotoReturnInput').value = '';
+  document.getElementById('eqPhotoReturnPreview').innerHTML = e.photoUrlReturn ? `<img src="${e.photoUrlReturn}" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);"><div class="muted" style="font-size:11px;">ภาพเดิม (เลือกไฟล์ใหม่เพื่อเปลี่ยน)</div>` : '';
   setEqTxnMode(e.dateReturned ? 'return' : 'borrow');
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
@@ -6522,7 +6563,7 @@ function openEditEquipment(id){
 }
 /* ---- สัญญายืมครุภัณฑ์การแพทย์ (เฉพาะหมวดครุภัณฑ์ ไม่รวมวัสดุการแพทย์ซึ่งเป็นของใช้สิ้นเปลือง) ---- */
 function buildLoanContractHTML(payload){
-  const { elderly, cgName, relativePhone, dateReceived, items, contractNo } = payload;
+  const { elderly, cgName, relativePhone, dateReceived, items, contractNo, photoUrl } = payload;
   const itemRows = items.map((it,i)=>`
     <tr>
       <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${i+1}</td>
@@ -6530,6 +6571,11 @@ function buildLoanContractHTML(payload){
       <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.itemCode||'-'}</td>
       <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.quantity||'-'}</td>
     </tr>`).join('');
+  const photoBlockHtml = photoUrl ? `
+      <div style="margin-top:16px;">
+        <div style="font-weight:700;margin-bottom:6px;">ภาพถ่ายอุปกรณ์ ณ วันที่ยืม</div>
+        <img src="${photoUrl}" style="max-width:280px;max-height:220px;border-radius:8px;border:1px solid #ccc;">
+      </div>` : '';
   return `
   <div style="width:754px;min-height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
     <div style="background:linear-gradient(120deg,#1571BA,#43C1F1);padding:16px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
@@ -6557,6 +6603,7 @@ function buildLoanContractHTML(payload){
         </tr></thead>
         <tbody>${itemRows}</tbody>
       </table>
+      ${photoBlockHtml}
       <div style="margin-top:18px;font-weight:700;">ข้อตกลง</div>
       <div>1. ผู้ยืมจะดูแลรักษาครุภัณฑ์ที่ยืมให้อยู่ในสภาพดี ใช้งานอย่างถูกวิธี และไม่นำไปใช้ผิดวัตถุประสงค์</div>
       <div>2. หากครุภัณฑ์ชำรุด สูญหาย หรือเสียหาย ผู้ยืมจะแจ้งให้ ${FACILITY_NAME} ทราบทันที</div>
@@ -6596,7 +6643,84 @@ async function generateEquipmentLoanContractPDF(payload){
   root.innerHTML = '';
 }
 
-document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
+/* ---- ใบส่งคืนครุภัณฑ์การแพทย์ (สร้างอัตโนมัติเมื่อบันทึกวันที่ส่งคืนพร้อมกับข้อมูลยืม-คืน) ---- */
+function buildReturnReceiptHTML(payload){
+  const { elderly, cgName, relativePhone, dateReturned, items, receiptNo, photoUrl } = payload;
+  const itemRows = items.map((it,i)=>`
+    <tr>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${i+1}</td>
+      <td style="padding:7px 8px;border:1px solid #999;">${it.itemType}</td>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.itemCode||'-'}</td>
+      <td style="padding:7px 8px;border:1px solid #999;text-align:center;">${it.quantity||'-'}</td>
+    </tr>`).join('');
+  const photoBlockHtml = photoUrl ? `
+      <div style="margin-top:16px;">
+        <div style="font-weight:700;margin-bottom:6px;">ภาพถ่ายอุปกรณ์ ณ วันที่ส่งคืน</div>
+        <img src="${photoUrl}" style="max-width:280px;max-height:220px;border-radius:8px;border:1px solid #ccc;">
+      </div>` : '';
+  return `
+  <div style="width:754px;min-height:1083px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#B8860B,#F0A93B);padding:16px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:19px;font-weight:700;">ใบส่งคืนครุภัณฑ์การแพทย์</div>
+        <div style="font-size:11.5px;margin-top:2px;opacity:.92;">${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      </div>
+      <div style="width:60px;flex-shrink:0;"></div>
+    </div>
+    <div style="padding:26px 34px;flex:1;font-size:13px;color:#1B2E3B;line-height:1.9;">
+      <div style="text-align:right;margin-bottom:10px;">เลขที่ใบส่งคืน ${receiptNo}</div>
+      <div>ทำที่ ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร</div>
+      <div>วันที่ส่งคืน ${dateReturned ? formatThaiDate(dateReturned) : '-'}</div>
+      <div style="margin-top:14px;">ใบรับรองนี้ยืนยันว่าได้รับคืนครุภัณฑ์การแพทย์จากผู้ยืมตามรายละเอียดด้านล่างเรียบร้อยแล้ว</div>
+      <div>ชื่อผู้สูงอายุ/ผู้รับการสนับสนุน: <b>${elderly ? elderly.name : '-'}</b> อายุ ${elderly && elderly.age ? elderly.age : '-'} ปี &nbsp;&nbsp; ผู้ดูแล (CG): ${cgName||'-'}</div>
+      <div>เบอร์โทรศัพท์ญาติ/ผู้ติดต่อ: ${relativePhone||'-'}</div>
+      <div style="margin-top:16px;font-weight:700;">รายการครุภัณฑ์ที่ส่งคืน</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;">
+        <thead><tr style="background:#FFF3E0;color:#8A6100;">
+          <th style="padding:7px 8px;border:1px solid #999;">ลำดับ</th>
+          <th style="padding:7px 8px;border:1px solid #999;">รายการครุภัณฑ์</th>
+          <th style="padding:7px 8px;border:1px solid #999;">เลขครุภัณฑ์</th>
+          <th style="padding:7px 8px;border:1px solid #999;">จำนวน</th>
+        </tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      ${photoBlockHtml}
+      <div style="display:flex;justify-content:space-between;margin-top:70px;">
+        <div style="text-align:center;width:45%;">
+          <div>ลงชื่อ .....................................................</div>
+          <div style="margin-top:6px;">( ${elderly ? elderly.name : '.....................................................'} / ผู้แทน )</div>
+          <div>ผู้ส่งคืน</div>
+        </div>
+        <div style="text-align:center;width:45%;">
+          <div>ลงชื่อ .....................................................</div>
+          <div style="margin-top:6px;">( เจ้าหน้าที่ผู้รับคืน )</div>
+          <div>ผู้รับคืน</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:6px 0 2px;">
+      ${FACILITY_NAME} ต.เชียงเครือ อ.เมือง จ.สกลนคร
+    </div>
+    <div style="text-align:center;font-size:8px;color:#aaa;padding-bottom:4px;">${COPYRIGHT_NOTICE}</div>
+  </div>`;
+}
+async function generateEquipmentReturnReceiptPDF(payload){
+  const root = document.getElementById('pdfRenderRoot');
+  root.innerHTML = buildReturnReceiptHTML(payload);
+  await new Promise(r=>setTimeout(r,300));
+  const target = root.firstElementChild;
+  const canvas = await html2canvas(target, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
+  const imgData = canvas.toDataURL('image/jpeg',0.92);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  pdf.addImage(imgData,'JPEG',0,0,210,297);
+  const safeName = (payload.elderly ? payload.elderly.name : 'ผู้ส่งคืน').replace(/[\\/:*?"<>|]/g,'');
+  pdf.save(`ใบส่งคืนครุภัณฑ์_${safeName}_${payload.receiptNo}.pdf`);
+  root.innerHTML = '';
+}
+
+document.getElementById('eqSaveBtn').addEventListener('click', async ()=>{
   if(blockIfReadOnly()) return;
   const editId = document.getElementById('eqEditId').value;
   const elderlyId = document.getElementById('eqElderly').value;
@@ -6619,12 +6743,36 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
   }
   if(items.length === 0){ toast('กรุณาเลือกหรือระบุประเภทครุภัณฑ์/วัสดุการแพทย์อย่างน้อย 1 รายการ','error'); return; }
 
+  const saveBtn = document.getElementById('eqSaveBtn');
+  saveBtn.disabled = true;
+  /* อัปโหลดภาพถ่าย (ถ้ามีการเลือกไฟล์ใหม่) ขึ้นคลังภาพก่อนบันทึกข้อมูล */
+  const borrowFile = document.getElementById('eqPhotoBorrowInput').files[0];
+  const returnFile = document.getElementById('eqPhotoReturnInput').files[0];
+  let photoUrlBorrow, photoUrlReturn;
+  try{
+    if(borrowFile){
+      toast('กำลังอัปโหลดภาพถ่ายวันที่ยืม...','success');
+      photoUrlBorrow = await uploadToImgBB(await resizeImage(borrowFile, 1200, 0.85));
+    }
+    if(returnFile){
+      toast('กำลังอัปโหลดภาพถ่ายวันที่ส่งคืน...','success');
+      photoUrlReturn = await uploadToImgBB(await resizeImage(returnFile, 1200, 0.85));
+    }
+  }catch(err){
+    toast('อัปโหลดภาพไม่สำเร็จ: '+err.message,'error');
+    saveBtn.disabled = false;
+    return;
+  }
+
   if(editId){
+    const existing = STATE.equipment[editId] || {};
     const it = items[0];
     const data = {
       elderlyId, elderlyName: elderly?elderly.name:'',
       relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
-      quantity: it.quantity, dateReceived, dateReturned, createdAt: Date.now()
+      quantity: it.quantity, dateReceived, dateReturned, createdAt: Date.now(),
+      photoUrlBorrow: photoUrlBorrow || existing.photoUrlBorrow || '',
+      photoUrlReturn: photoUrlReturn || existing.photoUrlReturn || ''
     };
     const invUpdates = {};
     if(it.category==='durable' && it.itemCode){
@@ -6632,11 +6780,18 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
     }
     Promise.all([db.ref('equipment/'+editId).update(data), Object.keys(invUpdates).length ? db.ref().update(invUpdates) : Promise.resolve()]).then(async ()=>{
       toast('บันทึกสำเร็จ','success'); closeModal('equipmentModal');
+      saveBtn.disabled = false;
       if(it.category === 'durable'){
         await generateEquipmentLoanContractPDF({
           elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
-          relativePhone, dateReceived, items:[it], contractNo: 'EQC-'+editId
+          relativePhone, dateReceived, items:[it], contractNo: 'EQC-'+editId, photoUrl: data.photoUrlBorrow
         });
+        if(dateReturned){
+          await generateEquipmentReturnReceiptPDF({
+            elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
+            relativePhone, dateReturned, items:[it], receiptNo: 'EQR-'+editId, photoUrl: data.photoUrlReturn
+          });
+        }
       }
     });
   } else {
@@ -6647,7 +6802,8 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
       updates['equipment/'+id] = {
         elderlyId, elderlyName: elderly?elderly.name:'',
         relativePhone, itemCode: it.itemCode, category: it.category, itemType: it.itemType,
-        quantity: it.quantity, dateReceived, dateReturned, createdAt: ts
+        quantity: it.quantity, dateReceived, dateReturned, createdAt: ts,
+        photoUrlBorrow: photoUrlBorrow || '', photoUrlReturn: photoUrlReturn || ''
       };
       if(it.category==='durable' && it.itemCode){
         updates_removeAssetCodeFromInventory(it.category, it.itemType, it.itemCode, updates);
@@ -6656,12 +6812,19 @@ document.getElementById('eqSaveBtn').addEventListener('click', ()=>{
     db.ref().update(updates).then(async ()=>{
       toast(`บันทึกสำเร็จ (${items.length} รายการ)`,'success');
       closeModal('equipmentModal');
+      saveBtn.disabled = false;
       const durableItems = items.filter(it=>it.category==='durable');
       if(durableItems.length > 0){
         await generateEquipmentLoanContractPDF({
           elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
-          relativePhone, dateReceived, items: durableItems, contractNo: 'EQC-'+ts
+          relativePhone, dateReceived, items: durableItems, contractNo: 'EQC-'+ts, photoUrl: photoUrlBorrow
         });
+        if(dateReturned){
+          await generateEquipmentReturnReceiptPDF({
+            elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
+            relativePhone, dateReturned, items: durableItems, receiptNo: 'EQR-'+ts, photoUrl: photoUrlReturn
+          });
+        }
       }
     });
   }
@@ -6774,6 +6937,8 @@ function openEquipmentReturn(id){
   const todayIso = new Date().toISOString().slice(0,10);
   document.getElementById('eqReturnDate').value = todayIso;
   document.getElementById('eqReturnDateText').textContent = formatThaiDate(todayIso);
+  document.getElementById('eqReturnPhotoInput').value = '';
+  document.getElementById('eqReturnPhotoPreview').innerHTML = '';
   document.getElementById('eqReturnCondition').value = '';
   document.getElementById('eqReturnDamageDetail').value = '';
   document.getElementById('eqReturnDamageWrap').style.display = 'none';
@@ -6783,11 +6948,12 @@ function openEquipmentReturn(id){
   document.getElementById('eqReturnRepairPhone').value = '';
   openModal('equipmentReturnModal');
 }
+setupPhotoPreview('eqReturnPhotoInput', 'eqReturnPhotoPreview');
 document.getElementById('eqReturnDateBtn').addEventListener('click', ()=>{
   openThaiDatePicker('eqReturnDate', 'eqReturnDateText', 'เลือกวันที่รับคืน');
 });
 document.getElementById('eqDateReceivedBtn').addEventListener('click', ()=>{
-  openThaiDatePicker('eqDateReceived', 'eqDateReceivedText', 'เลือกวันที่ได้รับการสนับสนุน');
+  openThaiDatePicker('eqDateReceived', 'eqDateReceivedText', 'เลือกวันที่ยืมอุปกรณ์');
 });
 document.getElementById('eqDateReturnedBtn').addEventListener('click', ()=>{
   openThaiDatePicker('eqDateReturned', 'eqDateReturnedText', 'เลือกวันที่ส่งคืน');
@@ -6802,7 +6968,7 @@ document.getElementById('eqReturnCondition').addEventListener('change', function
 document.getElementById('eqReturnAction').addEventListener('change', function(){
   document.getElementById('eqReturnRepairWrap').style.display = (this.value==='repair') ? 'block' : 'none';
 });
-document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
+document.getElementById('eqReturnSaveBtn').addEventListener('click', async ()=>{
   if(blockIfReadOnly()) return;
   const id = document.getElementById('eqReturnId').value;
   const e = STATE.equipment[id];
@@ -6819,6 +6985,21 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   if(!action){ toast('กรุณาเลือกการดำเนินการต่อ','error'); return; }
   if(action==='repair' && !repairShop){ toast('กรุณาระบุร้าน/หน่วยงานที่ส่งซ่อม','error'); return; }
 
+  const saveBtn = document.getElementById('eqReturnSaveBtn');
+  saveBtn.disabled = true;
+  let photoUrlReturn;
+  const returnFile = document.getElementById('eqReturnPhotoInput').files[0];
+  try{
+    if(returnFile){
+      toast('กำลังอัปโหลดภาพถ่ายวันที่ส่งคืน...','success');
+      photoUrlReturn = await uploadToImgBB(await resizeImage(returnFile, 1200, 0.85));
+    }
+  }catch(err){
+    toast('อัปโหลดภาพไม่สำเร็จ: '+err.message,'error');
+    saveBtn.disabled = false;
+    return;
+  }
+
   const ACTION_LABELS = { stock:'รับกลับเข้าคลังเพื่อให้ยืมต่อ', repair:'ส่งซ่อม', dispose:'รอจำหน่าย' };
   const updates = {};
   updates['equipment/'+id+'/dateReturned'] = dateReturned;
@@ -6828,6 +7009,7 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   updates['equipment/'+id+'/returnActionLabel'] = ACTION_LABELS[action];
   updates['equipment/'+id+'/repairShop'] = action==='repair' ? repairShop : '';
   updates['equipment/'+id+'/repairPhone'] = action==='repair' ? repairPhone : '';
+  if(photoUrlReturn) updates['equipment/'+id+'/photoUrlReturn'] = photoUrlReturn;
 
   if(action === 'stock'){
     /* หากลับเข้าคลังเพื่อให้ยืมต่อ:
@@ -6870,9 +7052,19 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
     }
   }
 
-  db.ref().update(updates).then(()=>{
+  db.ref().update(updates).then(async ()=>{
     toast(`รับคืนอุปกรณ์สำเร็จ (${ACTION_LABELS[action]})`,'success');
     closeModal('equipmentReturnModal');
+    saveBtn.disabled = false;
+    if(e.category === 'durable'){
+      const elderly = STATE.elderly[e.elderlyId];
+      await generateEquipmentReturnReceiptPDF({
+        elderly, cgName: elderly ? (STATE.cgs[elderly.cgCode]?.name||'') : '',
+        relativePhone: e.relativePhone, dateReturned,
+        items: [{ itemType:e.itemType, itemCode:e.itemCode, quantity:e.quantity }],
+        receiptNo: 'EQR-'+id, photoUrl: photoUrlReturn || e.photoUrlReturn
+      });
+    }
   });
 });
 
