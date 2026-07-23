@@ -143,6 +143,9 @@ textarea{resize:vertical;min-height:60px;}
 .stat.stat-yellow b,.stat.stat-yellow span{color:#fff;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);}
+.inv-table th,.inv-table td{vertical-align:top;border-right:1px solid #EEF2F5;}
+.inv-table th:last-child,.inv-table td:last-child{border-right:none;}
+.inv-table thead th{border-bottom:1.5px solid var(--border);}
 th{color:var(--muted);font-weight:600;font-size:12px;}
 .progress-bar{background:#D6ECF7;border-radius:20px;height:10px;overflow:hidden;margin-top:4px;}
 .progress-bar .fill{background:var(--primary);height:100%;transition:width .3s;}
@@ -854,8 +857,9 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     </div>
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
+    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 4px;">
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th style="text-align:center;">หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th>สถานะ</th><th>วันที่รับมา</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table class="inv-table" style="margin-top:0;min-width:640px;"><thead><tr><th style="text-align:center;">หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th style="white-space:nowrap;">สถานะ</th><th style="white-space:nowrap;">วันที่รับมา</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
@@ -881,7 +885,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการยืม-ส่งคืน</button>
     </div>
     <div style="overflow-x:auto;">
-    <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
+    <table class="inv-table" style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
     <tbody id="equipmentTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายการที่ถูกยืมและยังไม่คืน สามารถออกรายงานแยกได้ด้านล่าง</p>
@@ -900,16 +904,26 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="card">
     <h3>🔧 ทะเบียนคุมรายการส่งซ่อม</h3>
     <p class="muted">รายการครุภัณฑ์ที่ส่งซ่อมทั้งหมด — สามารถบันทึกข้อมูลร้านซ่อม วันส่ง กำหนดแล้วเสร็จ และเมื่อซ่อมเสร็จแล้วให้คลิก "ซ่อมเสร็จ-นำกลับเข้าคลัง" เพื่ออัปเดตสถานะ</p>
-    <div style="overflow-x:auto;">
-    <table style="min-width:700px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>อาการที่เสีย</th><th>ร้านที่ส่งซ่อม</th><th>ชื่อผู้รับซ่อม</th><th>เบอร์โทร</th><th>วันที่ส่ง</th><th>กำหนดแล้วเสร็จ</th><th>สถานะ</th><th></th></tr></thead>
+    <div class="row">
+      <div class="field"><label>เลือกครุภัณฑ์</label><select id="repairPickItem"><option value="">-- เลือกรายการ --</option></select></div>
+      <div class="field"><label>เลขครุภัณฑ์ที่ว่าง</label><select id="repairPickCode"><option value="">-- เลือกรายการก่อน --</option></select></div>
+      <button class="btn btn-primary btn-sm" id="repairPickBtn" style="align-self:flex-end;">+ ส่งซ่อม</button>
+    </div>
+    <div style="overflow-x:auto;margin-top:10px;">
+    <table class="inv-table" style="min-width:700px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>อาการที่เสีย</th><th>ร้านที่ส่งซ่อม</th><th>ชื่อผู้รับซ่อม</th><th>เบอร์โทร</th><th>วันที่ส่ง</th><th>กำหนดแล้วเสร็จ</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="repairRegistryTable"></tbody></table>
     </div>
   </div>
   <div class="card">
     <h3>⛔ ทะเบียนครุภัณฑ์รอจำหน่าย</h3>
     <p class="muted">รายการครุภัณฑ์ที่รอจำหน่ายออกจากระบบ — ยอดคงคลังถูกตัดออกแล้วทันที เมื่อจำหน่ายแล้วให้คลิก "ยืนยันจำหน่าย" เพื่อปิดรายการ</p>
-    <div style="overflow-x:auto;">
-    <table style="min-width:600px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>เหตุผล</th><th>วันที่รอจำหน่าย</th><th>สถานะ</th><th></th></tr></thead>
+    <div class="row">
+      <div class="field"><label>เลือกครุภัณฑ์</label><select id="disposalPickItem"><option value="">-- เลือกรายการ --</option></select></div>
+      <div class="field"><label>เลขครุภัณฑ์ที่ว่าง</label><select id="disposalPickCode"><option value="">-- เลือกรายการก่อน --</option></select></div>
+      <button class="btn btn-danger btn-sm" id="disposalPickBtn" style="align-self:flex-end;">+ รอจำหน่าย</button>
+    </div>
+    <div style="overflow-x:auto;margin-top:10px;">
+    <table class="inv-table" style="min-width:600px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>เหตุผล</th><th>วันที่รอจำหน่าย</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="disposalRegistryTable"></tbody></table>
     </div>
   </div>
@@ -5390,6 +5404,7 @@ db.ref('inventory').on('value', snap=>{
   STATE.inventory = snap.val() || {};
   renderInventoryTable();
   renderEqStatusDashboard();
+  renderRepairDisposalPickers();
 });
 db.ref('repairRegistry').on('value', snap=>{
   STATE.repairRegistry = snap.val() || {};
@@ -5429,6 +5444,49 @@ function getAssetCodeStatus(code){
   if(loanEntry) return { status:'borrowed', entryId: loanEntry[0], data: loanEntry[1] };
   return { status:'available' };
 }
+
+/* ---- ตัวเลือกครุภัณฑ์+เลขครุภัณฑ์ว่าง สำหรับเริ่มรายการส่งซ่อม/รอจำหน่ายโดยตรงจากทะเบียนคุม ---- */
+function renderRepairDisposalPickers(){
+  const durableWithCodes = Object.entries(STATE.inventory||{})
+    .filter(([,inv])=>inv.category==='durable' && (inv.availableAssetCodes||[]).length>0)
+    .sort(([,a],[,b])=>(a.itemType||'').localeCompare(b.itemType||''));
+  ['repairPickItem','disposalPickItem'].forEach(selId=>{
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    const prevVal = sel.value;
+    sel.innerHTML = '<option value="">-- เลือกรายการ --</option>' + durableWithCodes.map(([id,inv])=>`<option value="${id}">${inv.itemType} (ว่าง ${inv.availableAssetCodes.length})</option>`).join('');
+    if(prevVal && durableWithCodes.some(([id])=>id===prevVal)) sel.value = prevVal;
+  });
+  updatePickCodeOptions('repairPickItem','repairPickCode');
+  updatePickCodeOptions('disposalPickItem','disposalPickCode');
+}
+function updatePickCodeOptions(itemSelId, codeSelId){
+  const itemSel = document.getElementById(itemSelId);
+  const codeSel = document.getElementById(codeSelId);
+  if(!itemSel || !codeSel) return;
+  const invId = itemSel.value;
+  const inv = STATE.inventory[invId];
+  if(!inv){ codeSel.innerHTML = '<option value="">-- เลือกรายการก่อน --</option>'; return; }
+  const codes = inv.availableAssetCodes || [];
+  codeSel.innerHTML = codes.length
+    ? codes.map(c=>`<option value="${c}">${c}</option>`).join('')
+    : '<option value="">-- ไม่มีเลขว่าง --</option>';
+}
+document.getElementById('repairPickItem').addEventListener('change', ()=>updatePickCodeOptions('repairPickItem','repairPickCode'));
+document.getElementById('disposalPickItem').addEventListener('change', ()=>updatePickCodeOptions('disposalPickItem','disposalPickCode'));
+document.getElementById('repairPickBtn').addEventListener('click', ()=>{
+  const invId = document.getElementById('repairPickItem').value;
+  const code = document.getElementById('repairPickCode').value;
+  if(!invId || !code){ toast('กรุณาเลือกรายการและเลขครุภัณฑ์','error'); return; }
+  openRepairForCode(invId, code);
+});
+document.getElementById('disposalPickBtn').addEventListener('click', ()=>{
+  const invId = document.getElementById('disposalPickItem').value;
+  const code = document.getElementById('disposalPickCode').value;
+  if(!invId || !code){ toast('กรุณาเลือกรายการและเลขครุภัณฑ์','error'); return; }
+  openDisposalForCode(invId, code);
+});
+
 function renderInventoryTable(){
   const tbody = document.getElementById('inventoryTable');
   if(!tbody) return;
@@ -5453,27 +5511,20 @@ function renderInventoryTable(){
         statusColumnHtml = '-';
         dateColumnHtml = '-';
       } else {
-        const codeDetails = inv.codeDetails || {};
         const lines = allCodes.map(code=>{
           const st = getAssetCodeStatus(code);
           const style = EQ_STATUS_STYLES[st.status];
-          let actionIcon = '';
-          if(st.status === 'available'){
-            actionIcon = `<span onclick="quickBorrowCode('${id}','${code}')" title="คลิกเพื่อยืม" style="cursor:pointer;margin-left:6px;">👆</span>`;
-          } else if(st.status === 'borrowed'){
-            actionIcon = `<span onclick="quickReturnCode('${st.entryId}')" title="คลิกเพื่อส่งคืน" style="cursor:pointer;margin-left:6px;">↩️</span>`;
-          }
-          return { code, style, actionIcon, st };
+          return { code, style, st };
         });
-        codesColumnHtml = lines.map(l=>`<div style="color:${l.style.color};font-weight:700;">${l.code}${l.actionIcon}</div>`).join('');
+        codesColumnHtml = lines.map(l=>`<div style="color:${l.style.color};font-weight:700;">${l.code}</div>`).join('');
         statusColumnHtml = lines.map(l=>{
-          let extraBtn = '';
+          let actionBtn = '';
           if(l.st.status === 'available'){
-            extraBtn = ` <button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="openRepairForCode('${id}','${l.code}')">ส่งซ่อม</button><button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="openDisposalForCode('${id}','${l.code}')">จำหน่าย</button>`;
-          } else if(l.st.status === 'repair'){
-            extraBtn = ` <button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="completeRepair('${l.st.entryId}')">ซ่อมเสร็จ</button>`;
+            actionBtn = `<button onclick="quickBorrowCode('${id}','${l.code}')" title="คลิกเพื่อยืม" style="margin-left:8px;border:none;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;background:${l.style.color};color:#fff;cursor:pointer;">📤 ยืม</button>`;
+          } else if(l.st.status === 'borrowed'){
+            actionBtn = `<button onclick="quickReturnCode('${l.st.entryId}')" title="คลิกเพื่อส่งคืน" style="margin-left:8px;border:none;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;background:${l.style.color};color:#fff;cursor:pointer;">📥 คืน</button>`;
           }
-          return `<div style="color:${l.style.color};font-weight:700;white-space:nowrap;">${l.style.icon} ${l.style.label}${extraBtn}</div>`;
+          return `<div style="color:${l.style.color};font-weight:700;white-space:nowrap;display:flex;align-items:center;">${l.style.icon} ${l.style.label}${actionBtn}</div>`;
         }).join('');
         dateColumnHtml = lines.map(l=>{
           const cd = (inv.codeDetails||{})[l.code];
@@ -5498,7 +5549,7 @@ function renderInventoryTable(){
       <td>${inv.unit||'-'}</td>
       <td style="font-size:11.5px;line-height:1.7;white-space:nowrap;width:1%;">${codesColumnHtml}</td>
       <td style="font-size:11.5px;line-height:1.7;">${statusColumnHtml}</td>
-      <td style="font-size:11.5px;line-height:1.7;">${dateColumnHtml}</td>
+      <td style="font-size:11.5px;line-height:1.7;white-space:nowrap;">${dateColumnHtml}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
