@@ -837,7 +837,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="row" style="margin-top:8px;">
       <div class="field"><label>จำนวนที่รับเข้า</label><input type="number" id="invQuantity" min="0" placeholder="0"></div>
       <div class="field"><label>หน่วยนับ</label><input type="text" id="invUnit" placeholder="เช่น ชิ้น, ชุด, ห่อ, ม้วน"></div>
-      <div class="field"><label>วันที่รับเข้า</label><input type="date" id="invDateReceived"></div>
+      <div class="field"><label>วันที่รับเข้า</label>
+        <input type="hidden" id="invDateReceived">
+        <button type="button" class="btn btn-secondary" id="invDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="invDateReceivedText">เลือกวันที่</span></button>
+      </div>
     </div>
     <div class="field" id="invAssetCodesWrap" style="margin-top:8px;display:none;">
       <label>เลขครุภัณฑ์ (ระบุตามจำนวนที่รับเข้า)</label>
@@ -1204,6 +1207,16 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal('calendarModal')">เสร็จสิ้น</button></div>
 </div></div>
 
+<div class="modal-overlay" id="thaiDateModal"><div class="modal-box" style="max-width:340px;">
+  <h3 id="thaiDateModalTitle">เลือกวันที่</h3>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>เดือน</label><select id="thaiDateMonthSel"></select></div>
+    <div class="field"><label>ปี พ.ศ.</label><select id="thaiDateYearSel"></select></div>
+  </div>
+  <div class="calendar-grid" id="thaiDateGrid" style="margin-top:10px;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('thaiDateModal')">ยกเลิก</button></div>
+</div></div>
+
 <div class="modal-overlay" id="editVisitModal"><div class="modal-box">
   <h3>แก้ไขรายการเยี่ยม</h3>
   <input type="hidden" id="editVisitId">
@@ -1259,6 +1272,36 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
   <p class="muted" style="font-size:11.5px;margin-top:6px;">ถ้าเลือก "รับกลับเข้าคลังเพื่อให้ยืมต่อ" ระบบจะเพิ่มจำนวนคงคลังของรายการนี้ให้อัตโนมัติ ถ้าเลือก "ส่งซ่อม" หรือ "รอจำหน่าย" จะไม่เพิ่มจำนวนคงคลัง (ของยังไม่พร้อมให้ยืมต่อ)</p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentReturnModal')">ยกเลิก</button><button class="btn btn-primary" id="eqReturnSaveBtn">ยืนยันรับคืน</button></div>
+</div></div>
+
+<div class="modal-overlay" id="inventoryEditModal"><div class="modal-box" style="max-width:480px;">
+  <h3>✏️ แก้ไขรายการคงคลัง</h3>
+  <p class="muted">ใช้แก้ไขกรณีบันทึกข้อมูลผิดพลาด (ชื่อรายการ, จำนวน, หน่วย, เลขครุภัณฑ์, หมายเหตุ) — การแก้ไขนี้เขียนทับข้อมูลเดิมโดยตรง</p>
+  <input type="hidden" id="invEditId">
+  <div class="field">
+    <label>หมวดหมู่</label>
+    <select id="invEditCategory">
+      <option value="durable">ครุภัณฑ์การแพทย์</option>
+      <option value="material">วัสดุการแพทย์</option>
+    </select>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>ชื่อรายการ</label><input type="text" id="invEditItemType"></div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>จำนวนคงคลัง</label><input type="number" id="invEditQuantity" min="0"></div>
+    <div class="field"><label>หน่วยนับ</label><input type="text" id="invEditUnit"></div>
+  </div>
+  <div class="field" id="invEditAssetCodesWrap" style="margin-top:8px;display:none;">
+    <label>เลขครุภัณฑ์ที่พร้อมให้ยืม (แก้ไข/ลบทีละบรรทัดได้)</label>
+    <div id="invEditAssetCodesContainer" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+    <button type="button" class="btn btn-ghost btn-sm" id="invEditAddCodeBtn" style="margin-top:6px;">+ เพิ่มเลขครุภัณฑ์</button>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invEditNote"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryEditModal')">ยกเลิก</button><button class="btn btn-primary" id="invEditSaveBtn">บันทึกการแก้ไข</button></div>
+</div></div>
+
+<div class="modal-overlay" id="inventoryDetailModal"><div class="modal-box" style="max-width:440px;">
+  <div id="inventoryDetailBody"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryDetailModal')">ปิด</button></div>
 </div></div>
 
 <div class="modal-overlay" id="confirmModal"><div class="modal-box">
@@ -2880,6 +2923,56 @@ function toggleDate(ds){
   document.querySelectorAll(`.calendar-grid .day[data-date="${ds}"]`).forEach(el=>el.classList.toggle('selected'));
   renderSelectedChips();
 }
+
+/* =============================================================
+   ตัวเลือกวันที่แบบไทย (เลือกวันเดียว) ใช้ซ้ำได้กับทุกช่องวันที่ในระบบ
+   แสดงผลเป็น วัน/เดือน(ย่อไทย)/ปี พ.ศ. เมื่อเลือกแล้ว
+============================================================= */
+let thaiDatePickerTarget = null;
+function openThaiDatePicker(hiddenInputId, displayTextId, title){
+  thaiDatePickerTarget = { hiddenInputId, displayTextId };
+  document.getElementById('thaiDateModalTitle').textContent = title || 'เลือกวันที่';
+  const monthSel = document.getElementById('thaiDateMonthSel');
+  const yearSel = document.getElementById('thaiDateYearSel');
+  fillMonthYearSelects(monthSel, yearSel);
+  const currentVal = document.getElementById(hiddenInputId).value;
+  if(currentVal){
+    const [cy,cm] = currentVal.split('-').map(Number);
+    monthSel.value = cm;
+    yearSel.value = beYear(cy);
+  }
+  renderThaiDateGrid();
+  openModal('thaiDateModal');
+}
+function renderThaiDateGrid(){
+  const m = parseInt(document.getElementById('thaiDateMonthSel').value,10);
+  const yBE = parseInt(document.getElementById('thaiDateYearSel').value,10);
+  const y = yBE - 543;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const firstDow = new Date(y, m-1, 1).getDay();
+  const currentVal = document.getElementById(thaiDatePickerTarget.hiddenInputId).value;
+  const grid = document.getElementById('thaiDateGrid');
+  const beYr2 = String(yBE).slice(-2);
+  let html = TH_DOW.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html += `<div class="day empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = dateStr(y, m-1, d);
+    const sel = (ds===currentVal) ? 'selected' : '';
+    html += `<div class="day ${sel}" onclick="selectThaiDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${beYr2}</span></div>`;
+  }
+  grid.innerHTML = html;
+}
+document.getElementById('thaiDateMonthSel').addEventListener('change', renderThaiDateGrid);
+document.getElementById('thaiDateYearSel').addEventListener('change', renderThaiDateGrid);
+function selectThaiDate(ds){
+  document.getElementById(thaiDatePickerTarget.hiddenInputId).value = ds;
+  const displayEl = document.getElementById(thaiDatePickerTarget.displayTextId);
+  if(displayEl) displayEl.textContent = formatThaiDate(ds);
+  closeModal('thaiDateModal');
+}
+document.getElementById('invDateReceivedBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('invDateReceived', 'invDateReceivedText', 'เลือกวันที่รับเข้า');
+});
 function renderSelectedChips(){
   const wrap = document.getElementById('selectedDatesChips');
   STATE.selectedDates.sort();
@@ -5191,23 +5284,127 @@ function renderInventoryTable(){
   });
   tbody.innerHTML = sorted.map(([id,inv])=>{
     const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
-    const assetCodesText = availCodes.length ? availCodes.join(', ') : (inv.category==='durable' ? 'ไม่มีเลขว่าง' : '-');
+    /* แสดงเลขครุภัณฑ์แถวละ 1 รายการ เรียงเป็นบรรทัดลงมา อ่านง่ายเป็นลำดับชิ้น */
+    const assetCodesText = availCodes.length
+      ? availCodes.map((c,i)=>`<div>${i+1}. ${c}</div>`).join('')
+      : (inv.category==='durable' ? '<span class="muted">ไม่มีเลขว่าง</span>' : '-');
     const otherCat = inv.category==='durable' ? 'material' : 'durable';
     return `
     <tr>
       <td><span class="badge ${inv.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
-      <td>${inv.itemType||'-'}</td>
+      <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
       <td>${inv.unit||'-'}</td>
-      <td style="font-size:11.5px;">${assetCodesText}</td>
+      <td style="font-size:11.5px;line-height:1.6;">${assetCodesText}</td>
       <td>${inv.note||'-'}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
+        <button class="btn btn-ghost btn-sm" onclick="openInventoryEdit('${id}')" title="แก้ไขรายการ">✏️ แก้ไข</button>
         <button class="btn btn-ghost btn-sm" onclick="changeInventoryCategory('${id}','${otherCat}')" title="ย้ายไปเป็น${CATEGORY_LABELS_INV[otherCat]}">🔄 เปลี่ยนประเภท</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInventory('${id}')">🗑</button>
       </td>
     </tr>`;}).join('');
 }
+
+/* ---- ดูรายละเอียดรายการคงคลังแบบไม่ต้องส่งออก — การ์ดสีสันชัดเจน อ่านง่าย ---- */
+function openInventoryDetail(id){
+  const inv = STATE.inventory[id];
+  if(!inv) return;
+  const isDurable = inv.category==='durable';
+  const themeColor = isDurable ? '#185FA5' : '#2E7D32';
+  const themeBg = isDurable ? 'linear-gradient(135deg,#0F5590,#43C1F1)' : 'linear-gradient(135deg,#1B5E20,#4CAF50)';
+  const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
+  const codesHtml = availCodes.length
+    ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">${availCodes.map((c,i)=>`<div style="background:#F0F7FC;border:1px solid #D6ECF7;border-radius:8px;padding:8px 12px;font-weight:600;color:#0F5590;">🏷️ ลำดับที่ ${i+1}: ${c}</div>`).join('')}</div>`
+    : `<p class="muted" style="margin-top:8px;">${isDurable ? 'ไม่มีเลขครุภัณฑ์ว่างอยู่ในขณะนี้' : 'วัสดุการแพทย์ไม่มีเลขครุภัณฑ์กำกับ'}</p>`;
+  document.getElementById('inventoryDetailBody').innerHTML = `
+    <div style="background:${themeBg};color:#fff;padding:18px 20px;border-radius:12px 12px 0 0;margin:-24px -24px 16px;text-align:center;">
+      <div style="font-size:12px;opacity:.85;letter-spacing:1px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:4px;">${inv.itemType||'-'}</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;background:#F7FBFF;border-radius:10px;padding:12px;text-align:center;border:1px solid #E3F0F8;">
+        <div style="font-size:26px;font-weight:800;color:${themeColor};">${inv.quantity??0}</div>
+        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">จำนวนคงคลัง (${inv.unit||'หน่วย'})</div>
+      </div>
+      <div style="flex:1;background:#F7FBFF;border-radius:10px;padding:12px;text-align:center;border:1px solid #E3F0F8;">
+        <div style="font-size:26px;font-weight:800;color:${themeColor};">${availCodes.length || (isDurable?0:'-')}</div>
+        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">${isDurable ? 'เลขครุภัณฑ์ที่ว่าง' : 'ไม่มีเลขกำกับ'}</div>
+      </div>
+    </div>
+    <div style="font-size:13px;line-height:1.9;">
+      <div>📝 <b>หมายเหตุ:</b> ${inv.note||'-'}</div>
+      <div>🕒 <b>อัปเดตล่าสุด:</b> ${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10)) : '-'}</div>
+      ${inv.dateReceived ? `<div>📥 <b>รับเข้าล่าสุด:</b> ${formatThaiDate(inv.dateReceived)}</div>` : ''}
+    </div>
+    ${isDurable ? `<div style="margin-top:10px;"><b style="font-size:13px;">เลขครุภัณฑ์ที่พร้อมให้ยืม:</b>${codesHtml}</div>` : ''}
+  `;
+  openModal('inventoryDetailModal');
+}
+
+/* ---- แก้ไขรายการคงคลัง กรณีบันทึกข้อมูลผิดพลาด ---- */
+function openInventoryEdit(id){
+  const inv = STATE.inventory[id];
+  if(!inv) return;
+  document.getElementById('invEditId').value = id;
+  document.getElementById('invEditCategory').value = inv.category||'durable';
+  document.getElementById('invEditItemType').value = inv.itemType||'';
+  document.getElementById('invEditQuantity').value = inv.quantity??0;
+  document.getElementById('invEditUnit').value = inv.unit||'';
+  document.getElementById('invEditNote').value = inv.note||'';
+  renderInvEditAssetCodeFields(inv.availableAssetCodes || inv.assetCodes || []);
+  openModal('inventoryEditModal');
+}
+function renderInvEditAssetCodeFields(codes){
+  const cat = document.getElementById('invEditCategory').value;
+  const wrap = document.getElementById('invEditAssetCodesWrap');
+  const container = document.getElementById('invEditAssetCodesContainer');
+  if(cat !== 'durable'){ wrap.style.display = 'none'; container.innerHTML=''; return; }
+  wrap.style.display = 'block';
+  container.innerHTML = '';
+  (codes.length ? codes : ['']).forEach(code=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+    row.innerHTML = `<input type="text" class="inv-edit-code" value="${code}" style="flex:1;"><button type="button" class="btn btn-danger btn-sm inv-edit-remove-code" style="padding:4px 8px;">✕</button>`;
+    row.querySelector('.inv-edit-remove-code').addEventListener('click', ()=>row.remove());
+    container.appendChild(row);
+  });
+}
+document.getElementById('invEditCategory').addEventListener('change', ()=>{
+  const inv = STATE.inventory[document.getElementById('invEditId').value];
+  renderInvEditAssetCodeFields(inv ? (inv.availableAssetCodes||inv.assetCodes||[]) : []);
+});
+document.getElementById('invEditAddCodeBtn').addEventListener('click', ()=>{
+  const container = document.getElementById('invEditAssetCodesContainer');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `<input type="text" class="inv-edit-code" value="" style="flex:1;"><button type="button" class="btn btn-danger btn-sm inv-edit-remove-code" style="padding:4px 8px;">✕</button>`;
+  row.querySelector('.inv-edit-remove-code').addEventListener('click', ()=>row.remove());
+  container.appendChild(row);
+});
+document.getElementById('invEditSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const id = document.getElementById('invEditId').value;
+  const category = document.getElementById('invEditCategory').value;
+  const itemType = document.getElementById('invEditItemType').value.trim();
+  const quantity = parseInt(document.getElementById('invEditQuantity').value,10);
+  const unit = document.getElementById('invEditUnit').value.trim();
+  const note = document.getElementById('invEditNote').value.trim();
+  if(!itemType){ toast('กรุณากรอกชื่อรายการ','error'); return; }
+  if(isNaN(quantity) || quantity<0){ toast('กรุณาระบุจำนวนคงคลังให้ถูกต้อง','error'); return; }
+  const newCodes = category==='durable'
+    ? Array.from(document.querySelectorAll('.inv-edit-code')).map(i=>i.value.trim()).filter(Boolean)
+    : [];
+  db.ref('inventory/'+id).update({
+    category, itemType, quantity, unit, note,
+    assetCodes: newCodes, availableAssetCodes: newCodes
+  }).then(()=>{
+    toast('แก้ไขรายการคงคลังสำเร็จ','success');
+    closeModal('inventoryEditModal');
+  });
+});
+
 function changeInventoryCategory(id, newCat){
   if(blockIfReadOnly()) return;
   const inv = STATE.inventory[id];
@@ -5269,6 +5466,7 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
       document.getElementById('invUnit').value='';
       document.getElementById('invNote').value='';
       document.getElementById('invDateReceived').value='';
+      document.getElementById('invDateReceivedText').textContent='เลือกวันที่';
       renderInvAssetCodeFields();
     });
 });
