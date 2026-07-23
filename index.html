@@ -855,7 +855,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th>วันที่รับมา</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th>สถานะ</th><th>วันที่รับมา</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
@@ -896,6 +896,22 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <p class="muted">รายงานนี้แยกต่างหากจากรายงานการเยี่ยมบ้านของ CG จะออกเป็นทะเบียนคุมรายการครุภัณฑ์ทั้งหมด (หรือกรองตามผู้สูงอายุที่เลือกด้านบน)</p>
     <button class="btn btn-secondary" id="generateEquipmentPdfBtn">📄 สร้างทะเบียนคุมครุภัณฑ์ (PDF)</button>
     <div class="upload-progress" id="eqPdfProgress"></div>
+  </div>
+  <div class="card">
+    <h3>🔧 ทะเบียนคุมรายการส่งซ่อม</h3>
+    <p class="muted">รายการครุภัณฑ์ที่ส่งซ่อมทั้งหมด — สามารถบันทึกข้อมูลร้านซ่อม วันส่ง กำหนดแล้วเสร็จ และเมื่อซ่อมเสร็จแล้วให้คลิก "ซ่อมเสร็จ-นำกลับเข้าคลัง" เพื่ออัปเดตสถานะ</p>
+    <div style="overflow-x:auto;">
+    <table style="min-width:700px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>อาการที่เสีย</th><th>ร้านที่ส่งซ่อม</th><th>ชื่อผู้รับซ่อม</th><th>เบอร์โทร</th><th>วันที่ส่ง</th><th>กำหนดแล้วเสร็จ</th><th>สถานะ</th><th></th></tr></thead>
+    <tbody id="repairRegistryTable"></tbody></table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>⛔ ทะเบียนครุภัณฑ์รอจำหน่าย</h3>
+    <p class="muted">รายการครุภัณฑ์ที่รอจำหน่ายออกจากระบบ — ยอดคงคลังถูกตัดออกแล้วทันที เมื่อจำหน่ายแล้วให้คลิก "ยืนยันจำหน่าย" เพื่อปิดรายการ</p>
+    <div style="overflow-x:auto;">
+    <table style="min-width:600px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>เลขครุภัณฑ์</th><th>เหตุผล</th><th>วันที่รอจำหน่าย</th><th>สถานะ</th><th></th></tr></thead>
+    <tbody id="disposalRegistryTable"></tbody></table>
+    </div>
   </div>
 </section>
 
@@ -1330,9 +1346,47 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryEditModal')">ยกเลิก</button><button class="btn btn-primary" id="invEditSaveBtn">บันทึกการแก้ไข</button></div>
 </div></div>
 
-<div class="modal-overlay" id="inventoryDetailModal"><div class="modal-box" style="max-width:440px;">
+<div class="modal-overlay" id="inventoryDetailModal"><div class="modal-box" style="max-width:480px;">
   <div id="inventoryDetailBody"></div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryDetailModal')">ปิด</button></div>
+</div></div>
+
+<div class="modal-overlay" id="repairModal"><div class="modal-box" style="max-width:480px;">
+  <h3>🔧 ส่งซ่อมครุภัณฑ์</h3>
+  <input type="hidden" id="repairInvId">
+  <input type="hidden" id="repairAssetCode">
+  <p class="muted" id="repairItemInfo" style="margin-bottom:10px;"></p>
+  <div class="field"><label>อาการที่เสีย / สาเหตุที่ส่งซ่อม</label><input type="text" id="repairFaultDesc" placeholder="เช่น ล้อหัก, มอเตอร์ไหม้, สายขาด"></div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>ร้านที่ส่งซ่อม</label><input type="text" id="repairShopName" placeholder="ชื่อร้าน/หน่วยงาน"></div>
+    <div class="field"><label>ชื่อผู้รับซ่อม</label><input type="text" id="repairContact" placeholder="ชื่อ-สกุล"></div>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>หมายเลขโทรศัพท์</label><input type="tel" id="repairPhoneNo" placeholder="08xxxxxxxx"></div>
+    <div class="field"><label>วันที่ส่งซ่อม</label>
+      <input type="hidden" id="repairSentDate">
+      <button type="button" id="repairSentDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="repairSentDateText">เลือกวันที่</span></button>
+    </div>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>กำหนดแล้วเสร็จ</label>
+    <input type="hidden" id="repairDueDate">
+    <button type="button" id="repairDueDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="repairDueDateText">เลือกวันที่</span></button>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('repairModal')">ยกเลิก</button><button class="btn btn-primary" id="repairSaveBtn">📤 บันทึกส่งซ่อม</button></div>
+</div></div>
+
+<div class="modal-overlay" id="disposalModal"><div class="modal-box" style="max-width:440px;">
+  <h3>⛔ รอจำหน่ายครุภัณฑ์</h3>
+  <input type="hidden" id="disposalInvId">
+  <input type="hidden" id="disposalAssetCode">
+  <p class="muted" id="disposalItemInfo" style="margin-bottom:10px;"></p>
+  <div class="field"><label>เหตุผลในการจำหน่าย</label><input type="text" id="disposalReason" placeholder="เช่น เสียหายถาวร, ล้าสมัย, หมดอายุ"></div>
+  <div class="field" style="margin-top:8px;"><label>วันที่รอจำหน่าย</label>
+    <input type="hidden" id="disposalDate">
+    <button type="button" id="disposalDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="disposalDateText">เลือกวันที่</span></button>
+  </div>
+  <p style="margin-top:10px;font-size:13px;color:#D8503A;font-weight:600;">⚠️ ยอดคงคลังจะถูกตัดออกทันทีเมื่อกด "ยืนยัน"</p>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('disposalModal')">ยกเลิก</button><button class="btn btn-danger" id="disposalSaveBtn">⛔ ยืนยันรอจำหน่าย</button></div>
 </div></div>
 
 <div class="modal-overlay" id="confirmModal"><div class="modal-box">
@@ -1672,7 +1726,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, repairRegistry:{}, disposalRegistry:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -5312,6 +5366,14 @@ db.ref('inventory').on('value', snap=>{
   renderInventoryTable();
   renderEqStatusDashboard();
 });
+db.ref('repairRegistry').on('value', snap=>{
+  STATE.repairRegistry = snap.val() || {};
+  renderRepairRegistryTable();
+});
+db.ref('disposalRegistry').on('value', snap=>{
+  STATE.disposalRegistry = snap.val() || {};
+  renderDisposalRegistryTable();
+});
 
 /* ยอดคงเหลือ = จำนวนทั้งหมด หักด้วยจำนวนที่ถูกยืมอยู่ในขณะนี้ (ยังไม่คืน)
    ครุภัณฑ์ (durable): ใช้จำนวนเลขครุภัณฑ์ที่ยังว่างอยู่ (availableAssetCodes) โดยตรง เพราะติดตามเป็นรายชิ้น
@@ -5325,12 +5387,29 @@ function computeInventoryRemaining(inv){
     .reduce((sum,e)=>sum + (parseInt(e.quantity,10)||0), 0);
   return Math.max((parseInt(inv.quantity,10)||0) - borrowed, 0);
 }
+/* สถานะของครุภัณฑ์แต่ละชิ้น (แยกตามเลขครุภัณฑ์) — ตรวจสอบตามลำดับความสำคัญ:
+   ส่งซ่อม > ชำรุด/รอจำหน่าย > ถูกยืม > พร้อมใช้งาน */
+const EQ_STATUS_STYLES = {
+  available: { label:'พร้อมใช้งาน', color:'#1B5E20', bg:'#E8F5E9', border:'#C8E6C9', icon:'🟢' },
+  borrowed:  { label:'ถูกยืม',       color:'#8A6100', bg:'#FFF8E1', border:'#FFE0B2', icon:'🟡' },
+  damaged:   { label:'ชำรุด/รอจำหน่าย', color:'#A6321C', bg:'#FFEBEE', border:'#FFCDD2', icon:'🔴' },
+  repair:    { label:'ส่งซ่อม',       color:'#5A2D82', bg:'#F3E5F5', border:'#E1BEE7', icon:'🟣' }
+};
+function getAssetCodeStatus(code){
+  const repairEntry = Object.entries(STATE.repairRegistry||{}).find(([,r])=>r.assetCode===code && r.status==='pending');
+  if(repairEntry) return { status:'repair', entryId: repairEntry[0], data: repairEntry[1] };
+  const disposalEntry = Object.entries(STATE.disposalRegistry||{}).find(([,d])=>d.assetCode===code && d.status==='waiting');
+  if(disposalEntry) return { status:'damaged', entryId: disposalEntry[0], data: disposalEntry[1] };
+  const loanEntry = Object.entries(STATE.equipment||{}).find(([,e])=>e.itemCode===code && !e.dateReturned);
+  if(loanEntry) return { status:'borrowed', entryId: loanEntry[0], data: loanEntry[1] };
+  return { status:'available' };
+}
 function renderInventoryTable(){
   const tbody = document.getElementById('inventoryTable');
   if(!tbody) return;
   const entries = Object.entries(STATE.inventory||{});
   if(entries.length === 0){
-    tbody.innerHTML = '<tr><td colspan="10" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
     return;
   }
   /* จัดกลุ่มตามหมวดหมู่: ครุภัณฑ์ก่อน วัสดุหลัง */
@@ -5339,12 +5418,52 @@ function renderInventoryTable(){
     return (a.category==='durable') ? -1 : 1;
   });
   tbody.innerHTML = sorted.map(([id,inv])=>{
-    const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
-    /* แสดงเลขครุภัณฑ์แถวละ 1 รายการ เรียงเป็นบรรทัดลงมา อ่านง่ายเป็นลำดับชิ้น */
-    const assetCodesText = availCodes.length
-      ? availCodes.map((c,i)=>`<div>${i+1}. ${c}</div>`).join('')
-      : (inv.category==='durable' ? '<span class="muted">ไม่มีเลขว่าง</span>' : '-');
     const remaining = computeInventoryRemaining(inv);
+    let codesColumnHtml, statusColumnHtml, dateColumnHtml;
+
+    if(inv.category === 'durable'){
+      const allCodes = inv.assetCodes || [];
+      if(allCodes.length === 0){
+        codesColumnHtml = '<span class="muted">ไม่มีเลขครุภัณฑ์</span>';
+        statusColumnHtml = '-';
+        dateColumnHtml = '-';
+      } else {
+        const codeDetails = inv.codeDetails || {};
+        const lines = allCodes.map(code=>{
+          const st = getAssetCodeStatus(code);
+          const style = EQ_STATUS_STYLES[st.status];
+          let actionIcon = '';
+          if(st.status === 'available'){
+            actionIcon = `<span onclick="quickBorrowCode('${id}','${code}')" title="คลิกเพื่อยืม" style="cursor:pointer;margin-left:6px;">👆</span>`;
+          } else if(st.status === 'borrowed'){
+            actionIcon = `<span onclick="quickReturnCode('${st.entryId}')" title="คลิกเพื่อส่งคืน" style="cursor:pointer;margin-left:6px;">↩️</span>`;
+          }
+          return { code, style, actionIcon, st };
+        });
+        codesColumnHtml = lines.map(l=>`<div style="color:${l.style.color};font-weight:700;">${l.code}${l.actionIcon}</div>`).join('');
+        statusColumnHtml = lines.map(l=>{
+          let extraBtn = '';
+          if(l.st.status === 'available'){
+            extraBtn = ` <button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="openRepairForCode('${id}','${l.code}')">ส่งซ่อม</button><button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="openDisposalForCode('${id}','${l.code}')">จำหน่าย</button>`;
+          } else if(l.st.status === 'repair'){
+            extraBtn = ` <button class="btn btn-ghost btn-sm" style="padding:1px 6px;font-size:11px;" onclick="completeRepair('${l.st.entryId}')">ซ่อมเสร็จ</button>`;
+          }
+          return `<div style="color:${l.style.color};font-weight:700;white-space:nowrap;">${l.style.icon} ${l.style.label}${extraBtn}</div>`;
+        }).join('');
+        dateColumnHtml = lines.map(l=>{
+          const cd = (inv.codeDetails||{})[l.code];
+          const dr = cd && cd.dateReceived ? cd.dateReceived : inv.dateReceived;
+          return `<div>${dr ? formatThaiDate(dr,true) : '-'}</div>`;
+        }).join('');
+      }
+    } else {
+      /* วัสดุการแพทย์: ไม่มีเลขครุภัณฑ์รายชิ้น แสดงสถานะแบบภาพรวมจากยอดคงเหลือ */
+      codesColumnHtml = '-';
+      const matStyle = remaining>0 ? EQ_STATUS_STYLES.available : EQ_STATUS_STYLES.borrowed;
+      statusColumnHtml = `<div style="color:${matStyle.color};font-weight:700;">${matStyle.icon} ${remaining>0?'มีของพร้อมจ่าย':'ของหมด/ถูกเบิกครบ'}</div>`;
+      dateColumnHtml = inv.dateReceived ? formatThaiDate(inv.dateReceived,true) : '-';
+    }
+
     return `
     <tr>
       <td><span class="badge ${inv.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
@@ -5352,8 +5471,9 @@ function renderInventoryTable(){
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
       <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':'#2E7D32'};">${remaining}</td>
       <td>${inv.unit||'-'}</td>
-      <td style="font-size:11.5px;line-height:1.6;white-space:nowrap;width:1%;">${assetCodesText}</td>
-      <td>${inv.dateReceived ? formatThaiDate(inv.dateReceived,true) : '-'}</td>
+      <td style="font-size:11.5px;line-height:1.7;white-space:nowrap;width:1%;">${codesColumnHtml}</td>
+      <td style="font-size:11.5px;line-height:1.7;">${statusColumnHtml}</td>
+      <td style="font-size:11.5px;line-height:1.7;">${dateColumnHtml}</td>
       <td style="max-width:110px;overflow-wrap:break-word;font-size:12px;">${inv.note||'-'}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
@@ -5362,6 +5482,197 @@ function renderInventoryTable(){
         <button class="btn btn-danger btn-sm" onclick="deleteInventory('${id}')">🗑</button>
       </td>
     </tr>`;}).join('');
+}
+
+/* ---- คลิกยืมด่วนจากคลัง: เปิดฟอร์มยืม-คืน พร้อมเลือกรายการและเลขครุภัณฑ์นี้ให้อัตโนมัติ ---- */
+function quickBorrowCode(invId, code){
+  const inv = STATE.inventory[invId];
+  if(!inv) return;
+  document.getElementById('addEquipmentBtn').click();
+  setTimeout(()=>{
+    const firstRow = document.querySelector('#eqItemRows .eq-item-row');
+    if(!firstRow) return;
+    firstRow.querySelector('.eq-item-category').value = inv.category;
+    firstRow.querySelector('.eq-item-category').dispatchEvent(new Event('change'));
+    setTimeout(()=>{
+      firstRow.querySelector('.eq-item-type').value = inv.itemType;
+      firstRow.querySelector('.eq-item-type').dispatchEvent(new Event('change'));
+      setTimeout(()=>{
+        const codeSelect = firstRow.querySelector('.eq-item-code-select');
+        if(codeSelect && codeSelect.style.display !== 'none'){
+          codeSelect.value = code;
+          codeSelect.dispatchEvent(new Event('change'));
+        }
+        firstRow.querySelector('.eq-item-qty').value = 1;
+      }, 50);
+    }, 50);
+  }, 150);
+}
+/* ---- คลิกส่งคืนด่วนจากคลัง: เปิดฟอร์มรับคืนของรายการยืมนี้โดยตรง ---- */
+function quickReturnCode(equipmentId){
+  openEquipmentReturn(equipmentId);
+}
+
+/* ---- ส่งซ่อมครุภัณฑ์ ---- */
+function openRepairForCode(invId, code){
+  const inv = STATE.inventory[invId];
+  if(!inv) return;
+  document.getElementById('repairInvId').value = invId;
+  document.getElementById('repairAssetCode').value = code;
+  document.getElementById('repairItemInfo').textContent = `${inv.itemType} — เลขครุภัณฑ์ ${code}`;
+  document.getElementById('repairFaultDesc').value = '';
+  document.getElementById('repairShopName').value = '';
+  document.getElementById('repairContact').value = '';
+  document.getElementById('repairPhoneNo').value = '';
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('repairSentDate').value = todayIso;
+  document.getElementById('repairSentDateText').textContent = formatThaiDate(todayIso);
+  document.getElementById('repairDueDate').value = '';
+  document.getElementById('repairDueDateText').textContent = 'เลือกวันที่';
+  openModal('repairModal');
+}
+document.getElementById('repairSentDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('repairSentDate', 'repairSentDateText', 'เลือกวันที่ส่งซ่อม');
+});
+document.getElementById('repairDueDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('repairDueDate', 'repairDueDateText', 'เลือกกำหนดแล้วเสร็จ');
+});
+document.getElementById('repairSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const invId = document.getElementById('repairInvId').value;
+  const code = document.getElementById('repairAssetCode').value;
+  const inv = STATE.inventory[invId];
+  if(!inv) return;
+  const faultDesc = document.getElementById('repairFaultDesc').value.trim();
+  const repairShop = document.getElementById('repairShopName').value.trim();
+  const repairContact = document.getElementById('repairContact').value.trim();
+  const repairPhone = document.getElementById('repairPhoneNo').value.trim();
+  const sentDate = document.getElementById('repairSentDate').value;
+  const dueDate = document.getElementById('repairDueDate').value;
+  if(!faultDesc){ toast('กรุณาระบุอาการที่เสีย','error'); return; }
+  if(!repairShop){ toast('กรุณาระบุร้านที่ส่งซ่อม','error'); return; }
+  if(!sentDate){ toast('กรุณาระบุวันที่ส่งซ่อม','error'); return; }
+  const updates = {};
+  const repairId = 'RPR'+Date.now();
+  updates['repairRegistry/'+repairId] = {
+    inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
+    faultDesc, repairShop, repairContact, repairPhone, sentDate, dueDate,
+    status: 'pending', createdAt: Date.now()
+  };
+  /* เอาเลขครุภัณฑ์นี้ออกจากรายการ "พร้อมให้ยืม" ระหว่างส่งซ่อม (แต่ยังคงอยู่ในทะเบียนหลัก assetCodes) */
+  const avail = (inv.availableAssetCodes||inv.assetCodes||[]).filter(c=>c!==code);
+  updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+  db.ref().update(updates).then(()=>{
+    toast('บันทึกส่งซ่อมสำเร็จ','success');
+    closeModal('repairModal');
+  });
+});
+function completeRepair(repairId){
+  if(blockIfReadOnly()) return;
+  const r = STATE.repairRegistry[repairId];
+  if(!r) return;
+  showConfirm('ซ่อมเสร็จแล้ว นำกลับเข้าคลัง?', `${r.itemType} — เลขครุภัณฑ์ ${r.assetCode}`, ()=>{
+    const inv = STATE.inventory[r.inventoryId];
+    const updates = {};
+    updates['repairRegistry/'+repairId+'/status'] = 'completed';
+    updates['repairRegistry/'+repairId+'/completedAt'] = Date.now();
+    if(inv){
+      const avail = inv.availableAssetCodes || [];
+      if(!avail.includes(r.assetCode)) avail.push(r.assetCode);
+      updates['inventory/'+r.inventoryId+'/availableAssetCodes'] = avail;
+      updates['inventory/'+r.inventoryId+'/updatedAt'] = Date.now();
+    }
+    db.ref().update(updates).then(()=>toast('นำเข้าคลังสำเร็จ ซ่อมเสร็จเรียบร้อย','success'));
+  });
+}
+function renderRepairRegistryTable(){
+  const tbody = document.getElementById('repairRegistryTable');
+  if(!tbody) return;
+  const entries = Object.entries(STATE.repairRegistry||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="11" class="muted">ยังไม่มีรายการส่งซ่อม</td></tr>'; return; }
+  tbody.innerHTML = entries.map(([id,r])=>`
+    <tr>
+      <td><span class="badge ${r.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[r.category]||r.category}</span></td>
+      <td>${r.itemType||'-'}</td>
+      <td style="font-weight:700;">${r.assetCode||'-'}</td>
+      <td>${r.faultDesc||'-'}</td>
+      <td>${r.repairShop||'-'}</td>
+      <td>${r.repairContact||'-'}</td>
+      <td>${r.repairPhone||'-'}</td>
+      <td>${r.sentDate?formatThaiDate(r.sentDate,true):'-'}</td>
+      <td>${r.dueDate?formatThaiDate(r.dueDate,true):'-'}</td>
+      <td><span style="font-weight:700;color:${r.status==='completed'?'#2E7D32':'#5A2D82'};">${r.status==='completed'?'✅ ซ่อมเสร็จแล้ว':'🟣 กำลังซ่อม'}</span></td>
+      <td>${r.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="completeRepair('${id}')">ซ่อมเสร็จ-นำกลับเข้าคลัง</button>` : '-'}</td>
+    </tr>`).join('');
+}
+
+/* ---- รอจำหน่ายครุภัณฑ์ ---- */
+function openDisposalForCode(invId, code){
+  const inv = STATE.inventory[invId];
+  if(!inv) return;
+  document.getElementById('disposalInvId').value = invId;
+  document.getElementById('disposalAssetCode').value = code;
+  document.getElementById('disposalItemInfo').textContent = `${inv.itemType} — เลขครุภัณฑ์ ${code}`;
+  document.getElementById('disposalReason').value = '';
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('disposalDate').value = todayIso;
+  document.getElementById('disposalDateText').textContent = formatThaiDate(todayIso);
+  openModal('disposalModal');
+}
+document.getElementById('disposalDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('disposalDate', 'disposalDateText', 'เลือกวันที่รอจำหน่าย');
+});
+document.getElementById('disposalSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const invId = document.getElementById('disposalInvId').value;
+  const code = document.getElementById('disposalAssetCode').value;
+  const inv = STATE.inventory[invId];
+  if(!inv) return;
+  const reason = document.getElementById('disposalReason').value.trim();
+  const disposalDate = document.getElementById('disposalDate').value;
+  if(!reason){ toast('กรุณาระบุเหตุผลในการจำหน่าย','error'); return; }
+  if(!disposalDate){ toast('กรุณาระบุวันที่รอจำหน่าย','error'); return; }
+  const updates = {};
+  const disposalId = 'DSP'+Date.now();
+  updates['disposalRegistry/'+disposalId] = {
+    inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
+    reason, disposalDate, status: 'waiting', createdAt: Date.now()
+  };
+  /* ตัดยอดออกจากคลังทันที: เอาออกจากทั้ง availableAssetCodes และ assetCodes หลัก และลดจำนวนทั้งหมดลง 1 */
+  const avail = (inv.availableAssetCodes||[]).filter(c=>c!==code);
+  const allCodes = (inv.assetCodes||[]).filter(c=>c!==code);
+  updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+  updates['inventory/'+invId+'/assetCodes'] = allCodes;
+  updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(inv.quantity,10)||1) - 1, 0);
+  updates['inventory/'+invId+'/updatedAt'] = Date.now();
+  db.ref().update(updates).then(()=>{
+    toast('บันทึกรอจำหน่ายสำเร็จ ตัดยอดออกจากคลังแล้ว','success');
+    closeModal('disposalModal');
+  });
+});
+function confirmDisposal(disposalId){
+  if(blockIfReadOnly()) return;
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  showConfirm('ยืนยันการจำหน่ายเรียบร้อยแล้ว?', `${d.itemType} — เลขครุภัณฑ์ ${d.assetCode}`, ()=>{
+    db.ref('disposalRegistry/'+disposalId+'/status').set('disposed').then(()=>toast('ปิดรายการจำหน่ายสำเร็จ','success'));
+  });
+}
+function renderDisposalRegistryTable(){
+  const tbody = document.getElementById('disposalRegistryTable');
+  if(!tbody) return;
+  const entries = Object.entries(STATE.disposalRegistry||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted">ยังไม่มีรายการรอจำหน่าย</td></tr>'; return; }
+  tbody.innerHTML = entries.map(([id,d])=>`
+    <tr>
+      <td><span class="badge ${d.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[d.category]||d.category}</span></td>
+      <td>${d.itemType||'-'}</td>
+      <td style="font-weight:700;">${d.assetCode||'-'}</td>
+      <td>${d.reason||'-'}</td>
+      <td>${d.disposalDate?formatThaiDate(d.disposalDate,true):'-'}</td>
+      <td><span style="font-weight:700;color:${d.status==='disposed'?'#2E7D32':'#A6321C'};">${d.status==='disposed'?'✅ จำหน่ายแล้ว':'🔴 รอจำหน่าย'}</span></td>
+      <td>${d.status==='waiting' ? `<button class="btn btn-danger btn-sm" onclick="confirmDisposal('${id}')">ยืนยันจำหน่าย</button>` : '-'}</td>
+    </tr>`).join('');
 }
 
 /* ---- ดูรายละเอียดรายการคงคลังแบบไม่ต้องส่งออก — การ์ดสีสันชัดเจน อ่านง่าย ---- */
@@ -5497,6 +5808,9 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   const prevQty = existing ? (parseInt(existing[1].quantity,10)||0) : 0;
   const prevAssetCodes = existing ? (existing[1].assetCodes||[]) : [];
   const prevAvailableCodes = existing ? (existing[1].availableAssetCodes||existing[1].assetCodes||[]) : [];
+  const prevCodeDetails = existing ? (existing[1].codeDetails||{}) : {};
+  const newCodeDetails = Object.assign({}, prevCodeDetails);
+  newAssetCodes.forEach(code=>{ newCodeDetails[code] = { dateReceived }; });
   db.ref('inventory/'+id).set({
     category:cat, itemType,
     quantity: prevQty + quantity,
@@ -5504,6 +5818,7 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
     note: note || (existing ? existing[1].note : ''),
     assetCodes: cat==='durable' ? [...prevAssetCodes, ...newAssetCodes] : [],
     availableAssetCodes: cat==='durable' ? [...prevAvailableCodes, ...newAssetCodes] : [],
+    codeDetails: cat==='durable' ? newCodeDetails : {},
     dateReceived,
     updatedAt: Date.now()
   }).then(()=>{
