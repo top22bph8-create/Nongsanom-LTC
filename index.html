@@ -855,7 +855,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th>สถานะ</th><th>วันที่รับมา</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th style="text-align:center;">หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th>สถานะ</th><th>วันที่รับมา</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
@@ -1352,7 +1352,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 </div></div>
 
 <div class="modal-overlay" id="repairModal"><div class="modal-box" style="max-width:480px;">
-  <h3>🔧 ส่งซ่อมครุภัณฑ์</h3>
+  <h3 id="repairModalTitle">🔧 ส่งซ่อมครุภัณฑ์</h3>
+  <input type="hidden" id="repairEditId">
   <input type="hidden" id="repairInvId">
   <input type="hidden" id="repairAssetCode">
   <p class="muted" id="repairItemInfo" style="margin-bottom:10px;"></p>
@@ -1375,8 +1376,20 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('repairModal')">ยกเลิก</button><button class="btn btn-primary" id="repairSaveBtn">📤 บันทึกส่งซ่อม</button></div>
 </div></div>
 
+<div class="modal-overlay" id="repairCompleteModal"><div class="modal-box" style="max-width:400px;">
+  <h3>✅ ซ่อมเสร็จ - รับคืนเข้าคลัง</h3>
+  <input type="hidden" id="repairCompleteId">
+  <p class="muted" id="repairCompleteInfo" style="margin-bottom:10px;"></p>
+  <div class="field"><label>วันที่รับคืน</label>
+    <input type="hidden" id="repairCompleteDate">
+    <button type="button" id="repairCompleteDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="repairCompleteDateText">เลือกวันที่</span></button>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('repairCompleteModal')">ยกเลิก</button><button class="btn btn-primary" id="repairCompleteSaveBtn">✅ ยืนยันรับคืนเข้าคลัง</button></div>
+</div></div>
+
 <div class="modal-overlay" id="disposalModal"><div class="modal-box" style="max-width:440px;">
-  <h3>⛔ รอจำหน่ายครุภัณฑ์</h3>
+  <h3 id="disposalModalTitle">⛔ รอจำหน่ายครุภัณฑ์</h3>
+  <input type="hidden" id="disposalEditId">
   <input type="hidden" id="disposalInvId">
   <input type="hidden" id="disposalAssetCode">
   <p class="muted" id="disposalItemInfo" style="margin-bottom:10px;"></p>
@@ -1385,8 +1398,20 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <input type="hidden" id="disposalDate">
     <button type="button" id="disposalDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="disposalDateText">เลือกวันที่</span></button>
   </div>
-  <p style="margin-top:10px;font-size:13px;color:#D8503A;font-weight:600;">⚠️ ยอดคงคลังจะถูกตัดออกทันทีเมื่อกด "ยืนยัน"</p>
+  <p class="muted" id="disposalWarnText" style="margin-top:10px;font-size:13px;color:#D8503A;font-weight:600;">⚠️ ยอดคงคลังจะถูกตัดออกทันทีเมื่อกด "ยืนยัน"</p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('disposalModal')">ยกเลิก</button><button class="btn btn-danger" id="disposalSaveBtn">⛔ ยืนยันรอจำหน่าย</button></div>
+</div></div>
+
+<div class="modal-overlay" id="disposalCancelModal"><div class="modal-box" style="max-width:400px;">
+  <h3>↩️ ไม่จำหน่าย — นำกลับเข้าระบบ</h3>
+  <input type="hidden" id="disposalCancelId">
+  <p class="muted" id="disposalCancelInfo" style="margin-bottom:14px;"></p>
+  <p style="margin-bottom:10px;">ต้องการนำครุภัณฑ์ชิ้นนี้กลับเข้าระบบแบบใด?</p>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <button class="btn btn-secondary" id="disposalCancelToStockBtn" style="text-align:left;">🟢 รับกลับเข้าคลังเลย (พร้อมให้ยืมทันที)</button>
+    <button class="btn btn-secondary" id="disposalCancelToRepairBtn" style="text-align:left;">🟣 ส่งซ่อมแทน (ยังไม่พร้อมให้ยืม)</button>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('disposalCancelModal')">ยกเลิก</button></div>
 </div></div>
 
 <div class="modal-overlay" id="confirmModal"><div class="modal-box">
@@ -5409,7 +5434,7 @@ function renderInventoryTable(){
   if(!tbody) return;
   const entries = Object.entries(STATE.inventory||{});
   if(entries.length === 0){
-    tbody.innerHTML = '<tr><td colspan="11" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
     return;
   }
   /* จัดกลุ่มตามหมวดหมู่: ครุภัณฑ์ก่อน วัสดุหลัง */
@@ -5466,7 +5491,7 @@ function renderInventoryTable(){
 
     return `
     <tr>
-      <td><span class="badge ${inv.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
+      <td style="text-align:center;"><span class="badge ${inv.category==='durable'?'normal':'obt'}" style="font-weight:700;font-size:12.5px;letter-spacing:.3px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
       <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
       <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':'#2E7D32'};">${remaining}</td>
@@ -5474,7 +5499,6 @@ function renderInventoryTable(){
       <td style="font-size:11.5px;line-height:1.7;white-space:nowrap;width:1%;">${codesColumnHtml}</td>
       <td style="font-size:11.5px;line-height:1.7;">${statusColumnHtml}</td>
       <td style="font-size:11.5px;line-height:1.7;">${dateColumnHtml}</td>
-      <td style="max-width:110px;overflow-wrap:break-word;font-size:12px;">${inv.note||'-'}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
@@ -5517,6 +5541,8 @@ function quickReturnCode(equipmentId){
 function openRepairForCode(invId, code){
   const inv = STATE.inventory[invId];
   if(!inv) return;
+  document.getElementById('repairModalTitle').textContent = '🔧 ส่งซ่อมครุภัณฑ์';
+  document.getElementById('repairEditId').value = '';
   document.getElementById('repairInvId').value = invId;
   document.getElementById('repairAssetCode').value = code;
   document.getElementById('repairItemInfo').textContent = `${inv.itemType} — เลขครุภัณฑ์ ${code}`;
@@ -5531,6 +5557,24 @@ function openRepairForCode(invId, code){
   document.getElementById('repairDueDateText').textContent = 'เลือกวันที่';
   openModal('repairModal');
 }
+function openRepairEdit(repairId){
+  const r = STATE.repairRegistry[repairId];
+  if(!r) return;
+  document.getElementById('repairModalTitle').textContent = '✏️ แก้ไขรายการส่งซ่อม';
+  document.getElementById('repairEditId').value = repairId;
+  document.getElementById('repairInvId').value = r.inventoryId;
+  document.getElementById('repairAssetCode').value = r.assetCode;
+  document.getElementById('repairItemInfo').textContent = `${r.itemType} — เลขครุภัณฑ์ ${r.assetCode}`;
+  document.getElementById('repairFaultDesc').value = r.faultDesc||'';
+  document.getElementById('repairShopName').value = r.repairShop||'';
+  document.getElementById('repairContact').value = r.repairContact||'';
+  document.getElementById('repairPhoneNo').value = r.repairPhone||'';
+  document.getElementById('repairSentDate').value = r.sentDate||'';
+  document.getElementById('repairSentDateText').textContent = r.sentDate ? formatThaiDate(r.sentDate) : 'เลือกวันที่';
+  document.getElementById('repairDueDate').value = r.dueDate||'';
+  document.getElementById('repairDueDateText').textContent = r.dueDate ? formatThaiDate(r.dueDate) : 'เลือกวันที่';
+  openModal('repairModal');
+}
 document.getElementById('repairSentDateBtn').addEventListener('click', ()=>{
   openThaiDatePicker('repairSentDate', 'repairSentDateText', 'เลือกวันที่ส่งซ่อม');
 });
@@ -5539,6 +5583,7 @@ document.getElementById('repairDueDateBtn').addEventListener('click', ()=>{
 });
 document.getElementById('repairSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
+  const editId = document.getElementById('repairEditId').value;
   const invId = document.getElementById('repairInvId').value;
   const code = document.getElementById('repairAssetCode').value;
   const inv = STATE.inventory[invId];
@@ -5552,37 +5597,81 @@ document.getElementById('repairSaveBtn').addEventListener('click', ()=>{
   if(!faultDesc){ toast('กรุณาระบุอาการที่เสีย','error'); return; }
   if(!repairShop){ toast('กรุณาระบุร้านที่ส่งซ่อม','error'); return; }
   if(!sentDate){ toast('กรุณาระบุวันที่ส่งซ่อม','error'); return; }
-  const updates = {};
-  const repairId = 'RPR'+Date.now();
-  updates['repairRegistry/'+repairId] = {
-    inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
-    faultDesc, repairShop, repairContact, repairPhone, sentDate, dueDate,
-    status: 'pending', createdAt: Date.now()
-  };
-  /* เอาเลขครุภัณฑ์นี้ออกจากรายการ "พร้อมให้ยืม" ระหว่างส่งซ่อม (แต่ยังคงอยู่ในทะเบียนหลัก assetCodes) */
-  const avail = (inv.availableAssetCodes||inv.assetCodes||[]).filter(c=>c!==code);
-  updates['inventory/'+invId+'/availableAssetCodes'] = avail;
-  db.ref().update(updates).then(()=>{
-    toast('บันทึกส่งซ่อมสำเร็จ','success');
-    closeModal('repairModal');
-  });
+
+  if(editId){
+    /* แก้ไขรายการเดิม ไม่กระทบสถานะคงคลัง */
+    db.ref('repairRegistry/'+editId).update({ faultDesc, repairShop, repairContact, repairPhone, sentDate, dueDate }).then(()=>{
+      toast('แก้ไขรายการส่งซ่อมสำเร็จ','success');
+      closeModal('repairModal');
+    });
+  } else {
+    const updates = {};
+    const repairId = 'RPR'+Date.now();
+    updates['repairRegistry/'+repairId] = {
+      inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
+      faultDesc, repairShop, repairContact, repairPhone, sentDate, dueDate,
+      status: 'pending', createdAt: Date.now()
+    };
+    /* เอาเลขครุภัณฑ์นี้ออกจากรายการ "พร้อมให้ยืม" ระหว่างส่งซ่อม (แต่ยังคงอยู่ในทะเบียนหลัก assetCodes) */
+    const avail = (inv.availableAssetCodes||inv.assetCodes||[]).filter(c=>c!==code);
+    updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+    db.ref().update(updates).then(()=>{
+      toast('บันทึกส่งซ่อมสำเร็จ','success');
+      closeModal('repairModal');
+    });
+  }
 });
 function completeRepair(repairId){
+  const r = STATE.repairRegistry[repairId];
+  if(!r) return;
+  document.getElementById('repairCompleteId').value = repairId;
+  document.getElementById('repairCompleteInfo').textContent = `${r.itemType} — เลขครุภัณฑ์ ${r.assetCode}`;
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('repairCompleteDate').value = todayIso;
+  document.getElementById('repairCompleteDateText').textContent = formatThaiDate(todayIso);
+  openModal('repairCompleteModal');
+}
+document.getElementById('repairCompleteDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('repairCompleteDate', 'repairCompleteDateText', 'เลือกวันที่รับคืน');
+});
+document.getElementById('repairCompleteSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const repairId = document.getElementById('repairCompleteId').value;
+  const r = STATE.repairRegistry[repairId];
+  if(!r) return;
+  const completedDate = document.getElementById('repairCompleteDate').value;
+  if(!completedDate){ toast('กรุณาระบุวันที่รับคืน','error'); return; }
+  const inv = STATE.inventory[r.inventoryId];
+  const updates = {};
+  updates['repairRegistry/'+repairId+'/status'] = 'completed';
+  updates['repairRegistry/'+repairId+'/completedDate'] = completedDate;
+  if(inv){
+    const avail = inv.availableAssetCodes || [];
+    if(!avail.includes(r.assetCode)) avail.push(r.assetCode);
+    updates['inventory/'+r.inventoryId+'/availableAssetCodes'] = avail;
+    updates['inventory/'+r.inventoryId+'/updatedAt'] = Date.now();
+  }
+  db.ref().update(updates).then(()=>{
+    toast('นำเข้าคลังสำเร็จ ซ่อมเสร็จเรียบร้อย','success');
+    closeModal('repairCompleteModal');
+  });
+});
+/* ลบ/ยกเลิกรายการส่งซ่อม (ไม่ส่งซ่อมก็ได้) — คืนเลขครุภัณฑ์กลับเป็น "พร้อมให้ยืม" แล้วลบทะเบียนออก */
+function deleteRepairRecord(repairId){
   if(blockIfReadOnly()) return;
   const r = STATE.repairRegistry[repairId];
   if(!r) return;
-  showConfirm('ซ่อมเสร็จแล้ว นำกลับเข้าคลัง?', `${r.itemType} — เลขครุภัณฑ์ ${r.assetCode}`, ()=>{
+  showConfirm('ลบรายการส่งซ่อมนี้ (ไม่ส่งซ่อม)?', `${r.itemType} — เลขครุภัณฑ์ ${r.assetCode} จะกลับเป็นพร้อมให้ยืม`, ()=>{
     const inv = STATE.inventory[r.inventoryId];
     const updates = {};
-    updates['repairRegistry/'+repairId+'/status'] = 'completed';
-    updates['repairRegistry/'+repairId+'/completedAt'] = Date.now();
-    if(inv){
+    updates['repairRegistry/'+repairId] = null;
+    if(inv && r.status !== 'completed'){
       const avail = inv.availableAssetCodes || [];
       if(!avail.includes(r.assetCode)) avail.push(r.assetCode);
       updates['inventory/'+r.inventoryId+'/availableAssetCodes'] = avail;
       updates['inventory/'+r.inventoryId+'/updatedAt'] = Date.now();
     }
-    db.ref().update(updates).then(()=>toast('นำเข้าคลังสำเร็จ ซ่อมเสร็จเรียบร้อย','success'));
+    db.ref().update(updates).then(()=>toast('ลบรายการส่งซ่อมสำเร็จ','success'));
   });
 }
 function renderRepairRegistryTable(){
@@ -5602,7 +5691,11 @@ function renderRepairRegistryTable(){
       <td>${r.sentDate?formatThaiDate(r.sentDate,true):'-'}</td>
       <td>${r.dueDate?formatThaiDate(r.dueDate,true):'-'}</td>
       <td><span style="font-weight:700;color:${r.status==='completed'?'#2E7D32':'#5A2D82'};">${r.status==='completed'?'✅ ซ่อมเสร็จแล้ว':'🟣 กำลังซ่อม'}</span></td>
-      <td>${r.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="completeRepair('${id}')">ซ่อมเสร็จ-นำกลับเข้าคลัง</button>` : '-'}</td>
+      <td style="white-space:nowrap;">
+        ${r.status==='pending' ? `<button class="btn btn-primary btn-sm" onclick="completeRepair('${id}')">ซ่อมเสร็จ</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openRepairEdit('${id}')" title="แก้ไข">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRepairRecord('${id}')" title="ลบ/ไม่ส่งซ่อม">🗑</button>
+      </td>
     </tr>`).join('');
 }
 
@@ -5610,13 +5703,30 @@ function renderRepairRegistryTable(){
 function openDisposalForCode(invId, code){
   const inv = STATE.inventory[invId];
   if(!inv) return;
+  document.getElementById('disposalModalTitle').textContent = '⛔ รอจำหน่ายครุภัณฑ์';
+  document.getElementById('disposalEditId').value = '';
   document.getElementById('disposalInvId').value = invId;
   document.getElementById('disposalAssetCode').value = code;
   document.getElementById('disposalItemInfo').textContent = `${inv.itemType} — เลขครุภัณฑ์ ${code}`;
   document.getElementById('disposalReason').value = '';
+  document.getElementById('disposalWarnText').style.display = 'block';
   const todayIso = new Date().toISOString().slice(0,10);
   document.getElementById('disposalDate').value = todayIso;
   document.getElementById('disposalDateText').textContent = formatThaiDate(todayIso);
+  openModal('disposalModal');
+}
+function openDisposalEdit(disposalId){
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  document.getElementById('disposalModalTitle').textContent = '✏️ แก้ไขรายการรอจำหน่าย';
+  document.getElementById('disposalEditId').value = disposalId;
+  document.getElementById('disposalInvId').value = d.inventoryId;
+  document.getElementById('disposalAssetCode').value = d.assetCode;
+  document.getElementById('disposalItemInfo').textContent = `${d.itemType} — เลขครุภัณฑ์ ${d.assetCode}`;
+  document.getElementById('disposalReason').value = d.reason||'';
+  document.getElementById('disposalWarnText').style.display = 'none';
+  document.getElementById('disposalDate').value = d.disposalDate||'';
+  document.getElementById('disposalDateText').textContent = d.disposalDate ? formatThaiDate(d.disposalDate) : 'เลือกวันที่';
   openModal('disposalModal');
 }
 document.getElementById('disposalDateBtn').addEventListener('click', ()=>{
@@ -5624,6 +5734,7 @@ document.getElementById('disposalDateBtn').addEventListener('click', ()=>{
 });
 document.getElementById('disposalSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
+  const editId = document.getElementById('disposalEditId').value;
   const invId = document.getElementById('disposalInvId').value;
   const code = document.getElementById('disposalAssetCode').value;
   const inv = STATE.inventory[invId];
@@ -5632,23 +5743,32 @@ document.getElementById('disposalSaveBtn').addEventListener('click', ()=>{
   const disposalDate = document.getElementById('disposalDate').value;
   if(!reason){ toast('กรุณาระบุเหตุผลในการจำหน่าย','error'); return; }
   if(!disposalDate){ toast('กรุณาระบุวันที่รอจำหน่าย','error'); return; }
-  const updates = {};
-  const disposalId = 'DSP'+Date.now();
-  updates['disposalRegistry/'+disposalId] = {
-    inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
-    reason, disposalDate, status: 'waiting', createdAt: Date.now()
-  };
-  /* ตัดยอดออกจากคลังทันที: เอาออกจากทั้ง availableAssetCodes และ assetCodes หลัก และลดจำนวนทั้งหมดลง 1 */
-  const avail = (inv.availableAssetCodes||[]).filter(c=>c!==code);
-  const allCodes = (inv.assetCodes||[]).filter(c=>c!==code);
-  updates['inventory/'+invId+'/availableAssetCodes'] = avail;
-  updates['inventory/'+invId+'/assetCodes'] = allCodes;
-  updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(inv.quantity,10)||1) - 1, 0);
-  updates['inventory/'+invId+'/updatedAt'] = Date.now();
-  db.ref().update(updates).then(()=>{
-    toast('บันทึกรอจำหน่ายสำเร็จ ตัดยอดออกจากคลังแล้ว','success');
-    closeModal('disposalModal');
-  });
+
+  if(editId){
+    /* แก้ไขรายการเดิม ไม่กระทบยอดคงคลังซ้ำ (ตัดไปแล้วครั้งเดียวตอนสร้างรายการ) */
+    db.ref('disposalRegistry/'+editId).update({ reason, disposalDate }).then(()=>{
+      toast('แก้ไขรายการรอจำหน่ายสำเร็จ','success');
+      closeModal('disposalModal');
+    });
+  } else {
+    const updates = {};
+    const disposalId = 'DSP'+Date.now();
+    updates['disposalRegistry/'+disposalId] = {
+      inventoryId: invId, assetCode: code, itemType: inv.itemType, category: inv.category,
+      reason, disposalDate, status: 'waiting', createdAt: Date.now()
+    };
+    /* ตัดยอดออกจากคลังทันที: เอาออกจากทั้ง availableAssetCodes และ assetCodes หลัก และลดจำนวนทั้งหมดลง 1 */
+    const avail = (inv.availableAssetCodes||[]).filter(c=>c!==code);
+    const allCodes = (inv.assetCodes||[]).filter(c=>c!==code);
+    updates['inventory/'+invId+'/availableAssetCodes'] = avail;
+    updates['inventory/'+invId+'/assetCodes'] = allCodes;
+    updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(inv.quantity,10)||1) - 1, 0);
+    updates['inventory/'+invId+'/updatedAt'] = Date.now();
+    db.ref().update(updates).then(()=>{
+      toast('บันทึกรอจำหน่ายสำเร็จ ตัดยอดออกจากคลังแล้ว','success');
+      closeModal('disposalModal');
+    });
+  }
 });
 function confirmDisposal(disposalId){
   if(blockIfReadOnly()) return;
@@ -5658,6 +5778,66 @@ function confirmDisposal(disposalId){
     db.ref('disposalRegistry/'+disposalId+'/status').set('disposed').then(()=>toast('ปิดรายการจำหน่ายสำเร็จ','success'));
   });
 }
+/* ลบรายการรอจำหน่ายออกทั้งหมด (ใช้เมื่อบันทึกผิดพลาด — ไม่คืนของเข้าคลัง ต่างจาก "ไม่จำหน่าย" ด้านล่าง) */
+function deleteDisposalRecord(disposalId){
+  if(blockIfReadOnly()) return;
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  showConfirm('ลบรายการนี้ออกจากทะเบียน?', 'การลบนี้ไม่คืนยอดเข้าคลัง ใช้เมื่อบันทึกผิดพลาดเท่านั้น หากต้องการนำของกลับเข้าระบบ ให้ใช้ปุ่ม "ไม่จำหน่าย" แทน', ()=>{
+    db.ref('disposalRegistry/'+disposalId).remove().then(()=>toast('ลบรายการสำเร็จ','success'));
+  });
+}
+/* ไม่จำหน่าย — นำของกลับเข้าระบบ โดยถามว่าจะรับเข้าคลังเลยหรือส่งซ่อมแทน */
+function cancelDisposal(disposalId){
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  document.getElementById('disposalCancelId').value = disposalId;
+  document.getElementById('disposalCancelInfo').textContent = `${d.itemType} — เลขครุภัณฑ์ ${d.assetCode}`;
+  openModal('disposalCancelModal');
+}
+function restoreDisposalCode(disposalId){
+  const d = STATE.disposalRegistry[disposalId];
+  const inv = STATE.inventory[d.inventoryId];
+  const updates = {};
+  updates['disposalRegistry/'+disposalId] = null;
+  if(inv){
+    const allCodes = inv.assetCodes || [];
+    if(!allCodes.includes(d.assetCode)) allCodes.push(d.assetCode);
+    updates['inventory/'+d.inventoryId+'/assetCodes'] = allCodes;
+    updates['inventory/'+d.inventoryId+'/quantity'] = (parseInt(inv.quantity,10)||0) + 1;
+    updates['inventory/'+d.inventoryId+'/updatedAt'] = Date.now();
+  }
+  return updates;
+}
+document.getElementById('disposalCancelToStockBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const disposalId = document.getElementById('disposalCancelId').value;
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  const inv = STATE.inventory[d.inventoryId];
+  const updates = restoreDisposalCode(disposalId);
+  if(inv){
+    const avail = inv.availableAssetCodes || [];
+    if(!avail.includes(d.assetCode)) avail.push(d.assetCode);
+    updates['inventory/'+d.inventoryId+'/availableAssetCodes'] = avail;
+  }
+  db.ref().update(updates).then(()=>{
+    toast('รับกลับเข้าคลังสำเร็จ พร้อมให้ยืมได้ทันที','success');
+    closeModal('disposalCancelModal');
+  });
+});
+document.getElementById('disposalCancelToRepairBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const disposalId = document.getElementById('disposalCancelId').value;
+  const d = STATE.disposalRegistry[disposalId];
+  if(!d) return;
+  const updates = restoreDisposalCode(disposalId);
+  db.ref().update(updates).then(()=>{
+    toast('นำกลับเข้าระบบสำเร็จ — กรุณากรอกข้อมูลส่งซ่อมต่อ','success');
+    closeModal('disposalCancelModal');
+    openRepairForCode(d.inventoryId, d.assetCode);
+  });
+});
 function renderDisposalRegistryTable(){
   const tbody = document.getElementById('disposalRegistryTable');
   if(!tbody) return;
@@ -5671,7 +5851,11 @@ function renderDisposalRegistryTable(){
       <td>${d.reason||'-'}</td>
       <td>${d.disposalDate?formatThaiDate(d.disposalDate,true):'-'}</td>
       <td><span style="font-weight:700;color:${d.status==='disposed'?'#2E7D32':'#A6321C'};">${d.status==='disposed'?'✅ จำหน่ายแล้ว':'🔴 รอจำหน่าย'}</span></td>
-      <td>${d.status==='waiting' ? `<button class="btn btn-danger btn-sm" onclick="confirmDisposal('${id}')">ยืนยันจำหน่าย</button>` : '-'}</td>
+      <td style="white-space:nowrap;">
+        ${d.status==='waiting' ? `<button class="btn btn-primary btn-sm" onclick="confirmDisposal('${id}')">ยืนยันจำหน่าย</button><button class="btn btn-secondary btn-sm" onclick="cancelDisposal('${id}')">ไม่จำหน่าย</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openDisposalEdit('${id}')" title="แก้ไข">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDisposalRecord('${id}')" title="ลบ">🗑</button>
+      </td>
     </tr>`).join('');
 }
 
