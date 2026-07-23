@@ -714,8 +714,14 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <p class="muted">กำหนด CG และช่วงวันที่ แล้วกดค้นหา เพื่อเรียกดูบันทึกการเยี่ยมที่ต้องการแก้ไขหรือลบ</p>
     <div class="row">
       <div class="field"><label>CG</label><select id="recManageCg"><option value="">ทุก CG</option></select></div>
-      <div class="field"><label>วันที่เริ่มต้น</label><input type="date" id="recManageDateFrom"></div>
-      <div class="field"><label>วันที่สิ้นสุด</label><input type="date" id="recManageDateTo"></div>
+      <div class="field"><label>วันที่เริ่มต้น</label>
+        <input type="hidden" id="recManageDateFrom">
+        <button type="button" class="btn btn-secondary" id="recManageDateFromBtn" style="width:100%;text-align:left;">🗓 <span id="recManageDateFromText">เลือกวันที่</span></button>
+      </div>
+      <div class="field"><label>วันที่สิ้นสุด</label>
+        <input type="hidden" id="recManageDateTo">
+        <button type="button" class="btn btn-secondary" id="recManageDateToBtn" style="width:100%;text-align:left;">🗓 <span id="recManageDateToText">เลือกวันที่</span></button>
+      </div>
     </div>
     <button class="btn btn-secondary" id="recManageSearchBtn" style="margin-top:10px;">🔍 ค้นหาบันทึกการเยี่ยม</button>
     <div id="recManageList" style="margin-top:14px;"></div>
@@ -849,7 +855,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
     <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
     <div style="overflow-x:auto;">
-    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนคงคลัง</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table style="margin-top:12px;min-width:640px;"><thead><tr><th>หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์ (พร้อมให้ยืม)</th><th>วันที่รับมา</th><th style="max-width:110px;">หมายเหตุ</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
     <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
@@ -862,11 +868,17 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="upload-progress" id="inventoryReportProgress"></div>
   </div>
   <div class="card">
+    <h3>📊 สถานะอุปกรณ์โดยรวม</h3>
+    <p class="muted">คลิกที่แถบสีเพื่อดูรายละเอียด</p>
+    <div id="eqStatusDashboard" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div id="eqStatusDetailPanel" style="margin-top:12px;"></div>
+  </div>
+  <div class="card">
     <h3>🔄 ระบบควบคุมการยืม-คืนอุปกรณ์ (ครุภัณฑ์การแพทย์ / วัสดุการแพทย์)</h3>
     <p class="muted">บันทึกรายการครุภัณฑ์การแพทย์หรือวัสดุการแพทย์ที่สนับสนุนผู้สูงอายุแต่ละคน ตั้งแต่วันแรกที่ CG เข้าไปดูแล จนสิ้นสุดการดูแล — เลือกยืมได้หลายรายการพร้อมกันในครั้งเดียว ถ้าเป็นครุภัณฑ์ที่มีเลขควบคุมในคลัง ระบบจะให้เลือกเลขที่ยังว่างอยู่โดยตรง</p>
     <div class="row">
       <div class="field"><label>กรองตามผู้สูงอายุ</label><select id="eqElderlyFilter"><option value="">ทั้งหมด</option></select></div>
-      <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการยืม</button>
+      <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการยืม-ส่งคืน</button>
     </div>
     <div style="overflow-x:auto;">
     <table style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
@@ -1194,7 +1206,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <option value="moved">ย้ายที่อยู่</option>
     </select>
   </div>
-  <div class="field" style="margin-top:8px;"><label>วันที่จำหน่าย</label><input type="date" id="dischargeDate"></div>
+  <div class="field" style="margin-top:8px;"><label>วันที่จำหน่าย</label>
+    <input type="hidden" id="dischargeDate">
+    <button type="button" class="btn btn-secondary" id="dischargeDateBtn" style="width:100%;text-align:left;">🗓 <span id="dischargeDateText">เลือกวันที่</span></button>
+  </div>
   <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><textarea id="dischargeNote"></textarea></div>
   <p class="muted" style="margin-top:8px;">* ไม่ว่าเหตุผลใด (หายป่วย, อาการดีขึ้นไม่เข้าเกณฑ์, เสียชีวิต, ย้ายที่อยู่) ระบบจะย้ายชื่อและประวัติการดูแลทั้งหมดไปเก็บไว้ที่แท็บ "ประวัติผู้สูงอายุ" โดยอัตโนมัติ (มองเห็นได้เฉพาะ Admin และ CM)</p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('dischargeModal')">ยกเลิก</button><button class="btn btn-danger" id="dischargeSubmitBtn">ยืนยันการจำหน่าย</button></div>
@@ -1231,8 +1246,17 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="field"><label>ชื่อผู้สูงอายุ</label><select id="eqElderly"></select></div>
   <div class="field" style="margin-top:8px;"><label>เบอร์โทรญาติ</label><input type="tel" id="eqRelativePhone" placeholder="เช่น 08xxxxxxxx"></div>
   <div class="row" style="margin-top:8px;">
-    <div class="field"><label>วันที่ได้รับการสนับสนุน</label><input type="date" id="eqDateReceived"></div>
-    <div class="field"><label>วันที่ส่งคืน (ถ้ายังไม่คืน เว้นว่างไว้)</label><input type="date" id="eqDateReturned"></div>
+    <div class="field"><label>วันที่ได้รับการสนับสนุน</label>
+      <input type="hidden" id="eqDateReceived">
+      <button type="button" class="btn btn-secondary" id="eqDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="eqDateReceivedText">เลือกวันที่</span></button>
+    </div>
+    <div class="field"><label>วันที่ส่งคืน (ถ้ายังไม่คืน เว้นว่างไว้)</label>
+      <input type="hidden" id="eqDateReturned">
+      <div class="row" style="gap:6px;">
+        <button type="button" class="btn btn-secondary" id="eqDateReturnedBtn" style="flex:1;text-align:left;">🗓 <span id="eqDateReturnedText">เลือกวันที่</span></button>
+        <button type="button" class="btn btn-ghost btn-sm" id="eqDateReturnedClearBtn" title="ล้างวันที่">✕</button>
+      </div>
+    </div>
   </div>
   <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">รายการครุภัณฑ์ / วัสดุการแพทย์ที่ขอรับการสนับสนุน</h4>
   <div id="eqItemRows" style="display:flex;flex-direction:column;gap:10px;"></div>
@@ -1246,7 +1270,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <p class="muted" id="eqReturnInfo" style="margin-bottom:10px;"></p>
   <div class="field">
     <label>วันที่รับคืน</label>
-    <input type="date" id="eqReturnDate">
+    <input type="hidden" id="eqReturnDate">
+    <button type="button" class="btn btn-secondary" id="eqReturnDateBtn" style="width:100%;text-align:left;">🗓 <span id="eqReturnDateText">เลือกวันที่</span></button>
   </div>
   <div class="field" style="margin-top:8px;">
     <label>สภาพของที่ส่งคืน</label>
@@ -1269,6 +1294,12 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <option value="repair">ส่งซ่อม</option>
       <option value="dispose">รอจำหน่าย</option>
     </select>
+  </div>
+  <div class="field" id="eqReturnRepairWrap" style="margin-top:8px;display:none;">
+    <label>ร้าน/หน่วยงานที่ส่งซ่อม</label>
+    <input type="text" id="eqReturnRepairShop" placeholder="เช่น ร้านช่างสมชายซ่อมเครื่องมือแพทย์">
+    <label style="margin-top:8px;display:block;">เบอร์โทรศัพท์ผู้ซ่อม</label>
+    <input type="tel" id="eqReturnRepairPhone" placeholder="เช่น 08xxxxxxxx">
   </div>
   <p class="muted" style="font-size:11.5px;margin-top:6px;">ถ้าเลือก "รับกลับเข้าคลังเพื่อให้ยืมต่อ" ระบบจะเพิ่มจำนวนคงคลังของรายการนี้ให้อัตโนมัติ ถ้าเลือก "ส่งซ่อม" หรือ "รอจำหน่าย" จะไม่เพิ่มจำนวนคงคลัง (ของยังไม่พร้อมให้ยืมต่อ)</p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentReturnModal')">ยกเลิก</button><button class="btn btn-primary" id="eqReturnSaveBtn">ยืนยันรับคืน</button></div>
@@ -2929,8 +2960,8 @@ function toggleDate(ds){
    แสดงผลเป็น วัน/เดือน(ย่อไทย)/ปี พ.ศ. เมื่อเลือกแล้ว
 ============================================================= */
 let thaiDatePickerTarget = null;
-function openThaiDatePicker(hiddenInputId, displayTextId, title){
-  thaiDatePickerTarget = { hiddenInputId, displayTextId };
+function openThaiDatePicker(hiddenInputId, displayTextId, title, onSelect){
+  thaiDatePickerTarget = { hiddenInputId, displayTextId, onSelect };
   document.getElementById('thaiDateModalTitle').textContent = title || 'เลือกวันที่';
   const monthSel = document.getElementById('thaiDateMonthSel');
   const yearSel = document.getElementById('thaiDateYearSel');
@@ -2968,8 +2999,16 @@ function selectThaiDate(ds){
   document.getElementById(thaiDatePickerTarget.hiddenInputId).value = ds;
   const displayEl = document.getElementById(thaiDatePickerTarget.displayTextId);
   if(displayEl) displayEl.textContent = formatThaiDate(ds);
+  const cb = thaiDatePickerTarget.onSelect;
   closeModal('thaiDateModal');
+  if(typeof cb === 'function') cb(ds);
 }
+document.getElementById('recManageDateFromBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('recManageDateFrom', 'recManageDateFromText', 'เลือกวันที่เริ่มต้น', renderRecManageList);
+});
+document.getElementById('recManageDateToBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('recManageDateTo', 'recManageDateToText', 'เลือกวันที่สิ้นสุด', renderRecManageList);
+});
 document.getElementById('invDateReceivedBtn').addEventListener('click', ()=>{
   openThaiDatePicker('invDateReceived', 'invDateReceivedText', 'เลือกวันที่รับเข้า');
 });
@@ -4250,9 +4289,13 @@ function openDischarge(id){
   document.getElementById('dischargeElderlyId').value = id;
   document.getElementById('dischargeReason').value = 'recovered';
   document.getElementById('dischargeDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('dischargeDateText').textContent = formatThaiDate(new Date().toISOString().slice(0,10));
   document.getElementById('dischargeNote').value = '';
   openModal('dischargeModal');
 }
+document.getElementById('dischargeDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('dischargeDate', 'dischargeDateText', 'เลือกวันที่จำหน่าย');
+});
 document.getElementById('dischargeSubmitBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const id = document.getElementById('dischargeElderlyId').value;
@@ -5267,14 +5310,27 @@ updateInvItemTypeSelect();
 db.ref('inventory').on('value', snap=>{
   STATE.inventory = snap.val() || {};
   renderInventoryTable();
+  renderEqStatusDashboard();
 });
 
+/* ยอดคงเหลือ = จำนวนทั้งหมด หักด้วยจำนวนที่ถูกยืมอยู่ในขณะนี้ (ยังไม่คืน)
+   ครุภัณฑ์ (durable): ใช้จำนวนเลขครุภัณฑ์ที่ยังว่างอยู่ (availableAssetCodes) โดยตรง เพราะติดตามเป็นรายชิ้น
+   วัสดุ (material): หักจากผลรวมจำนวนที่ถูกจ่ายออกแล้วยังไม่คืน ของรายการประเภทเดียวกัน */
+function computeInventoryRemaining(inv){
+  if(inv.category === 'durable'){
+    return (inv.availableAssetCodes || inv.assetCodes || []).length;
+  }
+  const borrowed = Object.values(STATE.equipment||{})
+    .filter(e=>e.category==='material' && e.itemType===inv.itemType && !e.dateReturned)
+    .reduce((sum,e)=>sum + (parseInt(e.quantity,10)||0), 0);
+  return Math.max((parseInt(inv.quantity,10)||0) - borrowed, 0);
+}
 function renderInventoryTable(){
   const tbody = document.getElementById('inventoryTable');
   if(!tbody) return;
   const entries = Object.entries(STATE.inventory||{});
   if(entries.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="muted">ยังไม่มีรายการคงคลัง</td></tr>';
     return;
   }
   /* จัดกลุ่มตามหมวดหมู่: ครุภัณฑ์ก่อน วัสดุหลัง */
@@ -5288,20 +5344,21 @@ function renderInventoryTable(){
     const assetCodesText = availCodes.length
       ? availCodes.map((c,i)=>`<div>${i+1}. ${c}</div>`).join('')
       : (inv.category==='durable' ? '<span class="muted">ไม่มีเลขว่าง</span>' : '-');
-    const otherCat = inv.category==='durable' ? 'material' : 'durable';
+    const remaining = computeInventoryRemaining(inv);
     return `
     <tr>
       <td><span class="badge ${inv.category==='durable'?'normal':'obt'}">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
       <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
+      <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':'#2E7D32'};">${remaining}</td>
       <td>${inv.unit||'-'}</td>
       <td style="font-size:11.5px;line-height:1.6;white-space:nowrap;width:1%;">${assetCodesText}</td>
+      <td>${inv.dateReceived ? formatThaiDate(inv.dateReceived,true) : '-'}</td>
       <td style="max-width:110px;overflow-wrap:break-word;font-size:12px;">${inv.note||'-'}</td>
       <td>${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10),true) : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
         <button class="btn btn-ghost btn-sm" onclick="openInventoryEdit('${id}')" title="แก้ไขรายการ">✏️ แก้ไข</button>
-        <button class="btn btn-ghost btn-sm" onclick="changeInventoryCategory('${id}','${otherCat}')" title="ย้ายไปเป็น${CATEGORY_LABELS_INV[otherCat]}">🔄 เปลี่ยนประเภท</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInventory('${id}')">🗑</button>
       </td>
     </tr>`;}).join('');
@@ -5405,17 +5462,6 @@ document.getElementById('invEditSaveBtn').addEventListener('click', ()=>{
   });
 });
 
-function changeInventoryCategory(id, newCat){
-  if(blockIfReadOnly()) return;
-  const inv = STATE.inventory[id];
-  if(!inv) return;
-  showConfirm(`ย้ายรายการ "${inv.itemType}" เป็น ${CATEGORY_LABELS_INV[newCat]}?`,
-    `เปลี่ยนจาก ${CATEGORY_LABELS_INV[inv.category]} เป็น ${CATEGORY_LABELS_INV[newCat]} (จำนวนคงคลังและเลขครุภัณฑ์ยังคงเดิม)`, ()=>{
-    db.ref('inventory/'+id+'/category').set(newCat).then(()=>{
-      toast(`เปลี่ยนประเภทเป็น ${CATEGORY_LABELS_INV[newCat]} สำเร็จ`,'success');
-    });
-  });
-}
 function deleteInventory(id){
   if(blockIfReadOnly()) return;
   showConfirm('ลบรายการคงคลังนี้?', STATE.inventory[id]?.itemType||id, ()=>{
@@ -5682,6 +5728,70 @@ function renderEquipmentTable(){
         <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${id}')">🗑</button></td>
       </tr>`;}).join('');
   document.getElementById('equipmentTable').innerHTML = rows || '<tr><td colspan="9" class="muted">ยังไม่มีข้อมูล</td></tr>';
+  renderEqStatusDashboard();
+}
+
+/* =============================================================
+   แดชบอร์ดสถานะอุปกรณ์ 4 แถบสี — คลิกดูรายละเอียดได้โดยไม่ต้องส่งออก
+============================================================= */
+function renderEqStatusDashboard(){
+  const dash = document.getElementById('eqStatusDashboard');
+  if(!dash) return;
+  const greenCount = Object.values(STATE.inventory||{}).reduce((sum,inv)=>sum+computeInventoryRemaining(inv),0);
+  const borrowedList = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned);
+  const damagedList = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && (e.returnCondition==='เสียหาย' || e.returnAction==='dispose'));
+  const repairList = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && e.returnAction==='repair');
+  const barStyle = 'color:#fff;padding:12px 16px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:transform .15s;';
+  dash.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1B5E20,#4CAF50);${barStyle}" onclick="toggleEqStatusDetail('green')">
+      <span>🟢 อุปกรณ์ในคลังพร้อมใช้งาน</span><b style="font-size:20px;">${greenCount}</b>
+    </div>
+    <div style="background:linear-gradient(135deg,#8A6100,#FDB813);${barStyle}" onclick="toggleEqStatusDetail('yellow')">
+      <span>🟡 อุปกรณ์ที่ถูกยืม</span><b style="font-size:20px;">${borrowedList.length}</b>
+    </div>
+    <div style="background:linear-gradient(135deg,#A6321C,#E8654A);${barStyle}" onclick="toggleEqStatusDetail('red')">
+      <span>🔴 อุปกรณ์ชำรุด / รอจำหน่าย</span><b style="font-size:20px;">${damagedList.length}</b>
+    </div>
+    <div style="background:linear-gradient(135deg,#5A2D82,#9C6ADE);${barStyle}" onclick="toggleEqStatusDetail('purple')">
+      <span>🟣 อุปกรณ์ส่งซ่อม</span><b style="font-size:20px;">${repairList.length}</b>
+    </div>
+  `;
+  if(eqStatusOpenTab) toggleEqStatusDetail(eqStatusOpenTab, true);
+}
+let eqStatusOpenTab = null;
+function toggleEqStatusDetail(tab, forceRefresh){
+  const panel = document.getElementById('eqStatusDetailPanel');
+  if(!forceRefresh && eqStatusOpenTab === tab){ panel.innerHTML=''; eqStatusOpenTab=null; return; }
+  eqStatusOpenTab = tab;
+  if(tab==='green'){
+    const items = Object.entries(STATE.inventory||{}).filter(([,inv])=>computeInventoryRemaining(inv)>0);
+    panel.innerHTML = items.length ? items.map(([,inv])=>`
+      <div style="padding:9px 14px;border:1px solid #C8E6C9;background:#F1F8E9;border-radius:8px;margin-bottom:6px;">
+        <b>${inv.itemType}</b> <span class="muted">(${CATEGORY_LABELS_INV[inv.category]||inv.category})</span> — เหลือ <b style="color:#2E7D32;">${computeInventoryRemaining(inv)}</b> ${inv.unit||''}
+      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์พร้อมใช้งานในขณะนี้</p>';
+  } else if(tab==='yellow'){
+    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned);
+    panel.innerHTML = items.length ? items.map(([id,e])=>`
+      <div style="padding:9px 14px;border:1px solid #FFE0B2;background:#FFF8E1;border-radius:8px;margin-bottom:6px;">
+        <b>${e.elderlyName||'-'}</b> ยืม <b>${e.itemType||'-'}</b> (${CATEGORY_LABELS_INV[e.category]||e.category||'-'}) ${e.itemCode?`เลขครุภัณฑ์ ${e.itemCode}`:''} จำนวน ${e.quantity||1}<br>
+        <span class="muted" style="font-size:12px;">วันที่ได้รับ: ${e.dateReceived?formatThaiDate(e.dateReceived):'-'} | เบอร์โทรญาติ: ${e.relativePhone||'-'}</span>
+      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ที่ถูกยืมอยู่ในขณะนี้</p>';
+  } else if(tab==='red'){
+    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && (e.returnCondition==='เสียหาย' || e.returnAction==='dispose'));
+    panel.innerHTML = items.length ? items.map(([id,e])=>`
+      <div style="padding:9px 14px;border:1px solid #FFCDD2;background:#FFEBEE;border-radius:8px;margin-bottom:6px;">
+        <b>${e.itemType||'-'}</b> ${e.itemCode?`(เลขครุภัณฑ์ ${e.itemCode})`:''} — สถานะ: ${e.returnCondition||'-'} / ${e.returnActionLabel||'-'}<br>
+        <span class="muted" style="font-size:12px;">${e.returnDamageDetail?`ความเสียหาย: ${e.returnDamageDetail} | `:''}รับคืนจาก: ${e.elderlyName||'-'} เมื่อ ${e.dateReturned?formatThaiDate(e.dateReturned):'-'}</span>
+      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ชำรุดหรือรอจำหน่ายในขณะนี้</p>';
+  } else if(tab==='purple'){
+    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && e.returnAction==='repair');
+    panel.innerHTML = items.length ? items.map(([id,e])=>`
+      <div style="padding:9px 14px;border:1px solid #E1BEE7;background:#F3E5F5;border-radius:8px;margin-bottom:6px;">
+        <b>${e.itemType||'-'}</b> ${e.itemCode?`(เลขครุภัณฑ์ ${e.itemCode})`:''}<br>
+        <span style="font-size:12.5px;">🔧 อาการที่เสีย: ${e.returnDamageDetail||'-'}</span><br>
+        <span style="font-size:12.5px;">🏪 ร้านซ่อม: ${e.repairShop||'-'} &nbsp; 📞 เบอร์โทร: ${e.repairPhone||'-'}</span>
+      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ที่ส่งซ่อมในขณะนี้</p>';
+  }
 }
 
 /* ---- แถวรายการอุปกรณ์แบบเพิ่มได้หลายรายการในการขอรับการสนับสนุนครั้งเดียว ---- */
@@ -5793,8 +5903,11 @@ document.getElementById('addEquipmentBtn').addEventListener('click', ()=>{
   document.getElementById('eqModalTitle').textContent = 'เพิ่มรายการอุปกรณ์';
   document.getElementById('eqEditId').value = '';
   document.getElementById('eqRelativePhone').value = '';
-  document.getElementById('eqDateReceived').value = '';
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('eqDateReceived').value = todayIso;
+  document.getElementById('eqDateReceivedText').textContent = formatThaiDate(todayIso);
   document.getElementById('eqDateReturned').value = '';
+  document.getElementById('eqDateReturnedText').textContent = 'เลือกวันที่';
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
   rowsWrap.appendChild(createEqItemRow());
@@ -5808,7 +5921,9 @@ function openEditEquipment(id){
   document.getElementById('eqElderly').value = e.elderlyId||'';
   document.getElementById('eqRelativePhone').value = e.relativePhone||'';
   document.getElementById('eqDateReceived').value = e.dateReceived||'';
+  document.getElementById('eqDateReceivedText').textContent = e.dateReceived ? formatThaiDate(e.dateReceived) : 'เลือกวันที่';
   document.getElementById('eqDateReturned').value = e.dateReturned||'';
+  document.getElementById('eqDateReturnedText').textContent = e.dateReturned ? formatThaiDate(e.dateReturned) : 'เลือกวันที่';
   const rowsWrap = document.getElementById('eqItemRows');
   rowsWrap.innerHTML = '';
   rowsWrap.appendChild(createEqItemRow({ itemCode:e.itemCode, category:e.category, itemType:e.itemType, quantity:e.quantity }));
@@ -6068,15 +6183,36 @@ function openEquipmentReturn(id){
   document.getElementById('eqReturnId').value = id;
   const catLabel = CATEGORY_LABELS_INV[e.category] || e.category || '-';
   document.getElementById('eqReturnInfo').textContent = `${e.elderlyName||'-'} — ${catLabel}: ${e.itemType||'-'} (จำนวน ${e.quantity||1})`;
-  document.getElementById('eqReturnDate').value = new Date().toISOString().slice(0,10);
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('eqReturnDate').value = todayIso;
+  document.getElementById('eqReturnDateText').textContent = formatThaiDate(todayIso);
   document.getElementById('eqReturnCondition').value = '';
   document.getElementById('eqReturnDamageDetail').value = '';
   document.getElementById('eqReturnDamageWrap').style.display = 'none';
   document.getElementById('eqReturnAction').value = '';
+  document.getElementById('eqReturnRepairWrap').style.display = 'none';
+  document.getElementById('eqReturnRepairShop').value = '';
+  document.getElementById('eqReturnRepairPhone').value = '';
   openModal('equipmentReturnModal');
 }
+document.getElementById('eqReturnDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('eqReturnDate', 'eqReturnDateText', 'เลือกวันที่รับคืน');
+});
+document.getElementById('eqDateReceivedBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('eqDateReceived', 'eqDateReceivedText', 'เลือกวันที่ได้รับการสนับสนุน');
+});
+document.getElementById('eqDateReturnedBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('eqDateReturned', 'eqDateReturnedText', 'เลือกวันที่ส่งคืน');
+});
+document.getElementById('eqDateReturnedClearBtn').addEventListener('click', ()=>{
+  document.getElementById('eqDateReturned').value = '';
+  document.getElementById('eqDateReturnedText').textContent = 'เลือกวันที่';
+});
 document.getElementById('eqReturnCondition').addEventListener('change', function(){
   document.getElementById('eqReturnDamageWrap').style.display = (this.value==='เสียหาย') ? 'block' : 'none';
+});
+document.getElementById('eqReturnAction').addEventListener('change', function(){
+  document.getElementById('eqReturnRepairWrap').style.display = (this.value==='repair') ? 'block' : 'none';
 });
 document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
@@ -6087,10 +6223,13 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   const condition = document.getElementById('eqReturnCondition').value;
   const damageDetail = document.getElementById('eqReturnDamageDetail').value.trim();
   const action = document.getElementById('eqReturnAction').value;
+  const repairShop = document.getElementById('eqReturnRepairShop').value.trim();
+  const repairPhone = document.getElementById('eqReturnRepairPhone').value.trim();
   if(!dateReturned){ toast('กรุณาระบุวันที่รับคืน','error'); return; }
   if(!condition){ toast('กรุณาเลือกสภาพของที่ส่งคืน','error'); return; }
   if(condition==='เสียหาย' && !damageDetail){ toast('กรุณาระบุความเสียหาย','error'); return; }
   if(!action){ toast('กรุณาเลือกการดำเนินการต่อ','error'); return; }
+  if(action==='repair' && !repairShop){ toast('กรุณาระบุร้าน/หน่วยงานที่ส่งซ่อม','error'); return; }
 
   const ACTION_LABELS = { stock:'รับกลับเข้าคลังเพื่อให้ยืมต่อ', repair:'ส่งซ่อม', dispose:'รอจำหน่าย' };
   const updates = {};
@@ -6099,6 +6238,8 @@ document.getElementById('eqReturnSaveBtn').addEventListener('click', ()=>{
   updates['equipment/'+id+'/returnDamageDetail'] = condition==='เสียหาย' ? damageDetail : '';
   updates['equipment/'+id+'/returnAction'] = action;
   updates['equipment/'+id+'/returnActionLabel'] = ACTION_LABELS[action];
+  updates['equipment/'+id+'/repairShop'] = action==='repair' ? repairShop : '';
+  updates['equipment/'+id+'/repairPhone'] = action==='repair' ? repairPhone : '';
 
   if(action === 'stock'){
     /* หากลับเข้าคลังเพื่อให้ยืมต่อ:
