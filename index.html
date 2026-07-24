@@ -1256,7 +1256,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal('calendarModal')">เสร็จสิ้น</button></div>
 </div></div>
 
-<div class="modal-overlay" id="thaiDateModal"><div class="modal-box" style="max-width:340px;">
+<div class="modal-overlay" id="thaiDateModal" style="z-index:600;"><div class="modal-box" style="max-width:340px;">
   <h3 id="thaiDateModalTitle">เลือกวันที่</h3>
   <div class="row" style="margin-top:8px;">
     <div class="field"><label>เดือน</label><select id="thaiDateMonthSel"></select></div>
@@ -1700,9 +1700,9 @@ function dateStr(y,m,d){ return `${y}-${pad2(m+1)}-${pad2(d)}`; }
 function formatThaiDate(iso, short){
   if(!iso) return '';
   const [y,m,d] = iso.split('-').map(Number);
-  const yy = String(beYear(y)).slice(-2);
-  if(short) return `${d} ${TH_MONTHS_ABBR[m-1]}`;
-  return `${d} ${TH_MONTHS_ABBR[m-1]} ${yy}`;
+  const yBE = beYear(y);
+  if(short) return `${d} ${TH_MONTHS_ABBR[m-1]} ${yBE}`;
+  return `${d} ${TH_MONTHS_ABBR[m-1]} ${yBE}`;
 }
 
 function toast(msg, type){
@@ -3058,13 +3058,12 @@ document.getElementById('openCalendarBtn').addEventListener('click', ()=>{
     ? `แนะนำให้เลือก ${remaining} วัน (คงเหลือจากเป้าหมาย ${required} ครั้ง/เดือน) - ${TH_MONTHS_FULL[m-1]} ${yBE}`
     : `เยี่ยมครบตามเป้าหมาย ${required} ครั้ง/เดือนแล้ว แต่ยังเลือกวันที่เพิ่มได้หากต้องการ - ${TH_MONTHS_FULL[m-1]} ${yBE}`;
   const grid = document.getElementById('calendarGrid');
-  const beYr2 = String(yBE).slice(-2);
   let html = TH_DOW.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html += `<div class="day empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const ds = dateStr(y, m-1, d);
     const sel = STATE.selectedDates.includes(ds) ? 'selected' : '';
-    html += `<div class="day ${sel}" data-date="${ds}" onclick="toggleDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${beYr2}</span></div>`;
+    html += `<div class="day ${sel}" data-date="${ds}" onclick="toggleDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${yBE}</span></div>`;
   }
   grid.innerHTML = html;
   openModal('calendarModal');
@@ -3104,13 +3103,12 @@ function renderThaiDateGrid(){
   const firstDow = new Date(y, m-1, 1).getDay();
   const currentVal = document.getElementById(thaiDatePickerTarget.hiddenInputId).value;
   const grid = document.getElementById('thaiDateGrid');
-  const beYr2 = String(yBE).slice(-2);
   let html = TH_DOW.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html += `<div class="day empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const ds = dateStr(y, m-1, d);
     const sel = (ds===currentVal) ? 'selected' : '';
-    html += `<div class="day ${sel}" onclick="selectThaiDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${beYr2}</span></div>`;
+    html += `<div class="day ${sel}" onclick="selectThaiDate('${ds}')"><b>${d}</b><span class="day-sub">${TH_MONTHS_ABBR[m-1]} ${yBE}</span></div>`;
   }
   grid.innerHTML = html;
 }
