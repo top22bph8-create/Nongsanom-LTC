@@ -1357,6 +1357,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <option value="ม้วน">ม้วน</option><option value="แผ่น">แผ่น</option><option value="ชุด">ชุด</option>
         <option value="แพ็ค">แพ็ค</option><option value="ลัง">ลัง</option><option value="ขวด">ขวด</option>
         <option value="หลอด">หลอด</option><option value="ซอง">ซอง</option>
+        <option value="เครื่อง">เครื่อง</option><option value="สาย">สาย</option>
+        <option value="ถุง">ถุง</option><option value="ห่อ">ห่อ</option>
       </select>
     </div>
     <div class="field"><label>วันที่รับเข้า</label>
@@ -1403,6 +1405,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <option value="ม้วน">ม้วน</option><option value="แผ่น">แผ่น</option><option value="ชุด">ชุด</option>
         <option value="แพ็ค">แพ็ค</option><option value="ลัง">ลัง</option><option value="ขวด">ขวด</option>
         <option value="หลอด">หลอด</option><option value="ซอง">ซอง</option>
+        <option value="เครื่อง">เครื่อง</option><option value="สาย">สาย</option>
+        <option value="ถุง">ถุง</option><option value="ห่อ">ห่อ</option>
       </select>
     </div>
   </div>
@@ -5757,16 +5761,32 @@ function renderEquipmentElderlySelect(){
 /* รายการครุภัณฑ์การแพทย์ / วัสดุการแพทย์ ให้เลือกเป็นช้อยสะดวก — เลือก "อื่นๆ" เพื่อพิมพ์เองได้
    ใช้ร่วมกันทั้งฟอร์ม "ขอรับการสนับสนุนอุปกรณ์" และ "คงคลังอุปกรณ์" ด้านล่าง */
 const EQUIPMENT_DURABLE_ITEMS = [
-  "เตียงฟาวเลอร์","เครื่องผลิตออกซิเจน","ถังออกซิเจน ขนาดใหญ่","ถังออกซิเจน ขนาดเล็ก",
+  "เตียงฟาวเลอร์","เครื่องผลิตออกซิเจน","เครื่องดูดเสมหะ",
+  "ถังออกซิเจน ขนาดใหญ่","ถังออกซิเจน ขนาดเล็ก",
   "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
 ];
 const EQUIPMENT_MATERIAL_ITEMS = [
-  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
+  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ",
+  "สายออกซิเจน","สายออกซิเจน canular","สายยางให้อาหาร (NG tube)",
+  "เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
   "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา",
   "ถุงขยะสีดำ","ถุงขยะสีแดง","ถุงมือ","แอลกอฮอล์ 70%","เจลแอลกอฮอล์ล้างมือ",
   "เบาะรองนั่ง","นมกล่อง UHT","อาหารทางการแพทย์สำหรับให้ทางสายยาง"
 ];
-const UNIT_NAMES = ["ชิ้น","อัน","กล่อง","ถัง","ตัว","หลัง","ม้วน","แผ่น","ชุด","แพ็ค","ลัง","ขวด","หลอด","ซอง"];
+const UNIT_NAMES = ["ชิ้น","อัน","กล่อง","ถัง","ตัว","หลัง","ม้วน","แผ่น","ชุด","แพ็ค","ลัง","ขวด","หลอด","ซอง","เครื่อง","สาย","ถุง","ห่อ"];
+/* อิโมจิประกอบรายการครุภัณฑ์/วัสดุ */
+const ITEM_EMOJI = {
+  "เตียงฟาวเลอร์":"🛏️","เครื่องผลิตออกซิเจน":"💨","เครื่องดูดเสมหะ":"🩺",
+  "ถังออกซิเจน ขนาดใหญ่":"🫁","ถังออกซิเจน ขนาดเล็ก":"🫁",
+  "เกย์ปรับออกซิเจน":"🔧","รถเข็นนั่ง":"♿","สามล้อโยก":"🚲","ที่นอนลมป้องกันแผลกดทับ":"🛌",
+  "ผ้าอ้อมสำเร็จรูป":"🩲","แผ่นรองซับ":"📋",
+  "สายออกซิเจน":"🔗","สายออกซิเจน canular":"🔗","สายยางให้อาหาร (NG tube)":"🪱",
+  "เครื่องเจาะน้ำตาลปลายนิ้ว":"💉","เครื่องวัดความดันโลหิต":"🩸",
+  "ไม้เท้าค้ำยันแบบเหน็บรักแร้":"🦯","ไม้เท้า 4 ขา":"🦯","ไม้เท้า 2 ขา":"🦯","ไม้เท้าค้ำยัน 1 ขา":"🦯",
+  "ถุงขยะสีดำ":"🗑️","ถุงขยะสีแดง":"🗑️","ถุงมือ":"🧤","แอลกอฮอล์ 70%":"🧴","เจลแอลกอฮอล์ล้างมือ":"🧴",
+  "เบาะรองนั่ง":"🪑","นมกล่อง UHT":"🥛","อาหารทางการแพทย์สำหรับให้ทางสายยาง":"🍼"
+};
+function getItemEmoji(itemType){ return ITEM_EMOJI[itemType] || '📦'; }
 function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
 
 /* =============================================================
@@ -5841,15 +5861,25 @@ function computeInventoryRemaining(inv){
     /* ครุภัณฑ์: ยอดคงเหลือ = จำนวนเลขครุภัณฑ์ที่ว่าง (ไม่ถูกยืม ไม่ส่งซ่อม ไม่รอจำหน่าย) */
     return (inv.availableAssetCodes || []).length;
   }
-  /* วัสดุ: ตัดจ่ายขาด ยอดคงเหลือ = ยอดรวมในคลัง (inv.quantity ถูกหักตรงๆ ทุกครั้งที่จ่าย) */
+  /* วัสดุ: ตัดจ่ายขาด ยอดคงเหลือ = ยอดรวมในคลัง */
   return Math.max(parseInt(inv.quantity,10)||0, 0);
 }
 function computeInventoryTotal(inv){
   if(inv.category === 'durable'){
-    /* จำนวนทั้งหมด = จำนวนเลขครุภัณฑ์ในทะเบียนหลัก (รวมที่ถูกยืมออกและที่ว่าง) */
-    return (inv.assetCodes || []).length || (parseInt(inv.quantity,10)||0);
+    /* จำนวนทั้งหมด = ทุกเลขครุภัณฑ์ในทะเบียนหลัก (รวมที่ถูกยืมออก ส่งซ่อม รอจำหน่าย) */
+    const total = (inv.assetCodes || []).length;
+    return total || Math.max(parseInt(inv.quantity,10)||0, 0);
   }
   return parseInt(inv.quantity,10)||0;
+}
+function sortAssetCodes(codes){
+  /* เรียงเลขครุภัณฑ์จากน้อยไปมาก: ถ้ามีตัวเลขใน string ให้เปรียบเทียบ numeric */
+  return [...codes].sort((a,b)=>{
+    const na=parseInt((a.match(/\d+/)||[0])[0],10);
+    const nb=parseInt((b.match(/\d+/)||[0])[0],10);
+    if(!isNaN(na)&&!isNaN(nb)&&na!==nb) return na-nb;
+    return (a||'').localeCompare(b||'');
+  });
 }
 /* สถานะของครุภัณฑ์แต่ละชิ้น (แยกตามเลขครุภัณฑ์) — ตรวจสอบตามลำดับความสำคัญ:
    ส่งซ่อม > ชำรุด/รอจำหน่าย > ถูกยืม > พร้อมใช้งาน */
@@ -5930,7 +5960,7 @@ function renderInventoryTable(){
     let codesColumnHtml, statusColumnHtml, dateColumnHtml;
 
     if(inv.category === 'durable'){
-      const allCodes = inv.assetCodes || [];
+      const allCodes = sortAssetCodes(inv.assetCodes || []);
       if(allCodes.length === 0){
         codesColumnHtml = '<span class="muted">ไม่มีเลขครุภัณฑ์</span>';
         statusColumnHtml = '-';
@@ -5968,7 +5998,7 @@ function renderInventoryTable(){
     return `
     <tr>
       <td style="text-align:center;"><span class="badge ${inv.category==='durable'?'normal':'obt'}" style="font-weight:700;font-size:12.5px;letter-spacing:.3px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
-      <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
+      <td style="text-align:center;"><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;"><span style="font-size:18px;">${getItemEmoji(inv.itemType)}</span><br><span style="font-size:12.5px;">${inv.itemType||'-'}</span></a></td>
       <td style="font-size:11.5px;color:#555;">${inv.source||'-'}</td>
       <td style="font-weight:700;text-align:center;">${total}</td>
       <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':remaining===total?'#2E7D32':'#B8860B'};">${remaining}</td>
@@ -6520,9 +6550,9 @@ function openInventoryDetail(id){
   const isDurable = inv.category==='durable';
   const themeColor = isDurable ? '#185FA5' : '#2E7D32';
   const themeBg = isDurable ? 'linear-gradient(135deg,#0F5590,#43C1F1)' : 'linear-gradient(135deg,#1B5E20,#4CAF50)';
-  const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
+  const availCodes = sortAssetCodes(inv.availableAssetCodes || inv.assetCodes || []);
   const codesHtml = availCodes.length || (inv.assetCodes||[]).length
-    ? (inv.assetCodes||[]).map((c,i)=>{
+    ? sortAssetCodes(inv.assetCodes||[]).map((c,i)=>{
         const st = getAssetCodeStatus(c);
         const isAvail = st.status === 'available';
         const isBorrowed = st.status === 'borrowed';
@@ -6616,8 +6646,10 @@ document.getElementById('invEditSaveBtn').addEventListener('click', ()=>{
   const newCodes = category==='durable'
     ? Array.from(document.querySelectorAll('.inv-edit-code')).map(i=>i.value.trim()).filter(Boolean)
     : [];
+  /* ครุภัณฑ์: ให้ quantity สัมพันธ์กับจำนวน assetCodes จริงๆ */
+  const finalQty = category==='durable' ? newCodes.length : quantity;
   db.ref('inventory/'+id).update({
-    category, itemType, quantity, unit, note, source,
+    category, itemType, quantity: finalQty, unit, note, source,
     assetCodes: newCodes, availableAssetCodes: newCodes
   }).then(()=>{
     toast('แก้ไขรายการคงคลังสำเร็จ','success');
@@ -6665,18 +6697,22 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   const prevCodeDetails = existing ? (existing[1].codeDetails||{}) : {};
   const newCodeDetails = Object.assign({}, prevCodeDetails);
   newAssetCodes.forEach(code=>{ newCodeDetails[code] = { dateReceived }; });
+  const newAllCodes = cat==='durable' ? [...prevAssetCodes, ...newAssetCodes] : [];
+  const newAllAvail = cat==='durable' ? [...prevAvailableCodes, ...newAssetCodes] : [];
+  /* ครุภัณฑ์ (durable): quantity ให้สัมพันธ์กับจำนวน assetCodes จริง ไม่ใช่จากการพิมพ์ */
+  const finalQty = cat==='durable' ? newAllCodes.length : (prevQty + quantity);
   db.ref('inventory/'+id).set({
     category:cat, itemType, source,
-    quantity: prevQty + quantity,
+    quantity: finalQty,
     unit: unit || (existing ? existing[1].unit : ''),
     note: note || (existing ? existing[1].note : ''),
-    assetCodes: cat==='durable' ? [...prevAssetCodes, ...newAssetCodes] : [],
-    availableAssetCodes: cat==='durable' ? [...prevAvailableCodes, ...newAssetCodes] : [],
+    assetCodes: newAllCodes,
+    availableAssetCodes: newAllAvail,
     codeDetails: cat==='durable' ? newCodeDetails : {},
     dateReceived,
     updatedAt: Date.now()
   }).then(()=>{
-      toast(`รับเข้าคลัง "${itemType}" จำนวน ${quantity} สำเร็จ (ยอดรวมล่าสุด ${prevQty+quantity})`,'success');
+      toast(`รับเข้าคลัง "${itemType}" จำนวน ${quantity} สำเร็จ (ยอดรวมล่าสุด ${finalQty})`,'success');
       document.getElementById('invQuantity').value='';
       document.getElementById('invNote').value='';
       document.getElementById('invDateReceived').value='';
@@ -7089,7 +7125,6 @@ function createEqItemRow(prefill){
       <div class="field"><label>หมวดหมู่</label>
         <select class="eq-item-category">
           <option value="durable">ครุภัณฑ์การแพทย์</option>
-          <option value="material">วัสดุการแพทย์</option>
         </select>
       </div>
     </div>
