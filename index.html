@@ -99,6 +99,14 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .ms-option{display:flex;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13.5px;transition:background .15s;}
 .tai-option-btn{padding:7px 13px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit;}
 .eq-txn-toggle{background:#fff;border:1.5px solid var(--border);color:var(--muted);font-weight:600;transition:all .15s;}
+.eq-actionbar{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;}
+.eq-action-btn{flex:1;min-width:180px;border:none;border-radius:14px;padding:18px 20px;cursor:pointer;color:#fff;font-family:inherit;font-weight:700;font-size:15px;text-align:left;display:flex;align-items:center;gap:12px;transition:transform .12s,box-shadow .12s;box-shadow:0 3px 10px rgba(0,0,0,.12);}
+.eq-action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.2);}
+.eq-action-btn .eq-action-ico{font-size:26px;line-height:1;}
+.eq-action-btn .eq-action-sub{display:block;font-size:11.5px;font-weight:500;opacity:.9;margin-top:2px;}
+.eq-action-add{background:linear-gradient(135deg,#0F5590,#43C1F1);}
+.eq-action-loan{background:linear-gradient(135deg,#B8860B,#F0A93B);}
+.eq-action-material{background:linear-gradient(135deg,#1B5E20,#4CAF50);}
 .eq-txn-toggle.active{border-color:transparent;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
 .eq-txn-toggle.active#eqTxnBorrowBtn{background:linear-gradient(135deg,#2E7D32,#4CAF50);}
 .eq-txn-toggle.active#eqTxnReturnBtn{background:linear-gradient(135deg,#B8860B,#F0A93B);}
@@ -862,57 +870,32 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <!-- ===================== EQUIPMENT MANAGEMENT ===================== -->
 <section id="tab-equipment" class="tabpanel">
   <div class="card">
-    <h3>📦 เพิ่มครุภัณฑ์การแพทย์ / วัสดุการแพทย์เข้าคลัง</h3>
-    <p class="muted">บันทึกจำนวนคงคลังของวัสดุและครุภัณฑ์การแพทย์ที่มีอยู่ในหน่วยงาน แยกตามประเภท เพื่อควบคุมการเบิกจ่ายและวางแผนจัดซื้อ — การกดเพิ่มแต่ละครั้งจะ "รับเข้า" เพิ่มจากยอดคงคลังเดิม ไม่ใช่การเขียนทับ ข้อมูลนี้จะเชื่อมกับระบบควบคุมการยืม-คืนด้านล่างโดยอัตโนมัติ (เลือกเลขครุภัณฑ์ที่มีในคลังตอนให้ยืมได้เลย)</p>
-    <div class="row">
-      <div class="field"><label>หมวดหมู่</label>
-        <select id="invCategory">
-          <option value="durable">ครุภัณฑ์การแพทย์</option>
-          <option value="material">วัสดุการแพทย์</option>
-        </select>
-      </div>
-      <div class="field"><label>รายการ</label>
-        <select id="invItemType"></select>
-        <input type="text" id="invItemTypeOther" placeholder="ระบุรายการ" style="display:none;margin-top:6px;">
-      </div>
+    <h3>⚙️ เมนูจัดการอุปกรณ์</h3>
+    <p class="muted">เลือกเมนูเพื่อทำรายการ — คลิกแล้วหน้าต่างจะเปิดขึ้นให้กรอกข้อมูล</p>
+    <div class="eq-actionbar">
+      <button type="button" class="eq-action-btn eq-action-add" id="openInvAddModalBtn">
+        <span class="eq-action-ico">📦</span>
+        <span>รับครุภัณฑ์/วัสดุเข้าคลัง<span class="eq-action-sub">เพิ่มของเข้าคลัง พร้อมระบุแหล่งงบประมาณ</span></span>
+      </button>
+      <button type="button" class="eq-action-btn eq-action-loan" id="openLoanModalBtn">
+        <span class="eq-action-ico">🔄</span>
+        <span>ยืม-คืนครุภัณฑ์<span class="eq-action-sub">ลงทะเบียนยืมหรือส่งคืนครุภัณฑ์การแพทย์</span></span>
+      </button>
+      <button type="button" class="eq-action-btn eq-action-material" id="openMatSupplyModalBtn">
+        <span class="eq-action-ico">💊</span>
+        <span>จ่ายวัสดุการแพทย์<span class="eq-action-sub">ตัดจ่ายวัสดุขาดจากคลัง ไม่ต้องคืน</span></span>
+      </button>
     </div>
-    <div class="row" style="margin-top:8px;">
-      <div class="field"><label>จำนวนที่รับเข้า</label><input type="number" id="invQuantity" min="0" placeholder="0"></div>
-      <div class="field"><label>ลักษณะนาม (หน่วยนับ)</label>
-        <select id="invUnit">
-          <option value="ชิ้น">ชิ้น</option>
-          <option value="อัน">อัน</option>
-          <option value="กล่อง">กล่อง</option>
-          <option value="ถัง">ถัง</option>
-          <option value="ตัว">ตัว</option>
-          <option value="หลัง">หลัง</option>
-          <option value="ม้วน">ม้วน</option>
-          <option value="แผ่น">แผ่น</option>
-          <option value="ชุด">ชุด</option>
-          <option value="แพ็ค">แพ็ค</option>
-          <option value="ลัง">ลัง</option>
-          <option value="ขวด">ขวด</option>
-          <option value="หลอด">หลอด</option>
-          <option value="ซอง">ซอง</option>
-        </select>
-      </div>
-      <div class="field"><label>วันที่รับเข้า</label>
-        <input type="hidden" id="invDateReceived">
-        <button type="button" class="btn btn-secondary" id="invDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="invDateReceivedText">เลือกวันที่</span></button>
-      </div>
-    </div>
-    <div class="field" id="invAssetCodesWrap" style="margin-top:8px;display:none;">
-      <label>เลขครุภัณฑ์ (ระบุตามจำนวนที่รับเข้า)</label>
-      <div id="invAssetCodesContainer" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
-    </div>
-    <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
-    <button class="btn btn-primary btn-sm" id="addInventoryBtn" style="margin-top:10px;">+ รับเข้าคลัง</button>
-    <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 4px;">
+  </div>
+
+  <div class="card">
+    <h3>📦 รายการครุภัณฑ์การแพทย์ / วัสดุการแพทย์ในคลัง</h3>
+    <p class="muted">ยอดคงเหลือจะปรับลดเมื่อถูกยืม/จ่ายออก และเพิ่มกลับเมื่อส่งคืน โดยสัมพันธ์กับสถานะรายชิ้นและเมนูเรียกดูข้อมูลอัตโนมัติ</p>
     <div style="overflow-x:auto;">
-    <table class="inv-table" style="margin-top:0;min-width:640px;"><thead><tr><th style="text-align:center;">หมวดหมู่</th><th>รายการ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th style="white-space:nowrap;">สถานะ</th><th style="white-space:nowrap;">วันที่รับมา</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
+    <table class="inv-table" style="margin-top:6px;min-width:720px;"><thead><tr><th style="text-align:center;">หมวดหมู่</th><th>รายการ</th><th>แหล่งงบประมาณ</th><th>จำนวนทั้งหมด</th><th>ยอดคงเหลือ</th><th>หน่วย</th><th style="white-space:nowrap;width:1%;">เลขครุภัณฑ์</th><th style="white-space:nowrap;">สถานะ</th><th style="white-space:nowrap;">วันที่รับมา</th><th>อัปเดตล่าสุด</th><th></th></tr></thead>
     <tbody id="inventoryTable"></tbody></table>
     </div>
-    <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว (รวมจากรายการอุปกรณ์ด้านล่าง) เพื่อดูยอดคงเหลือสุทธิ</p>
+    <p class="muted" style="margin-top:10px;">รายงานควบคุม = เปรียบเทียบจำนวนคงคลังปัจจุบัน กับ จำนวนที่จ่ายออกให้ผู้สูงอายุแล้ว เพื่อดูยอดคงเหลือสุทธิ</p>
     <div class="row" style="margin-top:8px;gap:8px;">
       <button class="btn btn-secondary" id="exportInventoryExcelBtn">📊 รายการในคลัง (Excel)</button>
       <button class="btn btn-secondary" id="exportInventoryPdfBtn">📄 รายการในคลัง (PDF)</button>
@@ -929,10 +912,9 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   </div>
   <div class="card">
     <h3>🔄 ระบบควบคุมการยืม-คืนอุปกรณ์ (ครุภัณฑ์การแพทย์ / วัสดุการแพทย์)</h3>
-    <p class="muted">บันทึกรายการครุภัณฑ์การแพทย์หรือวัสดุการแพทย์ที่สนับสนุนผู้สูงอายุแต่ละคน ตั้งแต่วันแรกที่ CG เข้าไปดูแล จนสิ้นสุดการดูแล — เลือกยืมได้หลายรายการพร้อมกันในครั้งเดียว ถ้าเป็นครุภัณฑ์ที่มีเลขควบคุมในคลัง ระบบจะให้เลือกเลขที่ยังว่างอยู่โดยตรง</p>
+    <p class="muted">รายการครุภัณฑ์ที่ยืม-คืน ปรากฏด้านล่าง — กดปุ่ม "ยืม-คืนครุภัณฑ์" ด้านบนเพื่อเพิ่มรายการใหม่ รายชื่อผู้ยืมจะปรากฏในหน้าต่างที่เปิดขึ้น</p>
     <div class="row">
       <div class="field"><label>กรองตามผู้สูงอายุ</label><select id="eqElderlyFilter"><option value="">ทั้งหมด</option></select></div>
-      <button class="btn btn-primary btn-sm" id="addEquipmentBtn" style="align-self:flex-end;">+ เพิ่มรายการยืม-ส่งคืน</button>
     </div>
     <div style="overflow-x:auto;">
     <table class="inv-table" style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
@@ -950,48 +932,9 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="upload-progress" id="borrowedReportProgress"></div>
   </div>
   <div class="card">
-    <h3>📄 ออกรายงานทะเบียนคุมครุภัณฑ์</h3>
-    <p class="muted">รายงานนี้แยกต่างหากจากรายงานการเยี่ยมบ้านของ CG จะออกเป็นทะเบียนคุมรายการครุภัณฑ์ทั้งหมด (หรือกรองตามผู้สูงอายุที่เลือกด้านบน)</p>
-    <button class="btn btn-secondary" id="generateEquipmentPdfBtn">📄 สร้างทะเบียนคุมครุภัณฑ์ (PDF)</button>
-    <div class="upload-progress" id="eqPdfProgress"></div>
-  </div>
-  <div class="card">
     <h3>💊 ทะเบียนการจ่ายวัสดุการแพทย์</h3>
-    <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — บันทึกการจ่ายแต่ละครั้งเพื่อควบคุมยอดคงเหลือและออกรายงาน</p>
-    <div class="row">
-      <div class="field"><label>ผู้รับวัสดุ</label><select id="matSupplyElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
-      <div class="field"><label>รายการวัสดุ</label>
-        <select id="matSupplyItem"><option value="">-- เลือกรายการ --</option></select>
-      </div>
-    </div>
-    <div class="row" style="margin-top:8px;">
-      <div class="field"><label>จำนวน</label><input type="number" id="matSupplyQty" min="1" value="1" style="max-width:100px;"></div>
-      <div class="field"><label>ลักษณะนาม (หน่วย)</label>
-        <select id="matSupplyUnit">
-          <option value="ชิ้น">ชิ้น</option>
-          <option value="อัน">อัน</option>
-          <option value="กล่อง">กล่อง</option>
-          <option value="ถัง">ถัง</option>
-          <option value="ตัว">ตัว</option>
-          <option value="หลัง">หลัง</option>
-          <option value="ม้วน">ม้วน</option>
-          <option value="แผ่น">แผ่น</option>
-          <option value="ชุด">ชุด</option>
-          <option value="แพ็ค">แพ็ค</option>
-          <option value="ลัง">ลัง</option>
-          <option value="ขวด">ขวด</option>
-          <option value="หลอด">หลอด</option>
-          <option value="ซอง">ซอง</option>
-        </select>
-      </div>
-      <div class="field"><label>วันที่จ่าย</label>
-        <input type="hidden" id="matSupplyDate">
-        <button type="button" id="matSupplyDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="matSupplyDateText">เลือกวันที่</span></button>
-      </div>
-      <div class="field"><label>หมายเหตุ</label><input type="text" id="matSupplyNote" placeholder="เช่น สนับสนุนตามโครงการ"></div>
-    </div>
-    <button class="btn btn-primary btn-sm" id="matSupplySaveBtn" style="margin-top:10px;">✅ บันทึกการจ่าย</button>
-    <div style="overflow-x:auto;margin-top:12px;">
+    <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — กดปุ่ม "จ่ายวัสดุการแพทย์" ด้านบนเพื่อบันทึกการจ่าย รายการจะปรากฏด้านล่าง</p>
+    <div style="overflow-x:auto;margin-top:6px;">
     <table class="inv-table" style="min-width:600px;"><thead><tr><th>วันที่จ่าย</th><th>ผู้รับวัสดุ</th><th>รายการ</th><th>จำนวน</th><th>ลักษณะนาม</th><th>หมายเหตุ</th><th></th></tr></thead>
     <tbody id="materialSupplyTable"></tbody></table>
     </div>
@@ -1000,6 +943,12 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <button class="btn btn-primary" id="exportMatSupplyPdfBtn">📄 รายงานการจ่ายวัสดุ (PDF)</button>
     </div>
     <div class="upload-progress" id="matSupplyProgress"></div>
+  </div>
+  <div class="card">
+    <h3>📄 ออกรายงานทะเบียนคุมครุภัณฑ์</h3>
+    <p class="muted">รายงานนี้แยกต่างหากจากรายงานการเยี่ยมบ้านของ CG จะออกเป็นทะเบียนคุมรายการครุภัณฑ์ทั้งหมด (หรือกรองตามผู้สูงอายุที่เลือกด้านบน)</p>
+    <button class="btn btn-secondary" id="generateEquipmentPdfBtn">📄 สร้างทะเบียนคุมครุภัณฑ์ (PDF)</button>
+    <div class="upload-progress" id="eqPdfProgress"></div>
   </div>
   <div class="card">
     <h3>🔧 ทะเบียนคุมรายการส่งซ่อม</h3>
@@ -1390,8 +1339,89 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('editVisitModal')">ยกเลิก</button><button class="btn btn-primary" id="editVisitSaveBtn">บันทึก</button></div>
 </div></div>
 
+<div class="modal-overlay" id="inventoryAddModal"><div class="modal-box" style="max-width:560px;">
+  <h3>📦 รับครุภัณฑ์การแพทย์ / วัสดุการแพทย์เข้าคลัง</h3>
+  <p class="muted">การกดเพิ่มแต่ละครั้งจะ "รับเข้า" เพิ่มจากยอดคงคลังเดิม ไม่ใช่การเขียนทับ</p>
+  <div class="row">
+    <div class="field"><label>หมวดหมู่</label>
+      <select id="invCategory">
+        <option value="durable">ครุภัณฑ์การแพทย์</option>
+        <option value="material">วัสดุการแพทย์</option>
+      </select>
+    </div>
+    <div class="field"><label>รายการ</label>
+      <select id="invItemType"></select>
+      <input type="text" id="invItemTypeOther" placeholder="ระบุรายการ" style="display:none;margin-top:6px;">
+    </div>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>แหล่งงบประมาณ / แหล่งที่มา</label>
+    <select id="invSource">
+      <option value="งบประมาณ LTC เทศบาล">งบประมาณ LTC เทศบาล</option>
+      <option value="งบประมาณกองทุนฟื้นฟูฯ อบจ.สกลนคร">งบประมาณกองทุนฟื้นฟูฯ อบจ.สกลนคร</option>
+      <option value="บริจาค">บริจาค</option>
+      <option value="เงินบำรุง รพ.สต.">เงินบำรุง รพ.สต.</option>
+      <option value="งบประมาณค่าเสื่อม">งบประมาณค่าเสื่อม</option>
+      <option value="อื่นๆ">อื่นๆ</option>
+    </select>
+    <input type="text" id="invSourceOther" placeholder="ระบุแหล่งงบประมาณ" style="display:none;margin-top:6px;">
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>จำนวนที่รับเข้า</label><input type="number" id="invQuantity" min="0" placeholder="0"></div>
+    <div class="field"><label>ลักษณะนาม (หน่วยนับ)</label>
+      <select id="invUnit">
+        <option value="ชิ้น">ชิ้น</option><option value="อัน">อัน</option><option value="กล่อง">กล่อง</option>
+        <option value="ถัง">ถัง</option><option value="ตัว">ตัว</option><option value="หลัง">หลัง</option>
+        <option value="ม้วน">ม้วน</option><option value="แผ่น">แผ่น</option><option value="ชุด">ชุด</option>
+        <option value="แพ็ค">แพ็ค</option><option value="ลัง">ลัง</option><option value="ขวด">ขวด</option>
+        <option value="หลอด">หลอด</option><option value="ซอง">ซอง</option>
+      </select>
+    </div>
+    <div class="field"><label>วันที่รับเข้า</label>
+      <input type="hidden" id="invDateReceived">
+      <button type="button" class="btn btn-secondary" id="invDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="invDateReceivedText">เลือกวันที่</span></button>
+    </div>
+  </div>
+  <div class="field" id="invAssetCodesWrap" style="margin-top:8px;display:none;">
+    <label>เลขครุภัณฑ์ (ระบุตามจำนวนที่รับเข้า)</label>
+    <div id="invAssetCodesContainer" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+  </div>
+  <div class="field" style="margin-top:8px;"><label>หมายเหตุ</label><input type="text" id="invNote" placeholder="เช่น ที่เก็บ"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryAddModal')">ยกเลิก</button><button class="btn btn-primary" id="addInventoryBtn">+ รับเข้าคลัง</button></div>
+</div></div>
+
+<div class="modal-overlay" id="matSupplyModal"><div class="modal-box" style="max-width:520px;">
+  <h3>💊 จ่ายวัสดุการแพทย์</h3>
+  <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน</p>
+  <div class="row">
+    <div class="field"><label>ผู้รับวัสดุ</label><select id="matSupplyElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
+    <div class="field"><label>รายการวัสดุ</label><select id="matSupplyItem"><option value="">-- เลือกรายการ --</option></select></div>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>จำนวน</label><input type="number" id="matSupplyQty" min="1" value="1"></div>
+    <div class="field"><label>ลักษณะนาม (หน่วย)</label>
+      <select id="matSupplyUnit">
+        <option value="ชิ้น">ชิ้น</option><option value="อัน">อัน</option><option value="กล่อง">กล่อง</option>
+        <option value="ถัง">ถัง</option><option value="ตัว">ตัว</option><option value="หลัง">หลัง</option>
+        <option value="ม้วน">ม้วน</option><option value="แผ่น">แผ่น</option><option value="ชุด">ชุด</option>
+        <option value="แพ็ค">แพ็ค</option><option value="ลัง">ลัง</option><option value="ขวด">ขวด</option>
+        <option value="หลอด">หลอด</option><option value="ซอง">ซอง</option>
+      </select>
+    </div>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="field"><label>วันที่จ่าย</label>
+      <input type="hidden" id="matSupplyDate">
+      <button type="button" id="matSupplyDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="matSupplyDateText">เลือกวันที่</span></button>
+    </div>
+    <div class="field"><label>หมายเหตุ</label><input type="text" id="matSupplyNote" placeholder="เช่น สนับสนุนตามโครงการ"></div>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('matSupplyModal')">ยกเลิก</button><button class="btn btn-primary" id="matSupplySaveBtn">✅ บันทึกการจ่าย</button></div>
+</div></div>
+
 <div class="modal-overlay" id="equipmentModal"><div class="modal-box" style="max-width:560px;">
   <h3 id="eqModalTitle">ลงทะเบียนยืม-คืนอุปกรณ์</h3>
+  <button type="button" id="addEquipmentBtn" style="display:none;"></button>
+  <button type="button" id="addEquipmentAlias" style="display:none;"></button>
   <input type="hidden" id="eqEditId">
   <div class="field">
     <label>ทำรายการ</label>
@@ -3277,6 +3307,38 @@ document.getElementById('recManageDateToBtn').addEventListener('click', ()=>{
 document.getElementById('invDateReceivedBtn').addEventListener('click', ()=>{
   openThaiDatePicker('invDateReceived', 'invDateReceivedText', 'เลือกวันที่รับเข้า');
 });
+
+/* ---- แถบเมนูหลักจัดการอุปกรณ์ ---- */
+document.getElementById('openInvAddModalBtn').addEventListener('click', ()=>{
+  /* รีเซ็ตฟอร์ม */
+  ['invQuantity','invNote'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('invCategory').value = 'durable';
+  document.getElementById('invSource').value = 'งบประมาณ LTC เทศบาล';
+  document.getElementById('invSourceOther').style.display = 'none';
+  document.getElementById('invDateReceived').value = '';
+  document.getElementById('invDateReceivedText').textContent = 'เลือกวันที่';
+  document.getElementById('invAssetCodesWrap').style.display = 'none';
+  document.getElementById('invAssetCodesContainer').innerHTML = '';
+  updateInvItemTypeSelect();
+  openModal('inventoryAddModal');
+});
+document.getElementById('openLoanModalBtn').addEventListener('click', ()=>{
+  document.getElementById('addEquipmentAlias').click();
+});
+document.getElementById('openMatSupplyModalBtn').addEventListener('click', ()=>{
+  populateMatSupplySelects();
+  const todayIso = new Date().toISOString().slice(0,10);
+  document.getElementById('matSupplyDate').value = todayIso;
+  document.getElementById('matSupplyDateText').textContent = formatThaiDate(todayIso);
+  document.getElementById('matSupplyQty').value = '1';
+  document.getElementById('matSupplyNote').value = '';
+  openModal('matSupplyModal');
+});
+/* แหล่งงบประมาณ: แสดงช่องพิมพ์เมื่อเลือก "อื่นๆ" */
+document.getElementById('invSource').addEventListener('change', function(){
+  document.getElementById('invSourceOther').style.display = (this.value === 'อื่นๆ') ? 'block' : 'none';
+});
+
 function renderSelectedChips(){
   const wrap = document.getElementById('selectedDatesChips');
   STATE.selectedDates.sort();
@@ -5888,6 +5950,7 @@ function renderInventoryTable(){
     <tr>
       <td style="text-align:center;"><span class="badge ${inv.category==='durable'?'normal':'obt'}" style="font-weight:700;font-size:12.5px;letter-spacing:.3px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
       <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
+      <td style="font-size:11.5px;color:#555;">${inv.source||'-'}</td>
       <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
       <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':'#2E7D32'};">${remaining}</td>
       <td>${inv.unit||'-'}</td>
@@ -5907,7 +5970,7 @@ function renderInventoryTable(){
 function quickBorrowCode(invId, code){
   const inv = STATE.inventory[invId];
   if(!inv) return;
-  document.getElementById('addEquipmentBtn').click();
+  document.getElementById('openLoanModalBtn').click();
   setTimeout(()=>{
     const firstRow = document.querySelector('#eqItemRows .eq-item-row');
     if(!firstRow) return;
@@ -6120,6 +6183,7 @@ document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
     document.getElementById('matSupplyNote').value='';
     document.getElementById('matSupplyDate').value='';
     document.getElementById('matSupplyDateText').textContent='เลือกวันที่';
+    closeModal('matSupplyModal');
   });
 });
 function renderMaterialSupplyTable(){
@@ -6445,6 +6509,7 @@ function openInventoryDetail(id){
     </div>
     <div style="font-size:13px;line-height:1.9;">
       <div>📝 <b>หมายเหตุ:</b> ${inv.note||'-'}</div>
+      <div>💰 <b>แหล่งงบประมาณ:</b> ${inv.source||'-'}</div>
       <div>🕒 <b>อัปเดตล่าสุด:</b> ${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10)) : '-'}</div>
       ${inv.dateReceived ? `<div>📥 <b>รับเข้าล่าสุด:</b> ${formatThaiDate(inv.dateReceived)}</div>` : ''}
     </div>
@@ -6539,6 +6604,8 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   const unit = document.getElementById('invUnit').value.trim();
   const note = document.getElementById('invNote').value.trim();
   const dateReceived = document.getElementById('invDateReceived').value;
+  const sourceSel = document.getElementById('invSource').value;
+  const source = sourceSel === 'อื่นๆ' ? (document.getElementById('invSourceOther').value.trim() || 'อื่นๆ') : sourceSel;
   const newAssetCodes = Array.from(document.querySelectorAll('.inv-asset-code')).map(i=>i.value.trim()).filter(Boolean);
   if(!itemType){ toast('กรุณาระบุรายการ','error'); return; }
   if(isNaN(quantity) || quantity<=0){ toast('กรุณาระบุจำนวนที่รับเข้า (มากกว่า 0)','error'); return; }
@@ -6554,7 +6621,7 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   const newCodeDetails = Object.assign({}, prevCodeDetails);
   newAssetCodes.forEach(code=>{ newCodeDetails[code] = { dateReceived }; });
   db.ref('inventory/'+id).set({
-    category:cat, itemType,
+    category:cat, itemType, source,
     quantity: prevQty + quantity,
     unit: unit || (existing ? existing[1].unit : ''),
     note: note || (existing ? existing[1].note : ''),
@@ -6566,11 +6633,12 @@ document.getElementById('addInventoryBtn').addEventListener('click', ()=>{
   }).then(()=>{
       toast(`รับเข้าคลัง "${itemType}" จำนวน ${quantity} สำเร็จ (ยอดรวมล่าสุด ${prevQty+quantity})`,'success');
       document.getElementById('invQuantity').value='';
-      document.getElementById('invUnit').value='';
       document.getElementById('invNote').value='';
       document.getElementById('invDateReceived').value='';
       document.getElementById('invDateReceivedText').textContent='เลือกวันที่';
+      document.getElementById('invSourceOther').style.display='none';
       renderInvAssetCodeFields();
+      closeModal('inventoryAddModal');
     });
 });
 
