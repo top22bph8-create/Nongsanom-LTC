@@ -5776,15 +5776,29 @@ const EQUIPMENT_MATERIAL_ITEMS = [
 const UNIT_NAMES = ["ชิ้น","อัน","กล่อง","ถัง","ตัว","หลัง","ม้วน","แผ่น","ชุด","แพ็ค","ลัง","ขวด","หลอด","ซอง","เครื่อง","สาย","ถุง","ห่อ"];
 /* อิโมจิประกอบรายการครุภัณฑ์/วัสดุ */
 const ITEM_EMOJI = {
-  "เตียงฟาวเลอร์":"🛏️","เครื่องผลิตออกซิเจน":"💨","เครื่องดูดเสมหะ":"🩺",
-  "ถังออกซิเจน ขนาดใหญ่":"🫁","ถังออกซิเจน ขนาดเล็ก":"🫁",
-  "เกย์ปรับออกซิเจน":"🔧","รถเข็นนั่ง":"♿","สามล้อโยก":"🚲","ที่นอนลมป้องกันแผลกดทับ":"🛌",
-  "ผ้าอ้อมสำเร็จรูป":"🩲","แผ่นรองซับ":"📋",
-  "สายออกซิเจน":"🔗","สายออกซิเจน canular":"🔗","สายยางให้อาหาร (NG tube)":"🪱",
-  "เครื่องเจาะน้ำตาลปลายนิ้ว":"💉","เครื่องวัดความดันโลหิต":"🩸",
-  "ไม้เท้าค้ำยันแบบเหน็บรักแร้":"🦯","ไม้เท้า 4 ขา":"🦯","ไม้เท้า 2 ขา":"🦯","ไม้เท้าค้ำยัน 1 ขา":"🦯",
-  "ถุงขยะสีดำ":"🗑️","ถุงขยะสีแดง":"🗑️","ถุงมือ":"🧤","แอลกอฮอล์ 70%":"🧴","เจลแอลกอฮอล์ล้างมือ":"🧴",
-  "เบาะรองนั่ง":"🪑","นมกล่อง UHT":"🥛","อาหารทางการแพทย์สำหรับให้ทางสายยาง":"🍼"
+  /* ครุภัณฑ์การแพทย์ */
+  "เตียงฟาวเลอร์":"🛏",          /* เตียงผู้ป่วย */
+  "เครื่องผลิตออกซิเจน":"🫧",     /* เครื่องผลิต O₂ */
+  "เครื่องดูดเสมหะ":"💊",          /* เครื่องดูดเสมหะ */
+  "ถังออกซิเจน ขนาดใหญ่":"🧯",   /* ถัง — ใช้ fire extinguisher (ทรงกระบอกใกล้เคียง) */
+  "ถังออกซิเจน ขนาดเล็ก":"🧯",   /* ถัง */
+  "เกย์ปรับออกซิเจน":"🔩",        /* ข้อต่อ/เกย์ */
+  "รถเข็นนั่ง":"🦽",              /* wheelchair */
+  "สามล้อโยก":"🚲",               /* สามล้อ */
+  "ที่นอนลมป้องกันแผลกดทับ":"🌀",  /* ที่นอนลม */
+  /* วัสดุการแพทย์ */
+  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* ผ้าอ้อม */
+  "แผ่นรองซับ":"🟦",              /* แผ่น */
+  "สายออกซิเจน":"〰️",             /* สาย */
+  "สายออกซิเจน canular":"〰️",     /* สาย */
+  "สายยางให้อาหาร (NG tube)":"🔌", /* สายยาง */
+  "เครื่องเจาะน้ำตาลปลายนิ้ว":"🔬","เครื่องวัดความดันโลหิต":"💓",
+  "ไม้เท้าค้ำยันแบบเหน็บรักแร้":"🦯","ไม้เท้า 4 ขา":"🦯",
+  "ไม้เท้า 2 ขา":"🦯","ไม้เท้าค้ำยัน 1 ขา":"🦯",
+  "ถุงขยะสีดำ":"🗑","ถุงขยะสีแดง":"🗑",
+  "ถุงมือ":"🧤","แอลกอฮอล์ 70%":"🧴","เจลแอลกอฮอล์ล้างมือ":"🧴",
+  "เบาะรองนั่ง":"🪑","นมกล่อง UHT":"🥛",
+  "อาหารทางการแพทย์สำหรับให้ทางสายยาง":"🍶"
 };
 function getItemEmoji(itemType){ return ITEM_EMOJI[itemType] || '📦'; }
 function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
@@ -6562,33 +6576,46 @@ function openInventoryDetail(id){
         return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;font-weight:600;color:${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].color};">${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].icon} ลำดับที่ ${i+1}: ${c} — ${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].label}${borrowerInfo}</div>`;
       }).join('')
     : `<p class="muted" style="margin-top:8px;">${isDurable ? 'ไม่มีเลขครุภัณฑ์ว่างอยู่ในขณะนี้' : 'วัสดุการแพทย์ไม่มีเลขครุภัณฑ์กำกับ'}</p>`;
+  const realTotal = computeInventoryTotal(inv);
+  const realRemain = computeInventoryRemaining(inv);
+  const emoji = getItemEmoji(inv.itemType||'');
   document.getElementById('inventoryDetailBody').innerHTML = `
     <div style="background:${themeBg};color:#fff;padding:18px 20px;border-radius:12px 12px 0 0;margin:-24px -24px 16px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:4px;">${emoji}</div>
       <div style="font-size:12px;opacity:.85;letter-spacing:1px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</div>
       <div style="font-size:20px;font-weight:800;margin-top:4px;">${inv.itemType||'-'}</div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:14px;">
       <div style="flex:1;background:#F7FBFF;border-radius:10px;padding:12px;text-align:center;border:1px solid #E3F0F8;">
-        <div style="font-size:26px;font-weight:800;color:${themeColor};">${inv.quantity??0}</div>
-        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">จำนวนคงคลัง (${inv.unit||'หน่วย'})</div>
+        <div style="font-size:26px;font-weight:800;color:${themeColor};">${realTotal}</div>
+        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">จำนวนทั้งหมด (${inv.unit||'หน่วย'})</div>
       </div>
       <div style="flex:1;background:#F7FBFF;border-radius:10px;padding:12px;text-align:center;border:1px solid #E3F0F8;">
-        <div style="font-size:26px;font-weight:800;color:${themeColor};">${availCodes.length || (isDurable?0:'-')}</div>
-        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">${isDurable ? 'เลขครุภัณฑ์ที่ว่าง' : 'ไม่มีเลขกำกับ'}</div>
+        <div style="font-size:26px;font-weight:800;color:${realRemain<=0?'#D8503A':realRemain<realTotal?'#B8860B':themeColor};">${realRemain}</div>
+        <div style="font-size:11.5px;color:#6b7d8a;margin-top:2px;">${isDurable ? 'ยอดคงเหลือ (ว่างให้ยืม)' : 'ยอดคงเหลือในคลัง'}</div>
       </div>
     </div>
+    ${isDurable && realTotal !== (parseInt(inv.quantity,10)||0) ? `<div style="background:#FFF3E0;border:1px solid #FFB300;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#8A6100;">⚠️ ยอดในฐานข้อมูล (${inv.quantity}) ไม่ตรงกับจำนวนเลขครุภัณฑ์ (${realTotal}) — <button class="btn btn-secondary btn-sm" onclick="fixInvQuantity('${id}',${realTotal})">🔧 แก้ไขให้สัมพันธ์กัน</button></div>` : ''}
     <div style="font-size:13px;line-height:1.9;">
       <div>📝 <b>หมายเหตุ:</b> ${inv.note||'-'}</div>
       <div>💰 <b>แหล่งงบประมาณ:</b> ${inv.source||'-'}</div>
       <div>🕒 <b>อัปเดตล่าสุด:</b> ${inv.updatedAt ? formatThaiDate(new Date(inv.updatedAt).toISOString().slice(0,10)) : '-'}</div>
       ${inv.dateReceived ? `<div>📥 <b>รับเข้าล่าสุด:</b> ${formatThaiDate(inv.dateReceived)}</div>` : ''}
     </div>
-    ${isDurable ? `<div style="margin-top:10px;"><b style="font-size:13px;">เลขครุภัณฑ์ที่พร้อมให้ยืม:</b>${codesHtml}</div>` : ''}
+    ${isDurable ? `<div style="margin-top:10px;"><b style="font-size:13px;">เลขครุภัณฑ์ทั้งหมด (สถานะรายชิ้น):</b><div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">${codesHtml}</div></div>` : ''}
   `;
   openModal('inventoryDetailModal');
 }
 
 /* ---- แก้ไขรายการคงคลัง กรณีบันทึกข้อมูลผิดพลาด ---- */
+/* แก้ไขยอด quantity ในฐานข้อมูลให้ตรงกับ assetCodes.length จริง (สำหรับกรณีข้อมูลเดิมไม่ตรง) */
+function fixInvQuantity(id, correctTotal){
+  if(blockIfReadOnly()) return;
+  db.ref('inventory/'+id+'/quantity').set(correctTotal).then(()=>{
+    toast(`แก้ไขยอดคงคลังเป็น ${correctTotal} สำเร็จ`,'success');
+    closeModal('inventoryDetailModal');
+  });
+}
 function openInventoryEdit(id){
   const inv = STATE.inventory[id];
   if(!inv) return;
