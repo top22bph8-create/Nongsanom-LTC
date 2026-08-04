@@ -600,9 +600,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <select id="recDailyActivity">
           <option value="">-- เลือก --</option>
           <option value="1">1. ช่วยเหลือตัวเองได้</option>
-          <option value="2">2. ช่วยเหลือตัวเองได้เล็กน้อย</option>
-          <option value="3">3. ต้องให้ญาติช่วยดูแล</option>
-          <option value="4">4. ช่วยเหลือตัวเองไม่ได้</option>
+          <option value="2">2. ช่วยเหลือตัวเองได้เล็กน้อย ต้องให้ญาติคอยดูแล</option>
+          <option value="3">3. ช่วยเหลือตัวเองไม่ได้</option>
         </select>
       </div>
     </div>
@@ -879,7 +878,24 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     </div>
     <div class="row" style="margin-top:8px;">
       <div class="field"><label>จำนวนที่รับเข้า</label><input type="number" id="invQuantity" min="0" placeholder="0"></div>
-      <div class="field"><label>หน่วยนับ</label><input type="text" id="invUnit" placeholder="เช่น ชิ้น, ชุด, ห่อ, ม้วน"></div>
+      <div class="field"><label>ลักษณะนาม (หน่วยนับ)</label>
+        <select id="invUnit">
+          <option value="ชิ้น">ชิ้น</option>
+          <option value="อัน">อัน</option>
+          <option value="กล่อง">กล่อง</option>
+          <option value="ถัง">ถัง</option>
+          <option value="ตัว">ตัว</option>
+          <option value="หลัง">หลัง</option>
+          <option value="ม้วน">ม้วน</option>
+          <option value="แผ่น">แผ่น</option>
+          <option value="ชุด">ชุด</option>
+          <option value="แพ็ค">แพ็ค</option>
+          <option value="ลัง">ลัง</option>
+          <option value="ขวด">ขวด</option>
+          <option value="หลอด">หลอด</option>
+          <option value="ซอง">ซอง</option>
+        </select>
+      </div>
       <div class="field"><label>วันที่รับเข้า</label>
         <input type="hidden" id="invDateReceived">
         <button type="button" class="btn btn-secondary" id="invDateReceivedBtn" style="width:100%;text-align:left;">🗓 <span id="invDateReceivedText">เลือกวันที่</span></button>
@@ -938,6 +954,52 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <p class="muted">รายงานนี้แยกต่างหากจากรายงานการเยี่ยมบ้านของ CG จะออกเป็นทะเบียนคุมรายการครุภัณฑ์ทั้งหมด (หรือกรองตามผู้สูงอายุที่เลือกด้านบน)</p>
     <button class="btn btn-secondary" id="generateEquipmentPdfBtn">📄 สร้างทะเบียนคุมครุภัณฑ์ (PDF)</button>
     <div class="upload-progress" id="eqPdfProgress"></div>
+  </div>
+  <div class="card">
+    <h3>💊 ทะเบียนการจ่ายวัสดุการแพทย์</h3>
+    <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — บันทึกการจ่ายแต่ละครั้งเพื่อควบคุมยอดคงเหลือและออกรายงาน</p>
+    <div class="row">
+      <div class="field"><label>ผู้รับวัสดุ</label><select id="matSupplyElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
+      <div class="field"><label>รายการวัสดุ</label>
+        <select id="matSupplyItem"><option value="">-- เลือกรายการ --</option></select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>จำนวน</label><input type="number" id="matSupplyQty" min="1" value="1" style="max-width:100px;"></div>
+      <div class="field"><label>ลักษณะนาม (หน่วย)</label>
+        <select id="matSupplyUnit">
+          <option value="ชิ้น">ชิ้น</option>
+          <option value="อัน">อัน</option>
+          <option value="กล่อง">กล่อง</option>
+          <option value="ถัง">ถัง</option>
+          <option value="ตัว">ตัว</option>
+          <option value="หลัง">หลัง</option>
+          <option value="ม้วน">ม้วน</option>
+          <option value="แผ่น">แผ่น</option>
+          <option value="ชุด">ชุด</option>
+          <option value="แพ็ค">แพ็ค</option>
+          <option value="ลัง">ลัง</option>
+          <option value="ขวด">ขวด</option>
+          <option value="หลอด">หลอด</option>
+          <option value="ซอง">ซอง</option>
+        </select>
+      </div>
+      <div class="field"><label>วันที่จ่าย</label>
+        <input type="hidden" id="matSupplyDate">
+        <button type="button" id="matSupplyDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="matSupplyDateText">เลือกวันที่</span></button>
+      </div>
+      <div class="field"><label>หมายเหตุ</label><input type="text" id="matSupplyNote" placeholder="เช่น สนับสนุนตามโครงการ"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="matSupplySaveBtn" style="margin-top:10px;">✅ บันทึกการจ่าย</button>
+    <div style="overflow-x:auto;margin-top:12px;">
+    <table class="inv-table" style="min-width:600px;"><thead><tr><th>วันที่จ่าย</th><th>ผู้รับวัสดุ</th><th>รายการ</th><th>จำนวน</th><th>ลักษณะนาม</th><th>หมายเหตุ</th><th></th></tr></thead>
+    <tbody id="materialSupplyTable"></tbody></table>
+    </div>
+    <div class="row" style="margin-top:8px;gap:8px;">
+      <button class="btn btn-secondary" id="exportMatSupplyExcelBtn">📊 รายงานการจ่ายวัสดุ (Excel)</button>
+      <button class="btn btn-primary" id="exportMatSupplyPdfBtn">📄 รายงานการจ่ายวัสดุ (PDF)</button>
+    </div>
+    <div class="upload-progress" id="matSupplyProgress"></div>
   </div>
   <div class="card">
     <h3>🔧 ทะเบียนคุมรายการส่งซ่อม</h3>
@@ -1581,7 +1643,7 @@ const TH_MONTHS_ABBR = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.�
 const TH_DOW = ["อา","จ","อ","พ","พฤ","ศ","ส"];
 
 const MEDICATION_LABELS = {'1':'กินยาสม่ำเสมอ','2':'กินยาไม่สม่ำเสมอ','3':'ไม่กินยา'};
-const DAILY_ACTIVITY_LABELS = {'1':'ช่วยเหลือตัวเองได้','2':'ช่วยเหลือตัวเองได้เล็กน้อย','3':'ต้องให้ญาติช่วยดูแล','4':'ช่วยเหลือตัวเองไม่ได้'};
+const DAILY_ACTIVITY_LABELS = {'1':'ช่วยเหลือตัวเองได้','2':'ช่วยเหลือตัวเองได้เล็กน้อย ต้องให้ญาติคอยดูแล','3':'ช่วยเหลือตัวเองไม่ได้'};
 const ELIMINATION_LABELS = {'1':'ปกติ','2':'ใช้สายสวนปัสสาวะ','3':'มีปัญหาการขับถ่าย'};
 const FEEDING_LABELS = {'1':'รับประทานเอง','2':'ผู้ดูแลหรือญาติต้องป้อนอาหาร','3':'ให้อาหารทางสายยาง'};
 const FOODTYPE_LABELS = {'1':'อาหารธรรมดา','2':'อาหารอ่อน','3':'อาหารแยกตามประเภท'};
@@ -1877,7 +1939,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, repairRegistry:{}, disposalRegistry:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, repairRegistry:{}, disposalRegistry:{}, materialSupply:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -5627,8 +5689,11 @@ const EQUIPMENT_DURABLE_ITEMS = [
 ];
 const EQUIPMENT_MATERIAL_ITEMS = [
   "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ","สายออกซิเจน canular","เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
-  "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา"
+  "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา",
+  "ถุงขยะสีดำ","ถุงขยะสีแดง","ถุงมือ","แอลกอฮอล์ 70%","เจลแอลกอฮอล์ล้างมือ",
+  "เบาะรองนั่ง","นมกล่อง UHT","อาหารทางการแพทย์สำหรับให้ทางสายยาง"
 ];
+const UNIT_NAMES = ["ชิ้น","อัน","กล่อง","ถัง","ตัว","หลัง","ม้วน","แผ่น","ชุด","แพ็ค","ลัง","ขวด","หลอด","ซอง"];
 function eqCategoryItemList(cat){ return (cat === 'durable') ? EQUIPMENT_DURABLE_ITEMS : EQUIPMENT_MATERIAL_ITEMS; }
 
 /* =============================================================
@@ -5691,18 +5756,20 @@ db.ref('disposalRegistry').on('value', snap=>{
   STATE.disposalRegistry = snap.val() || {};
   renderDisposalRegistryTable();
 });
+db.ref('materialSupply').on('value', snap=>{
+  STATE.materialSupply = snap.val() || {};
+  renderMaterialSupplyTable();
+});
 
-/* ยอดคงเหลือ = จำนวนทั้งหมด หักด้วยจำนวนที่ถูกยืมอยู่ในขณะนี้ (ยังไม่คืน)
-   ครุภัณฑ์ (durable): ใช้จำนวนเลขครุภัณฑ์ที่ยังว่างอยู่ (availableAssetCodes) โดยตรง เพราะติดตามเป็นรายชิ้น
-   วัสดุ (material): หักจากผลรวมจำนวนที่ถูกจ่ายออกแล้วยังไม่คืน ของรายการประเภทเดียวกัน */
+/* ยอดคงเหลือครุภัณฑ์ (durable): ใช้จำนวนเลขครุภัณฑ์ที่ว่างอยู่ (ตัดตามจำนวนที่ถูกยืมจริง)
+   วัสดุการแพทย์ (material): ตัดจ่ายขาดจากคลัง ไม่ใช่ยืม — ยอดคงเหลือ = ยอดรวม หักจำนวนที่จ่ายออกทั้งหมด (รวมทั้งที่จ่ายในอดีตด้วย) */
 function computeInventoryRemaining(inv){
   if(inv.category === 'durable'){
+    /* ครุภัณฑ์: ยอดคงเหลือ = จำนวนเลขครุภัณฑ์ที่ว่าง (ไม่ถูกยืม ไม่ส่งซ่อม ไม่รอจำหน่าย) */
     return (inv.availableAssetCodes || inv.assetCodes || []).length;
   }
-  const borrowed = Object.values(STATE.equipment||{})
-    .filter(e=>e.category==='material' && e.itemType===inv.itemType && !e.dateReturned)
-    .reduce((sum,e)=>sum + (parseInt(e.quantity,10)||0), 0);
-  return Math.max((parseInt(inv.quantity,10)||0) - borrowed, 0);
+  /* วัสดุ: ตัดจ่ายขาด ยอดคงเหลือ = ยอดรวมในคลัง (inv.quantity ถูกหักตรงๆ ทุกครั้งที่จ่าย) */
+  return Math.max(parseInt(inv.quantity,10)||0, 0);
 }
 /* สถานะของครุภัณฑ์แต่ละชิ้น (แยกตามเลขครุภัณฑ์) — ตรวจสอบตามลำดับความสำคัญ:
    ส่งซ่อม > ชำรุด/รอจำหน่าย > ถูกยืม > พร้อมใช้งาน */
@@ -6002,6 +6069,161 @@ function deleteRepairRecord(repairId){
     db.ref().update(updates).then(()=>toast('ลบรายการส่งซ่อมสำเร็จ','success'));
   });
 }
+/* =============================================================
+   ทะเบียนการจ่ายวัสดุการแพทย์ (ตัดจ่ายขาด ไม่ยืม-คืน)
+   Firebase path: /materialSupply/{id}
+   Schema: { elderlyId, elderlyName, itemType, quantity, unit, note, dispatchDate, createdAt }
+============================================================= */
+function populateMatSupplySelects(){
+  /* ผู้รับวัสดุ */
+  const esel = document.getElementById('matSupplyElderly');
+  if(!esel) return;
+  const prevE = esel.value;
+  esel.innerHTML = '<option value="">-- เลือกผู้สูงอายุ --</option>' + Object.entries(STATE.elderly||{}).map(([id,e])=>`<option value="${id}">${e.name}</option>`).join('');
+  if(prevE) esel.value = prevE;
+  /* รายการวัสดุ */
+  const msel = document.getElementById('matSupplyItem');
+  if(!msel) return;
+  const matInvItems = Object.values(STATE.inventory||{}).filter(inv=>inv.category==='material').map(inv=>inv.itemType);
+  const allMat = [...new Set([...matInvItems, ...EQUIPMENT_MATERIAL_ITEMS])].sort();
+  msel.innerHTML = '<option value="">-- เลือกรายการ --</option>' + allMat.map(i=>`<option value="${i}">${i}</option>`).join('');
+}
+document.getElementById('matSupplyDateBtn').addEventListener('click', ()=>{
+  openThaiDatePicker('matSupplyDate','matSupplyDateText','เลือกวันที่จ่ายวัสดุ');
+});
+document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const elderlyId = document.getElementById('matSupplyElderly').value;
+  const itemType = document.getElementById('matSupplyItem').value;
+  const qty = parseInt(document.getElementById('matSupplyQty').value,10);
+  const unit = document.getElementById('matSupplyUnit').value;
+  const note = document.getElementById('matSupplyNote').value.trim();
+  const dispatchDate = document.getElementById('matSupplyDate').value;
+  if(!itemType){ toast('กรุณาเลือกรายการวัสดุ','error'); return; }
+  if(isNaN(qty)||qty<1){ toast('กรุณาระบุจำนวน (อย่างน้อย 1)','error'); return; }
+  if(!dispatchDate){ toast('กรุณาระบุวันที่จ่าย','error'); return; }
+  const elderly = elderlyId ? STATE.elderly[elderlyId] : null;
+  const elderlyName = elderly ? elderly.name : '';
+  /* ตัดยอดวัสดุออกจากคลัง */
+  const invEntry = Object.entries(STATE.inventory||{}).find(([,inv])=>inv.category==='material' && inv.itemType===itemType);
+  const updates = {};
+  const id = 'MS'+Date.now();
+  updates['materialSupply/'+id] = { elderlyId, elderlyName, itemType, quantity:qty, unit, note, dispatchDate, createdAt:Date.now() };
+  if(invEntry){
+    const [invId, invData] = invEntry;
+    updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(invData.quantity,10)||0)-qty, 0);
+    updates['inventory/'+invId+'/updatedAt'] = Date.now();
+  }
+  db.ref().update(updates).then(()=>{
+    toast(`จ่ายวัสดุ "${itemType}" จำนวน ${qty} ${unit} สำเร็จ`,'success');
+    document.getElementById('matSupplyQty').value='1';
+    document.getElementById('matSupplyNote').value='';
+    document.getElementById('matSupplyDate').value='';
+    document.getElementById('matSupplyDateText').textContent='เลือกวันที่';
+  });
+});
+function renderMaterialSupplyTable(){
+  const tbody = document.getElementById('materialSupplyTable');
+  if(!tbody) return;
+  populateMatSupplySelects();
+  const entries = Object.entries(STATE.materialSupply||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted">ยังไม่มีรายการจ่ายวัสดุ</td></tr>'; return; }
+  tbody.innerHTML = entries.map(([id,ms])=>`
+    <tr>
+      <td>${ms.dispatchDate?formatThaiDate(ms.dispatchDate):'-'}</td>
+      <td>${ms.elderlyName||'-'}</td>
+      <td>${ms.itemType||'-'}</td>
+      <td style="text-align:center;font-weight:700;">${ms.quantity||0}</td>
+      <td>${ms.unit||'-'}</td>
+      <td>${ms.note||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMatSupply('${id}',${ms.quantity||0},'${(ms.itemType||'').replace(/'/g,'\\\'')}')" title="ลบ">🗑</button></td>
+    </tr>`).join('');
+}
+function deleteMatSupply(id, qty, itemType){
+  if(blockIfReadOnly()) return;
+  showConfirm('ลบรายการจ่ายวัสดุนี้?','ยอดวัสดุในคลังจะถูกคืนกลับตามจำนวนที่จ่ายออก',()=>{
+    const invEntry = Object.entries(STATE.inventory||{}).find(([,inv])=>inv.category==='material' && inv.itemType===itemType);
+    const updates = {};
+    updates['materialSupply/'+id] = null;
+    if(invEntry){
+      const [invId,invData] = invEntry;
+      updates['inventory/'+invId+'/quantity'] = (parseInt(invData.quantity,10)||0)+qty;
+      updates['inventory/'+invId+'/updatedAt'] = Date.now();
+    }
+    db.ref().update(updates).then(()=>toast('ลบรายการสำเร็จ คืนยอดวัสดุเข้าคลังแล้ว','success'));
+  });
+}
+document.getElementById('exportMatSupplyExcelBtn').addEventListener('click', ()=>{
+  const entries = Object.entries(STATE.materialSupply||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!entries.length){ toast('ไม่มีข้อมูลการจ่ายวัสดุ','error'); return; }
+  const sheetData = entries.map(([,ms])=>({
+    'วันที่จ่าย': ms.dispatchDate?formatThaiDate(ms.dispatchDate):'-',
+    'ผู้รับวัสดุ': ms.elderlyName||'-', 'รายการวัสดุ': ms.itemType||'-',
+    'จำนวน': ms.quantity||0, 'ลักษณะนาม': ms.unit||'-', 'หมายเหตุ': ms.note||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = [14,20,28,10,12,24].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'รายการจ่ายวัสดุ');
+  XLSX.writeFile(wb, `รายงานการจ่ายวัสดุ_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('ออกรายงาน Excel สำเร็จ','success');
+});
+document.getElementById('exportMatSupplyPdfBtn').addEventListener('click', async ()=>{
+  const entries = Object.entries(STATE.materialSupply||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!entries.length){ toast('ไม่มีข้อมูลการจ่ายวัสดุ','error'); return; }
+  const progress = document.getElementById('matSupplyProgress');
+  const btn = document.getElementById('exportMatSupplyPdfBtn');
+  btn.disabled = true; progress.textContent = 'กำลังสร้าง PDF...';
+  const root = document.getElementById('pdfRenderRoot');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const rowsHtml = entries.map(([,ms],i)=>`
+    <tr style="background:${i%2?'#F7FBFF':'#fff'}">
+      <td style="padding:5px 8px;border:1px solid #ddd;">${ms.dispatchDate?formatThaiDate(ms.dispatchDate):'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${ms.elderlyName||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${ms.itemType||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;font-weight:700;">${ms.quantity||0}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${ms.unit||'-'}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;">${ms.note||'-'}</td>
+    </tr>`).join('');
+  root.innerHTML = `
+  <div style="width:1050px;height:743px;font-family:'Sarabun',sans-serif;background:#fff;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(120deg,#2E7D32,#4CAF50);padding:14px 24px;display:flex;align-items:center;gap:14px;color:#fff;">
+      <img src="${LOGO_BASE64}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-size:17px;font-weight:700;">ทะเบียนการจ่ายวัสดุการแพทย์ตามโครงการ LTC</div>
+        <div style="font-size:11px;margin-top:2px;opacity:.92;">${FACILITY_NAME} | รวม ${entries.length} รายการ | ข้อมูล ณ วันที่ ${formatThaiDate(new Date().toISOString().slice(0,10))}</div>
+      </div>
+      <div style="width:52px;"></div>
+    </div>
+    <div style="padding:14px 20px;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+        <thead><tr style="background:#E8F5E9;color:#1B5E20;font-weight:700;">
+          <th style="padding:7px 8px;border:1px solid #ddd;">วันที่จ่าย</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">ผู้รับวัสดุ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">รายการวัสดุ</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">จำนวน</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">ลักษณะนาม</th>
+          <th style="padding:7px 8px;border:1px solid #ddd;">หมายเหตุ</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:10px;color:#777;border-top:1px solid #eee;padding:5px 0 2px;">
+      ทะเบียนการจ่ายวัสดุการแพทย์ตามโครงการ LTC | ${FACILITY_NAME}
+    </div>
+    <div style="text-align:center;font-size:8px;color:#aaa;padding-bottom:4px;">${COPYRIGHT_NOTICE}</div>
+  </div>`;
+  try{
+    await new Promise(r=>setTimeout(r,300));
+    const canvas = await html2canvas(root.firstElementChild,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);
+    pdf.save(`ทะเบียนจ่ายวัสดุ_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('ออกรายงาน PDF สำเร็จ','success');
+  }catch(err){ toast('เกิดข้อผิดพลาด: '+err.message,'error'); }
+  finally{ root.innerHTML=''; btn.disabled=false; progress.textContent=''; }
+});
+
 function renderRepairRegistryTable(){
   const tbody = document.getElementById('repairRegistryTable');
   if(!tbody) return;
@@ -6195,8 +6417,16 @@ function openInventoryDetail(id){
   const themeColor = isDurable ? '#185FA5' : '#2E7D32';
   const themeBg = isDurable ? 'linear-gradient(135deg,#0F5590,#43C1F1)' : 'linear-gradient(135deg,#1B5E20,#4CAF50)';
   const availCodes = inv.availableAssetCodes || inv.assetCodes || [];
-  const codesHtml = availCodes.length
-    ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">${availCodes.map((c,i)=>`<div style="background:#F0F7FC;border:1px solid #D6ECF7;border-radius:8px;padding:8px 12px;font-weight:600;color:#0F5590;">🏷️ ลำดับที่ ${i+1}: ${c}</div>`).join('')}</div>`
+  const codesHtml = availCodes.length || (inv.assetCodes||[]).length
+    ? (inv.assetCodes||[]).map((c,i)=>{
+        const st = getAssetCodeStatus(c);
+        const isAvail = st.status === 'available';
+        const isBorrowed = st.status === 'borrowed';
+        const bg = isAvail ? '#F1F8E9' : (isBorrowed ? '#FFF8E1' : (st.status==='repair'?'#F3E5F5':'#FFEBEE'));
+        const border = isAvail ? '#C8E6C9' : (isBorrowed ? '#FFE0B2' : (st.status==='repair'?'#E1BEE7':'#FFCDD2'));
+        const borrowerInfo = isBorrowed && st.data ? `<br><span style="font-size:11px;color:#8A6100;">👤 ผู้ยืม: ${st.data.elderlyName||st.data.extName||'-'} | 📞 ${st.data.relativePhone||st.data.extPhone||'-'}</span>` : '';
+        return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;font-weight:600;color:${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].color};">${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].icon} ลำดับที่ ${i+1}: ${c} — ${EQ_STATUS_STYLES[isAvail?'available':isBorrowed?'borrowed':st.status].label}${borrowerInfo}</div>`;
+      }).join('')
     : `<p class="muted" style="margin-top:8px;">${isDurable ? 'ไม่มีเลขครุภัณฑ์ว่างอยู่ในขณะนี้' : 'วัสดุการแพทย์ไม่มีเลขครุภัณฑ์กำกับ'}</p>`;
   document.getElementById('inventoryDetailBody').innerHTML = `
     <div style="background:${themeBg};color:#fff;padding:18px 20px;border-radius:12px 12px 0 0;margin:-24px -24px 16px;text-align:center;">
@@ -6903,7 +7133,7 @@ function buildLoanContractHTML(payload){
       <div style="display:flex;justify-content:space-between;margin-top:70px;">
         <div style="text-align:center;width:45%;">
           <div>ลงชื่อ .....................................................</div>
-          <div style="margin-top:6px;">( ${elderly ? elderly.name : '.....................................................'} / ผู้แทน )</div>
+          <div style="margin-top:6px;">( ${borrowerName} )</div>
           <div>ผู้ยืม</div>
         </div>
         <div style="text-align:center;width:45%;">
@@ -7647,6 +7877,7 @@ document.getElementById('generateEquipmentPdfBtn').addEventListener('click', asy
 /* init */
 renderCgSelects();
 renderCgTable();
+populateMatSupplySelects();
 renderElderlyTable();
 renderDashboard();
 renderDrill();
