@@ -911,31 +911,30 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div id="eqStatusDetailPanel" style="margin-top:12px;"></div>
   </div>
   <div class="card">
-    <h3>🔄 ระบบควบคุมการยืม-คืนอุปกรณ์ (ครุภัณฑ์การแพทย์ / วัสดุการแพทย์)</h3>
-    <p class="muted">รายการครุภัณฑ์ที่ยืม-คืน ปรากฏด้านล่าง — กดปุ่ม "ยืม-คืนครุภัณฑ์" ด้านบนเพื่อเพิ่มรายการใหม่ รายชื่อผู้ยืมจะปรากฏในหน้าต่างที่เปิดขึ้น</p>
+    <h3>🔄 ทะเบียนการยืม-คืนครุภัณฑ์การแพทย์</h3>
+    <p class="muted">รายการยืม-คืนครุภัณฑ์ทั้งหมด กรองและออกรายงานได้ด้านล่าง</p>
     <div class="row">
       <div class="field"><label>กรองตามผู้สูงอายุ</label><select id="eqElderlyFilter"><option value="">ทั้งหมด</option></select></div>
+      <div class="row" style="gap:6px;align-self:flex-end;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" id="exportBorrowedExcelBtn">📊 ยืม-LTC (Excel)</button>
+        <button class="btn btn-secondary btn-sm" id="exportBorrowedPdfBtn">📄 ยืม-LTC (PDF)</button>
+        <button class="btn btn-secondary btn-sm" id="exportExtBorrowedExcelBtn">📊 ยืม-ภายนอก (Excel)</button>
+        <button class="btn btn-secondary btn-sm" id="exportExtBorrowedPdfBtn">📄 ยืม-ภายนอก (PDF)</button>
+        <button class="btn btn-secondary btn-sm" id="generateEquipmentPdfBtn">📄 ทะเบียนคุมครุภัณฑ์</button>
+      </div>
     </div>
     <div style="overflow-x:auto;">
-    <table class="inv-table" style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้สูงอายุ</th><th>เบอร์โทรญาติ</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ได้รับ</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
+    <table class="inv-table" style="margin-top:10px;min-width:760px;"><thead><tr><th>ชื่อผู้ยืม</th><th>ประเภทผู้ยืม</th><th>เบอร์โทร</th><th>เลขครุภัณฑ์</th><th>หมวดหมู่</th><th>ประเภทครุภัณฑ์</th><th>วันที่ยืม</th><th>จำนวน</th><th>สถานะการคืน</th><th></th></tr></thead>
     <tbody id="equipmentTable"></tbody></table>
     </div>
-    <p class="muted" style="margin-top:10px;">รายการที่ถูกยืมและยังไม่คืน สามารถออกรายงานแยกได้ด้านล่าง</p>
-    <div class="row" style="margin-top:8px;gap:8px;">
-      <button class="btn btn-secondary" id="exportBorrowedExcelBtn">📊 รายการที่ถูกยืม-LTC (Excel)</button>
-      <button class="btn btn-primary" id="exportBorrowedPdfBtn">📄 รายการที่ถูกยืม-LTC (PDF)</button>
-    </div>
-    <div class="row" style="margin-top:8px;gap:8px;">
-      <button class="btn btn-secondary" id="exportExtBorrowedExcelBtn">📊 รายการยืม-บุคคลภายนอก (Excel)</button>
-      <button class="btn btn-primary" id="exportExtBorrowedPdfBtn">📄 รายการยืม-บุคคลภายนอก (PDF)</button>
-    </div>
     <div class="upload-progress" id="borrowedReportProgress"></div>
+    <div class="upload-progress" id="eqPdfProgress"></div>
   </div>
   <div class="card">
     <h3>💊 ทะเบียนการจ่ายวัสดุการแพทย์</h3>
-    <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — กดปุ่ม "จ่ายวัสดุการแพทย์" ด้านบนเพื่อบันทึกการจ่าย รายการจะปรากฏด้านล่าง</p>
+    <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — กดปุ่ม "จ่ายวัสดุการแพทย์" ด้านบนเพื่อบันทึกการจ่าย</p>
     <div style="overflow-x:auto;margin-top:6px;">
-    <table class="inv-table" style="min-width:600px;"><thead><tr><th>วันที่จ่าย</th><th>ผู้รับวัสดุ</th><th>รายการ</th><th>จำนวน</th><th>ลักษณะนาม</th><th>หมายเหตุ</th><th></th></tr></thead>
+    <table class="inv-table" style="min-width:600px;"><thead><tr><th>วันที่จ่าย</th><th>ผู้รับวัสดุ</th><th>ประเภทผู้รับ</th><th>รายการ</th><th>จำนวน</th><th>ลักษณะนาม</th><th>หมายเหตุ</th><th></th></tr></thead>
     <tbody id="materialSupplyTable"></tbody></table>
     </div>
     <div class="row" style="margin-top:8px;gap:8px;">
@@ -945,14 +944,8 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="upload-progress" id="matSupplyProgress"></div>
   </div>
   <div class="card">
-    <h3>📄 ออกรายงานทะเบียนคุมครุภัณฑ์</h3>
-    <p class="muted">รายงานนี้แยกต่างหากจากรายงานการเยี่ยมบ้านของ CG จะออกเป็นทะเบียนคุมรายการครุภัณฑ์ทั้งหมด (หรือกรองตามผู้สูงอายุที่เลือกด้านบน)</p>
-    <button class="btn btn-secondary" id="generateEquipmentPdfBtn">📄 สร้างทะเบียนคุมครุภัณฑ์ (PDF)</button>
-    <div class="upload-progress" id="eqPdfProgress"></div>
-  </div>
-  <div class="card">
     <h3>🔧 ทะเบียนคุมรายการส่งซ่อม</h3>
-    <p class="muted">รายการครุภัณฑ์ที่ส่งซ่อมทั้งหมด — สามารถบันทึกข้อมูลร้านซ่อม วันส่ง กำหนดแล้วเสร็จ และเมื่อซ่อมเสร็จแล้วให้คลิก "ซ่อมเสร็จ-นำกลับเข้าคลัง" เพื่ออัปเดตสถานะ</p>
+    <p class="muted">รายการครุภัณฑ์ที่ส่งซ่อมทั้งหมด</p>
     <div class="row">
       <div class="field"><label>เลือกครุภัณฑ์</label><select id="repairPickItem"><option value="">-- เลือกรายการ --</option></select></div>
       <div class="field"><label>เลขครุภัณฑ์ที่ว่าง</label><select id="repairPickCode"><option value="">-- เลือกรายการก่อน --</option></select></div>
@@ -1284,6 +1277,12 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('elderlyModal')">ยกเลิก</button><button class="btn btn-primary" id="elderlySaveBtn">บันทึก</button></div>
 </div></div>
 
+<div class="modal-overlay" id="eqDetailPopupModal" style="z-index:300;"><div class="modal-box" style="max-width:520px;">
+  <h3 id="eqDetailPopupTitle" style="margin-bottom:12px;"></h3>
+  <div id="eqDetailPopupBody" style="max-height:65vh;overflow-y:auto;"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('eqDetailPopupModal')">ปิด</button></div>
+</div></div>
+
 <div class="modal-overlay" id="elderlyProfileModal" style="z-index:250;"><div class="modal-box" style="max-width:700px;">
   <div id="elderlyProfileBody"></div>
   <div class="modal-actions">
@@ -1392,8 +1391,23 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 <div class="modal-overlay" id="matSupplyModal"><div class="modal-box" style="max-width:520px;">
   <h3>💊 จ่ายวัสดุการแพทย์</h3>
   <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน</p>
-  <div class="row">
-    <div class="field"><label>ผู้รับวัสดุ</label><select id="matSupplyElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
+  <div class="field">
+    <label>ประเภทผู้รับวัสดุ</label>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button type="button" class="btn eq-txn-toggle active" id="matBorrowerLtcBtn" style="flex:1;font-size:13px;">🏥 ผู้สูงอายุในโครงการ LTC</button>
+      <button type="button" class="btn eq-txn-toggle" id="matBorrowerExtBtn" style="flex:1;font-size:13px;">👤 บุคคลภายนอก</button>
+    </div>
+  </div>
+  <div id="matLtcSection" style="margin-top:8px;">
+    <div class="field"><label>ผู้รับวัสดุ (ผู้สูงอายุ LTC)</label><select id="matSupplyElderly"><option value="">-- เลือกผู้สูงอายุ --</option></select></div>
+  </div>
+  <div id="matExtSection" style="display:none;margin-top:8px;border:1.5px solid #FDB813;border-radius:10px;padding:12px;background:#FFFDE7;">
+    <div class="row">
+      <div class="field"><label>ชื่อ-สกุลผู้รับ *</label><input type="text" id="matExtName" placeholder="ชื่อ-สกุล"></div>
+      <div class="field"><label>เบอร์โทรศัพท์</label><input type="tel" id="matExtPhone" placeholder="08xxxxxxxx"></div>
+    </div>
+  </div>
+  <div class="row" style="margin-top:8px;">
     <div class="field"><label>รายการวัสดุ</label><select id="matSupplyItem"><option value="">-- เลือกรายการ --</option></select></div>
   </div>
   <div class="row" style="margin-top:8px;">
@@ -3323,7 +3337,7 @@ document.getElementById('openInvAddModalBtn').addEventListener('click', ()=>{
   openModal('inventoryAddModal');
 });
 document.getElementById('openLoanModalBtn').addEventListener('click', ()=>{
-  document.getElementById('addEquipmentAlias').click();
+  document.getElementById('addEquipmentBtn').click();
 });
 document.getElementById('openMatSupplyModalBtn').addEventListener('click', ()=>{
   populateMatSupplySelects();
@@ -3332,6 +3346,9 @@ document.getElementById('openMatSupplyModalBtn').addEventListener('click', ()=>{
   document.getElementById('matSupplyDateText').textContent = formatThaiDate(todayIso);
   document.getElementById('matSupplyQty').value = '1';
   document.getElementById('matSupplyNote').value = '';
+  document.getElementById('matExtName').value = '';
+  document.getElementById('matExtPhone').value = '';
+  setMatBorrowerType('ltc');
   openModal('matSupplyModal');
 });
 /* แหล่งงบประมาณ: แสดงช่องพิมพ์เมื่อเลือก "อื่นๆ" */
@@ -5828,10 +5845,17 @@ db.ref('materialSupply').on('value', snap=>{
 function computeInventoryRemaining(inv){
   if(inv.category === 'durable'){
     /* ครุภัณฑ์: ยอดคงเหลือ = จำนวนเลขครุภัณฑ์ที่ว่าง (ไม่ถูกยืม ไม่ส่งซ่อม ไม่รอจำหน่าย) */
-    return (inv.availableAssetCodes || inv.assetCodes || []).length;
+    return (inv.availableAssetCodes || []).length;
   }
   /* วัสดุ: ตัดจ่ายขาด ยอดคงเหลือ = ยอดรวมในคลัง (inv.quantity ถูกหักตรงๆ ทุกครั้งที่จ่าย) */
   return Math.max(parseInt(inv.quantity,10)||0, 0);
+}
+function computeInventoryTotal(inv){
+  if(inv.category === 'durable'){
+    /* จำนวนทั้งหมด = จำนวนเลขครุภัณฑ์ในทะเบียนหลัก (รวมที่ถูกยืมออกและที่ว่าง) */
+    return (inv.assetCodes || []).length || (parseInt(inv.quantity,10)||0);
+  }
+  return parseInt(inv.quantity,10)||0;
 }
 /* สถานะของครุภัณฑ์แต่ละชิ้น (แยกตามเลขครุภัณฑ์) — ตรวจสอบตามลำดับความสำคัญ:
    ส่งซ่อม > ชำรุด/รอจำหน่าย > ถูกยืม > พร้อมใช้งาน */
@@ -5908,6 +5932,7 @@ function renderInventoryTable(){
   });
   tbody.innerHTML = sorted.map(([id,inv])=>{
     const remaining = computeInventoryRemaining(inv);
+    const total = computeInventoryTotal(inv);
     let codesColumnHtml, statusColumnHtml, dateColumnHtml;
 
     if(inv.category === 'durable'){
@@ -5951,8 +5976,8 @@ function renderInventoryTable(){
       <td style="text-align:center;"><span class="badge ${inv.category==='durable'?'normal':'obt'}" style="font-weight:700;font-size:12.5px;letter-spacing:.3px;">${CATEGORY_LABELS_INV[inv.category]||inv.category}</span></td>
       <td><a href="javascript:void(0)" onclick="openInventoryDetail('${id}')" style="color:var(--primary);font-weight:600;text-decoration:underline dotted;cursor:pointer;">${inv.itemType||'-'}</a></td>
       <td style="font-size:11.5px;color:#555;">${inv.source||'-'}</td>
-      <td style="font-weight:700;text-align:center;">${inv.quantity??'-'}</td>
-      <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':'#2E7D32'};">${remaining}</td>
+      <td style="font-weight:700;text-align:center;">${total}</td>
+      <td style="font-weight:700;text-align:center;color:${remaining<=0?'#D8503A':remaining===total?'#2E7D32':'#B8860B'};">${remaining}</td>
       <td>${inv.unit||'-'}</td>
       <td style="font-size:11.5px;line-height:1.7;white-space:nowrap;width:1%;">${codesColumnHtml}</td>
       <td style="font-size:11.5px;line-height:1.7;">${statusColumnHtml}</td>
@@ -6154,9 +6179,18 @@ function populateMatSupplySelects(){
 document.getElementById('matSupplyDateBtn').addEventListener('click', ()=>{
   openThaiDatePicker('matSupplyDate','matSupplyDateText','เลือกวันที่จ่ายวัสดุ');
 });
+let matBorrowerType = 'ltc';
+function setMatBorrowerType(type){
+  matBorrowerType = type;
+  document.getElementById('matBorrowerLtcBtn').classList.toggle('active', type==='ltc');
+  document.getElementById('matBorrowerExtBtn').classList.toggle('active', type==='external');
+  document.getElementById('matLtcSection').style.display = type==='ltc' ? '' : 'none';
+  document.getElementById('matExtSection').style.display = type==='external' ? '' : 'none';
+}
+document.getElementById('matBorrowerLtcBtn').addEventListener('click', ()=>setMatBorrowerType('ltc'));
+document.getElementById('matBorrowerExtBtn').addEventListener('click', ()=>setMatBorrowerType('external'));
 document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
-  const elderlyId = document.getElementById('matSupplyElderly').value;
   const itemType = document.getElementById('matSupplyItem').value;
   const qty = parseInt(document.getElementById('matSupplyQty').value,10);
   const unit = document.getElementById('matSupplyUnit').value;
@@ -6165,13 +6199,22 @@ document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
   if(!itemType){ toast('กรุณาเลือกรายการวัสดุ','error'); return; }
   if(isNaN(qty)||qty<1){ toast('กรุณาระบุจำนวน (อย่างน้อย 1)','error'); return; }
   if(!dispatchDate){ toast('กรุณาระบุวันที่จ่าย','error'); return; }
-  const elderly = elderlyId ? STATE.elderly[elderlyId] : null;
-  const elderlyName = elderly ? elderly.name : '';
+  let elderlyId = '', elderlyName = '', extName = '', extPhone = '';
+  if(matBorrowerType === 'ltc'){
+    elderlyId = document.getElementById('matSupplyElderly').value;
+    const elderly = elderlyId ? STATE.elderly[elderlyId] : null;
+    elderlyName = elderly ? elderly.name : '';
+  } else {
+    extName = document.getElementById('matExtName').value.trim();
+    extPhone = document.getElementById('matExtPhone').value.trim();
+    if(!extName){ toast('กรุณาระบุชื่อผู้รับวัสดุ','error'); return; }
+    elderlyName = extName;
+  }
   /* ตัดยอดวัสดุออกจากคลัง */
   const invEntry = Object.entries(STATE.inventory||{}).find(([,inv])=>inv.category==='material' && inv.itemType===itemType);
   const updates = {};
   const id = 'MS'+Date.now();
-  updates['materialSupply/'+id] = { elderlyId, elderlyName, itemType, quantity:qty, unit, note, dispatchDate, createdAt:Date.now() };
+  updates['materialSupply/'+id] = { elderlyId, elderlyName, extName, extPhone, borrowerType: matBorrowerType, itemType, quantity:qty, unit, note, dispatchDate, createdAt:Date.now() };
   if(invEntry){
     const [invId, invData] = invEntry;
     updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(invData.quantity,10)||0)-qty, 0);
@@ -6183,6 +6226,8 @@ document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
     document.getElementById('matSupplyNote').value='';
     document.getElementById('matSupplyDate').value='';
     document.getElementById('matSupplyDateText').textContent='เลือกวันที่';
+    document.getElementById('matExtName').value='';
+    document.getElementById('matExtPhone').value='';
     closeModal('matSupplyModal');
   });
 });
@@ -6191,11 +6236,12 @@ function renderMaterialSupplyTable(){
   if(!tbody) return;
   populateMatSupplySelects();
   const entries = Object.entries(STATE.materialSupply||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
-  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted">ยังไม่มีรายการจ่ายวัสดุ</td></tr>'; return; }
+  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="8" class="muted">ยังไม่มีรายการจ่ายวัสดุ</td></tr>'; return; }
   tbody.innerHTML = entries.map(([id,ms])=>`
     <tr>
       <td>${ms.dispatchDate?formatThaiDate(ms.dispatchDate):'-'}</td>
       <td>${ms.elderlyName||'-'}</td>
+      <td><span class="badge ${ms.borrowerType==='external'?'obt':'normal'}" style="font-size:11px;">${ms.borrowerType==='external'?'ภายนอก':'LTC'}</span></td>
       <td>${ms.itemType||'-'}</td>
       <td style="text-align:center;font-weight:700;">${ms.quantity||0}</td>
       <td>${ms.unit||'-'}</td>
@@ -6863,61 +6909,128 @@ function renderEqStatusDashboard(){
   const dash = document.getElementById('eqStatusDashboard');
   if(!dash) return;
   const greenCount = Object.values(STATE.inventory||{}).reduce((sum,inv)=>sum+computeInventoryRemaining(inv),0);
-  const borrowedList = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned);
-  const damagedList = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && (e.returnCondition==='เสียหาย' || e.returnAction==='dispose'));
-  const repairList = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && e.returnAction==='repair');
-  const barStyle = 'color:#fff;padding:12px 16px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:transform .15s;';
+  const borrowedList = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned && (e.borrowerType||'ltc')==='ltc');
+  const extBorrowedList = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned && e.borrowerType==='external');
+  const matList = Object.entries(STATE.materialSupply||{}).filter(([,ms])=>!ms._deleted);
+  const repairList = Object.entries(STATE.repairRegistry||{}).filter(([,r])=>r.status==='pending');
+  const total = greenCount + borrowedList.length + extBorrowedList.length;
+  const cards = [
+    { id:'green',  bg:'linear-gradient(135deg,#1B5E20,#4CAF50)', icon:'🟢', label:'พร้อมใช้งาน', count:greenCount, pct: total?Math.round(greenCount/total*100):0 },
+    { id:'yellow', bg:'linear-gradient(135deg,#8A6100,#FDB813)', icon:'🟡', label:'ถูกยืม (LTC)', count:borrowedList.length, pct: total?Math.round(borrowedList.length/total*100):0 },
+    { id:'ext',    bg:'linear-gradient(135deg,#B8860B,#F0A93B)', icon:'🟠', label:'ยืม (ภายนอก)', count:extBorrowedList.length, pct: total?Math.round(extBorrowedList.length/total*100):0 },
+    { id:'mat',    bg:'linear-gradient(135deg,#1565C0,#42A5F5)', icon:'💊', label:'จ่ายวัสดุ', count:matList.length, pct:0 },
+    { id:'purple', bg:'linear-gradient(135deg,#5A2D82,#9C6ADE)', icon:'🟣', label:'ส่งซ่อม', count:repairList.length, pct:0 },
+  ];
   dash.innerHTML = `
-    <div style="background:linear-gradient(135deg,#1B5E20,#4CAF50);${barStyle}" onclick="toggleEqStatusDetail('green')">
-      <span>🟢 อุปกรณ์ในคลังพร้อมใช้งาน</span><b style="font-size:20px;">${greenCount}</b>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      ${cards.map(c=>`
+        <div onclick="showEqStatusDetail('${c.id}')" style="flex:1;min-width:140px;background:${c.bg};color:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;transition:transform .12s,box-shadow .12s;box-shadow:0 3px 10px rgba(0,0,0,.12);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div style="font-size:24px;">${c.icon}</div>
+          <div style="font-size:26px;font-weight:800;margin:4px 0 2px;">${c.count}</div>
+          <div style="font-size:12px;opacity:.92;font-weight:600;">${c.label}</div>
+          ${c.pct>0?`<div style="margin-top:6px;background:rgba(255,255,255,.2);border-radius:6px;height:6px;"><div style="background:#fff;border-radius:6px;height:6px;width:${c.pct}%;"></div></div>`:``}
+        </div>`).join('')}
     </div>
-    <div style="background:linear-gradient(135deg,#8A6100,#FDB813);${barStyle}" onclick="toggleEqStatusDetail('yellow')">
-      <span>🟡 อุปกรณ์ที่ถูกยืม</span><b style="font-size:20px;">${borrowedList.length}</b>
-    </div>
-    <div style="background:linear-gradient(135deg,#A6321C,#E8654A);${barStyle}" onclick="toggleEqStatusDetail('red')">
-      <span>🔴 อุปกรณ์ชำรุด / รอจำหน่าย</span><b style="font-size:20px;">${damagedList.length}</b>
-    </div>
-    <div style="background:linear-gradient(135deg,#5A2D82,#9C6ADE);${barStyle}" onclick="toggleEqStatusDetail('purple')">
-      <span>🟣 อุปกรณ์ส่งซ่อม</span><b style="font-size:20px;">${repairList.length}</b>
-    </div>
+    ${total>0?`
+    <div style="margin-top:14px;padding:12px 16px;background:#F7FBFF;border-radius:12px;border:1px solid #E3F0F8;">
+      <b style="font-size:13px;">📊 แผนภูมิการใช้งานอุปกรณ์ (คลิกที่แต่ละส่วนเพื่อดูรายละเอียด)</b>
+      <div style="display:flex;align-items:center;gap:20px;margin-top:10px;flex-wrap:wrap;">
+        <canvas id="eqPieChart" width="160" height="160" style="flex-shrink:0;cursor:pointer;"></canvas>
+        <div style="flex:1;min-width:160px;">
+          ${cards.filter(c=>c.count>0).map(c=>`
+            <div onclick="showEqStatusDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#E3F0F8'" onmouseout="this.style.background='transparent'">
+              <span style="font-size:16px;">${c.icon}</span>
+              <span style="font-size:13px;font-weight:600;">${c.label}</span>
+              <span style="margin-left:auto;font-weight:800;font-size:14px;">${c.count}</span>
+              ${c.pct>0?`<span style="font-size:11px;color:#6b7d8a;">${c.pct}%</span>`:''}
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`:''}
   `;
-  if(eqStatusOpenTab) toggleEqStatusDetail(eqStatusOpenTab, true);
-}
-let eqStatusOpenTab = null;
-function toggleEqStatusDetail(tab, forceRefresh){
-  const panel = document.getElementById('eqStatusDetailPanel');
-  if(!forceRefresh && eqStatusOpenTab === tab){ panel.innerHTML=''; eqStatusOpenTab=null; return; }
-  eqStatusOpenTab = tab;
-  if(tab==='green'){
-    const items = Object.entries(STATE.inventory||{}).filter(([,inv])=>computeInventoryRemaining(inv)>0);
-    panel.innerHTML = items.length ? items.map(([,inv])=>`
-      <div style="padding:9px 14px;border:1px solid #C8E6C9;background:#F1F8E9;border-radius:8px;margin-bottom:6px;">
-        <b>${inv.itemType}</b> <span class="muted">(${CATEGORY_LABELS_INV[inv.category]||inv.category})</span> — เหลือ <b style="color:#2E7D32;">${computeInventoryRemaining(inv)}</b> ${inv.unit||''}
-      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์พร้อมใช้งานในขณะนี้</p>';
-  } else if(tab==='yellow'){
-    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned);
-    panel.innerHTML = items.length ? items.map(([id,e])=>`
-      <div style="padding:9px 14px;border:1px solid #FFE0B2;background:#FFF8E1;border-radius:8px;margin-bottom:6px;">
-        <b>${e.elderlyName||'-'}</b> ยืม <b>${e.itemType||'-'}</b> (${CATEGORY_LABELS_INV[e.category]||e.category||'-'}) ${e.itemCode?`เลขครุภัณฑ์ ${e.itemCode}`:''} จำนวน ${e.quantity||1}<br>
-        <span class="muted" style="font-size:12px;">วันที่ได้รับ: ${e.dateReceived?formatThaiDate(e.dateReceived):'-'} | เบอร์โทรญาติ: ${e.relativePhone||'-'}</span>
-      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ที่ถูกยืมอยู่ในขณะนี้</p>';
-  } else if(tab==='red'){
-    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && (e.returnCondition==='เสียหาย' || e.returnAction==='dispose'));
-    panel.innerHTML = items.length ? items.map(([id,e])=>`
-      <div style="padding:9px 14px;border:1px solid #FFCDD2;background:#FFEBEE;border-radius:8px;margin-bottom:6px;">
-        <b>${e.itemType||'-'}</b> ${e.itemCode?`(เลขครุภัณฑ์ ${e.itemCode})`:''} — สถานะ: ${e.returnCondition||'-'} / ${e.returnActionLabel||'-'}<br>
-        <span class="muted" style="font-size:12px;">${e.returnDamageDetail?`ความเสียหาย: ${e.returnDamageDetail} | `:''}รับคืนจาก: ${e.elderlyName||'-'} เมื่อ ${e.dateReturned?formatThaiDate(e.dateReturned):'-'}</span>
-      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ชำรุดหรือรอจำหน่ายในขณะนี้</p>';
-  } else if(tab==='purple'){
-    const items = Object.entries(STATE.equipment||{}).filter(([,e])=>e.dateReturned && e.returnAction==='repair');
-    panel.innerHTML = items.length ? items.map(([id,e])=>`
-      <div style="padding:9px 14px;border:1px solid #E1BEE7;background:#F3E5F5;border-radius:8px;margin-bottom:6px;">
-        <b>${e.itemType||'-'}</b> ${e.itemCode?`(เลขครุภัณฑ์ ${e.itemCode})`:''}<br>
-        <span style="font-size:12.5px;">🔧 อาการที่เสีย: ${e.returnDamageDetail||'-'}</span><br>
-        <span style="font-size:12.5px;">🏪 ร้านซ่อม: ${e.repairShop||'-'} &nbsp; 📞 เบอร์โทร: ${e.repairPhone||'-'}</span>
-      </div>`).join('') : '<p class="muted">ไม่มีอุปกรณ์ที่ส่งซ่อมในขณะนี้</p>';
+  /* วาดแผนภูมิวงกลม */
+  if(total>0){
+    setTimeout(()=>{
+      const canvas = document.getElementById('eqPieChart');
+      if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const slices = [
+        { count:greenCount, color:'#4CAF50', id:'green' },
+        { count:borrowedList.length, color:'#FDB813', id:'yellow' },
+        { count:extBorrowedList.length, color:'#F0A93B', id:'ext' },
+      ].filter(s=>s.count>0);
+      let angle = -Math.PI/2;
+      const cx=80, cy=80, r=70;
+      ctx.clearRect(0,0,160,160);
+      eqPieSlices = [];
+      slices.forEach(s=>{
+        const sweep = (s.count/total)*2*Math.PI;
+        ctx.beginPath(); ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,r,angle,angle+sweep);
+        ctx.closePath(); ctx.fillStyle=s.color; ctx.fill();
+        eqPieSlices.push({startAngle:angle, endAngle:angle+sweep, id:s.id});
+        angle += sweep;
+      });
+      /* ช่องตรงกลาง */
+      ctx.beginPath(); ctx.arc(cx,cy,36,0,2*Math.PI); ctx.fillStyle='#fff'; ctx.fill();
+      ctx.fillStyle='#0F5590'; ctx.font='bold 16px Sarabun,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(total, cx, cy-6);
+      ctx.font='11px Sarabun,sans-serif'; ctx.fillStyle='#6b7d8a';
+      ctx.fillText('รายการ', cx, cy+10);
+      canvas.onclick = function(ev){
+        const rect=canvas.getBoundingClientRect();
+        const mx=ev.clientX-rect.left-cx, my=ev.clientY-rect.top-cy;
+        const dist=Math.sqrt(mx*mx+my*my);
+        if(dist<36||dist>r) return;
+        let a=Math.atan2(my,mx);
+        eqPieSlices.forEach(s=>{ if(a>=s.startAngle && a<s.endAngle) showEqStatusDetail(s.id); });
+      };
+    }, 100);
   }
 }
+let eqPieSlices = [];
+let eqStatusOpenTab = null;
+/* ---- Popup รายละเอียดจากแดชบอร์ดสถานะ ---- */
+function showEqStatusDetail(tab){
+  eqStatusOpenTab = tab;
+  let title='', rows=[], color='#0F5590';
+  if(tab==='green'){
+    title='🟢 อุปกรณ์พร้อมใช้งาน'; color='#2E7D32';
+    rows = Object.values(STATE.inventory||{}).filter(inv=>computeInventoryRemaining(inv)>0)
+      .map(inv=>`<div style="padding:9px 14px;border:1px solid #C8E6C9;background:#F1F8E9;border-radius:8px;margin-bottom:6px;">
+        <b>${inv.itemType}</b> <span class="muted">(${CATEGORY_LABELS_INV[inv.category]||inv.category})</span> — เหลือ <b style="color:#2E7D32;">${computeInventoryRemaining(inv)}</b>/${computeInventoryTotal(inv)} ${inv.unit||''}</div>`);
+  } else if(tab==='yellow'){
+    title='🟡 อุปกรณ์ถูกยืม (ผู้สูงอายุ LTC)'; color='#8A6100';
+    rows = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned && (e.borrowerType||'ltc')==='ltc')
+      .map(([,e])=>`<div style="padding:9px 14px;border:1px solid #FFE0B2;background:#FFF8E1;border-radius:8px;margin-bottom:6px;">
+        <b>${e.elderlyName||'-'}</b> ยืม <b>${e.itemType||'-'}</b> ${e.itemCode?`(${e.itemCode})`:''} จำนวน ${e.quantity||1}<br>
+        <span class="muted" style="font-size:12px;">วันที่ยืม: ${e.dateReceived?formatThaiDate(e.dateReceived):'-'} | เบอร์โทร: ${e.relativePhone||'-'}</span></div>`);
+  } else if(tab==='ext'){
+    title='🟠 อุปกรณ์ถูกยืม (บุคคลภายนอก)'; color='#B8860B';
+    rows = Object.entries(STATE.equipment||{}).filter(([,e])=>!e.dateReturned && e.borrowerType==='external')
+      .map(([,e])=>`<div style="padding:9px 14px;border:1px solid #FFE0B2;background:#FFF8E1;border-radius:8px;margin-bottom:6px;">
+        <b>${e.extName||e.elderlyName||'-'}</b> 📞 ${e.extPhone||e.relativePhone||'-'} ยืม <b>${e.itemType||'-'}</b> จำนวน ${e.quantity||1}<br>
+        <span class="muted" style="font-size:12px;">เหตุผล: ${e.extReason||'-'} | วันที่ยืม: ${e.dateReceived?formatThaiDate(e.dateReceived):'-'}</span></div>`);
+  } else if(tab==='mat'){
+    title='💊 รายการจ่ายวัสดุการแพทย์'; color='#1565C0';
+    rows = Object.entries(STATE.materialSupply||{}).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20)
+      .map(([,ms])=>`<div style="padding:9px 14px;border:1px solid #BBDEFB;background:#E3F2FD;border-radius:8px;margin-bottom:6px;">
+        <b>${ms.elderlyName||'-'}</b> ${ms.borrowerType==='external'?'(ภายนอก)':'(LTC)'} รับ <b>${ms.itemType||'-'}</b> ${ms.quantity||0} ${ms.unit||''}<br>
+        <span class="muted" style="font-size:12px;">วันที่จ่าย: ${ms.dispatchDate?formatThaiDate(ms.dispatchDate):'-'}</span></div>`);
+  } else if(tab==='purple'){
+    title='🟣 อุปกรณ์ส่งซ่อม'; color='#5A2D82';
+    rows = Object.entries(STATE.repairRegistry||{}).filter(([,r])=>r.status==='pending')
+      .map(([,r])=>`<div style="padding:9px 14px;border:1px solid #E1BEE7;background:#F3E5F5;border-radius:8px;margin-bottom:6px;">
+        <b>${r.itemType||'-'}</b> (${r.assetCode||'-'}) — อาการ: ${r.faultDesc||'-'}<br>
+        <span style="font-size:12px;">🏪 ${r.repairShop||'-'} | 📞 ${r.repairPhone||'-'} | กำหนด: ${r.dueDate?formatThaiDate(r.dueDate):'-'}</span></div>`);
+  }
+  const modal = document.getElementById('eqDetailPopupModal');
+  document.getElementById('eqDetailPopupTitle').textContent = title;
+  document.getElementById('eqDetailPopupTitle').style.color = color;
+  document.getElementById('eqDetailPopupBody').innerHTML = rows.length ? rows.join('') : '<p class="muted">ไม่มีข้อมูลในหมวดนี้</p>';
+  openModal('eqDetailPopupModal');
+}
+function toggleEqStatusDetail(tab, forceRefresh){ showEqStatusDetail(tab); }
 
 /* ---- แถวรายการอุปกรณ์แบบเพิ่มได้หลายรายการในการขอรับการสนับสนุนครั้งเดียว ---- */
 let eqRowCounter = 0;
