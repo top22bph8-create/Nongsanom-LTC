@@ -521,7 +521,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     </div>
     <div id="eqDashGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;"></div>
     <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-      <h4 style="margin:0 0 10px;font-size:13.5px;color:var(--primary-dark);">📊 สถิติการยืมอุปกรณ์ประจำเดือน — ผู้ได้รับการสนับสนุน</h4>
+      <h4 style="margin:0 0 10px;font-size:13.5px;color:var(--primary-dark);" id="eqMonthStatTitle">📊 สถิติการยืมอุปกรณ์ประจำเดือน — ผู้ได้รับการสนับสนุน</h4>
       <div id="eqMonthStatGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px;"></div>
       <div id="eqMonthBorrowerList" style="margin-top:8px;"></div>
     </div>
@@ -3022,7 +3022,13 @@ function renderEqDashboardHome(){
   const mList  = document.getElementById('eqMonthBorrowerList');
   if(!eqCard || !grid || !mGrid || !mList) return;
 
-  /* ---- 1) Grid รายการครุภัณฑ์พร้อมใช้งาน ---- */
+  /* อ่านเดือน/ปี จากตัวเลือกเดียวกับแดชบอร์ดหลัก */
+  const selMonth = parseInt(dashMonthSel.value, 10);   /* 1-12 */
+  const selYearBE = parseInt(dashYearSel.value, 10);    /* พ.ศ. เช่น 2568 */
+  const selYearCE = selYearBE - 543;
+  const monthLabel = `${TH_MONTHS_FULL[selMonth-1]} ${selYearBE}`;
+
+  /* ---- 1) Grid รายการครุภัณฑ์พร้อมใช้งาน (แสดงสถานะปัจจุบันเสมอ ไม่ขึ้นกับเดือนที่เลือก) ---- */
   const inv = STATE.inventory || {};
   const durableEntries = Object.values(inv).filter(d=>d.category==='durable');
   if(durableEntries.length === 0){
@@ -3034,7 +3040,6 @@ function renderEqDashboardHome(){
       const borrowed = total - remain;
       const pct = total ? Math.round(remain/total*100) : 0;
       const statusColor = remain === 0 ? '#D8503A' : remain < total ? '#B8860B' : '#2E7D32';
-      const statusLabel = remain === 0 ? 'หมด' : remain < total ? `ว่าง ${remain}/${total}` : `ว่าง ${remain}/${total}`;
       return `
       <div onclick="showEqStatusDetail('green')" style="background:#fff;border:1.5px solid ${remain>0?'#C8E6C9':'#FFCDD2'};border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .12s,box-shadow .12s;box-shadow:0 2px 6px rgba(0,0,0,.07);"
         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 14px rgba(0,0,0,.14)'"
@@ -3051,27 +3056,28 @@ function renderEqDashboardHome(){
     }).join('');
   }
 
-  /* ---- 2) สถิติการยืมในเดือนปัจจุบัน ---- */
-  const now = new Date();
-  const curMonth = now.getMonth() + 1;
-  const curYearCE = now.getFullYear();
-  const curYearBE = beYear(curYearCE);
-  const monthLabel = `${TH_MONTHS_FULL[curMonth-1]} ${curYearBE}`;
-  /* รายการที่ยืมออกในเดือนนี้ (dateReceived ตรงกับเดือน/ปีปัจจุบัน) */
+  /* อัปเดตหัวข้อ section ให้แสดงเดือนที่เลือก */
+  const eqTitleEl = document.getElementById('eqMonthStatTitle');
+  if(eqTitleEl) eqTitleEl.textContent = `📊 สถิติการยืมอุปกรณ์ — ${monthLabel}`;
+
+  /* ---- 2) สถิติการยืมตามเดือน/ปีที่เลือก ---- */
   const eqAll = Object.entries(STATE.equipment || {});
+
+  /* รายการที่ยืมในเดือน/ปีที่เลือก (ตรวจจาก dateReceived) */
   const monthLoaned = eqAll.filter(([,e])=>{
     if(!e.dateReceived) return false;
     const [ey, em] = e.dateReceived.split('-').map(Number);
-    return ey === curYearCE && em === curMonth;
+    return ey === selYearCE && em === selMonth;
   });
+  /* รายการที่ส่งคืนในเดือน/ปีที่เลือก */
   const monthReturned = eqAll.filter(([,e])=>{
     if(!e.dateReturned) return false;
     const [ey, em] = e.dateReturned.split('-').map(Number);
-    return ey === curYearCE && em === curMonth;
+    return ey === selYearCE && em === selMonth;
   });
-  const uniqueBorrowers = new Set(monthLoaned.map(([,e])=>e.elderlyId||e.extName||'ภายนอก'));
-  const ltcCount = monthLoaned.filter(([,e])=>(e.borrowerType||'ltc')==='ltc').length;
-  const extCount = monthLoaned.filter(([,e])=>e.borrowerType==='external').length;
+  const uniqueBorrowers = new Set(monthLoaned.map(([,e])=>e.elderlyId||e.extName||'ext'));
+  const ltcCount  = monthLoaned.filter(([,e])=>(e.borrowerType||'ltc')==='ltc').length;
+  const extCount  = monthLoaned.filter(([,e])=>e.borrowerType==='external').length;
   const stillOut  = eqAll.filter(([,e])=>!e.dateReturned).length;
 
   mGrid.innerHTML = `
@@ -3079,13 +3085,13 @@ function renderEqDashboardHome(){
     <div class="stat stat-success"><b>${uniqueBorrowers.size}</b><span>ผู้ได้รับการสนับสนุน</span></div>
     <div class="stat stat-purple"><b>${ltcCount}</b><span>ยืม (ผู้สูงอายุ LTC)</span></div>
     <div class="stat stat-warning"><b>${extCount}</b><span>ยืม (บุคคลภายนอก)</span></div>
-    <div class="stat stat-danger"><b>${stillOut}</b><span>ยังไม่คืน (สะสม)</span></div>
-    <div class="stat stat-teal"><b>${monthReturned.length}</b><span>ส่งคืนในเดือนนี้</span></div>
+    <div class="stat stat-danger"><b>${stillOut}</b><span>ยังไม่คืน (ทั้งหมด)</span></div>
+    <div class="stat stat-teal"><b>${monthReturned.length}</b><span>ส่งคืน (${monthLabel})</span></div>
   `;
 
-  /* รายชื่อผู้ยืมในเดือนนี้ */
+  /* รายชื่อผู้ยืมในเดือน/ปีที่เลือก */
   if(monthLoaned.length === 0){
-    mList.innerHTML = '<p class="muted">ยังไม่มีรายการยืมในเดือนนี้</p>';
+    mList.innerHTML = `<p class="muted">ไม่มีรายการยืมใน${monthLabel}</p>`;
   } else {
     const rows = monthLoaned.slice(0,8).map(([id,e])=>{
       const name = (e.borrowerType||'ltc')==='ltc' ? (e.elderlyName||'-') : (e.extName||e.elderlyName||'-');
@@ -3096,11 +3102,13 @@ function renderEqDashboardHome(){
       return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fff;">
         <span style="font-size:15px;">${getItemEmoji(e.itemType||'')}</span>
         <span style="flex:1;font-size:13px;font-weight:600;">${name} ${tag}</span>
-        <span style="font-size:12px;color:#6b7d8a;">${e.itemType||'-'} ${e.itemCode?`(${e.itemCode})`:''}</span>
+        <span style="font-size:12px;color:#6b7d8a;">${e.itemType||'-'}${e.itemCode?` (${e.itemCode})`:''}</span>
         ${ret}
       </div>`;
     }).join('');
-    const more = monthLoaned.length > 8 ? `<p class="muted" style="text-align:center;margin-top:4px;">+ อีก ${monthLoaned.length-8} รายการ — ดูเพิ่มเติมในเมนูจัดการอุปกรณ์</p>` : '';
+    const more = monthLoaned.length > 8
+      ? `<p class="muted" style="text-align:center;margin-top:4px;">+ อีก ${monthLoaned.length-8} รายการ — ดูเพิ่มเติมในเมนูจัดการอุปกรณ์</p>`
+      : '';
     mList.innerHTML = rows + more;
   }
 }
@@ -3114,45 +3122,50 @@ function renderMatDashboardHome(){
   const iGrid = document.getElementById('matDashItemGrid');
   if(!card||!sGrid||!iGrid) return;
 
-  const now = new Date();
-  const curMonth = now.getMonth() + 1;
-  const curYearCE = now.getFullYear();
-  const monthLabel = `${TH_MONTHS_FULL[curMonth-1]} ${beYear(curYearCE)}`;
+  /* อ่านเดือน/ปี จากตัวเลือกเดียวกับแดชบอร์ดหลัก */
+  const selMonth  = parseInt(dashMonthSel.value, 10);
+  const selYearBE = parseInt(dashYearSel.value, 10);
+  const selYearCE = selYearBE - 543;
+  const monthLabel = `${TH_MONTHS_FULL[selMonth-1]} ${selYearBE}`;
   const matAll = Object.entries(STATE.materialSupply || {});
 
-  /* สถิติเดือนนี้ */
-  const thisMonth = matAll.filter(([,ms])=>{
+  /* สถิติตามเดือน/ปีที่เลือก */
+  const selPeriod = matAll.filter(([,ms])=>{
     if(!ms.dispatchDate) return false;
     const [y,m] = ms.dispatchDate.split('-').map(Number);
-    return y === curYearCE && m === curMonth;
+    return y === selYearCE && m === selMonth;
   });
-  const totalThisMonth = thisMonth.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
-  const uniqueRecipients = new Set(thisMonth.map(([,ms])=>ms.elderlyId||ms.extName||'ext'));
-  const ltcRecip = thisMonth.filter(([,ms])=>(ms.borrowerType||'ltc')==='ltc').length;
-  const extRecip = thisMonth.filter(([,ms])=>ms.borrowerType==='external').length;
-  /* ยอดสะสมปีนี้ */
-  const thisYear = matAll.filter(([,ms])=>{
+  const totalSelPeriod  = selPeriod.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
+  const uniqueRecipients = new Set(selPeriod.map(([,ms])=>ms.elderlyId||ms.extName||'ext'));
+  const ltcRecip  = selPeriod.filter(([,ms])=>(ms.borrowerType||'ltc')==='ltc').length;
+  const extRecip  = selPeriod.filter(([,ms])=>ms.borrowerType==='external').length;
+  /* ยอดสะสมตามปีที่เลือก */
+  const selYear = matAll.filter(([,ms])=>{
     if(!ms.dispatchDate) return false;
     const [y] = ms.dispatchDate.split('-').map(Number);
-    return y === curYearCE;
+    return y === selYearCE;
   });
-  const totalThisYear = thisYear.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
+  const totalSelYear = selYear.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
 
   sGrid.innerHTML = `
-    <div class="stat stat-success"><b>${thisMonth.length}</b><span>รายการจ่าย (${monthLabel})</span></div>
+    <div class="stat stat-success"><b>${selPeriod.length}</b><span>รายการจ่าย (${monthLabel})</span></div>
     <div class="stat stat-info"><b>${uniqueRecipients.size}</b><span>ผู้รับวัสดุ</span></div>
-    <div class="stat stat-purple"><b>${totalThisMonth}</b><span>ชิ้น/หน่วยจ่ายออก</span></div>
+    <div class="stat stat-purple"><b>${totalSelPeriod}</b><span>จำนวนหน่วยที่จ่าย</span></div>
     <div class="stat stat-teal"><b>${ltcRecip}</b><span>รายการ LTC</span></div>
     <div class="stat stat-warning"><b>${extRecip}</b><span>รายการภายนอก</span></div>
-    <div class="stat stat-info"><b>${totalThisYear}</b><span>จ่ายสะสมปีนี้ (หน่วย)</span></div>
+    <div class="stat stat-info"><b>${totalSelYear}</b><span>จ่ายสะสม ปี พ.ศ.${selYearBE}</span></div>
   `;
 
-  /* สรุปรายการวัสดุที่จ่ายในเดือนนี้ (groupBy itemType) */
-  if(thisMonth.length === 0){
-    iGrid.innerHTML = '<p class="muted">ยังไม่มีรายการจ่ายวัสดุในเดือนนี้</p>';
+  /* หัวข้อ section จ่ายวัสดุ */
+  const sectionTitle = document.querySelector('#matDashCard h4');
+  if(sectionTitle) sectionTitle.textContent = `📋 สรุปรายการวัสดุที่จ่ายในเดือน${monthLabel}`;
+
+  /* สรุปรายการวัสดุในเดือน/ปีที่เลือก (groupBy itemType) */
+  if(selPeriod.length === 0){
+    iGrid.innerHTML = `<p class="muted">ไม่มีรายการจ่ายวัสดุใน${monthLabel}</p>`;
   } else {
     const byItem = {};
-    thisMonth.forEach(([,ms])=>{
+    selPeriod.forEach(([,ms])=>{
       if(!byItem[ms.itemType]) byItem[ms.itemType] = { qty:0, unit:ms.unit||'', count:0 };
       byItem[ms.itemType].qty   += parseInt(ms.quantity,10)||0;
       byItem[ms.itemType].count += 1;
