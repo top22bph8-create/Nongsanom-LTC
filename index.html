@@ -1399,9 +1399,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryAddModal')">ยกเลิก</button><button class="btn btn-primary" id="addInventoryBtn">+ รับเข้าคลัง</button></div>
 </div></div>
 
-<div class="modal-overlay" id="matSupplyModal"><div class="modal-box" style="max-width:520px;">
+<div class="modal-overlay" id="matSupplyModal"><div class="modal-box" style="max-width:580px;">
   <h3>💊 จ่ายวัสดุการแพทย์</h3>
-  <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน</p>
+  <p class="muted">วัสดุการแพทย์จ่ายตัดขาดจากคลัง ไม่ต้องยืมคืน — เพิ่มได้หลายรายการในครั้งเดียว</p>
+
   <div class="field">
     <label>ประเภทผู้รับวัสดุ</label>
     <div style="display:flex;gap:8px;margin-top:4px;">
@@ -1418,31 +1419,29 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
       <div class="field"><label>เบอร์โทรศัพท์</label><input type="tel" id="matExtPhone" placeholder="08xxxxxxxx"></div>
     </div>
   </div>
-  <div class="row" style="margin-top:8px;">
-    <div class="field"><label>รายการวัสดุ</label><select id="matSupplyItem"><option value="">-- เลือกรายการ --</option></select></div>
-  </div>
-  <div class="row" style="margin-top:8px;">
-    <div class="field"><label>จำนวน</label><input type="number" id="matSupplyQty" min="1" value="1"></div>
-    <div class="field"><label>ลักษณะนาม (หน่วย)</label>
-      <select id="matSupplyUnit">
-        <option value="ชิ้น">ชิ้น</option><option value="อัน">อัน</option><option value="กล่อง">กล่อง</option>
-        <option value="ถัง">ถัง</option><option value="ตัว">ตัว</option><option value="หลัง">หลัง</option>
-        <option value="ม้วน">ม้วน</option><option value="แผ่น">แผ่น</option><option value="ชุด">ชุด</option>
-        <option value="แพ็ค">แพ็ค</option><option value="ลัง">ลัง</option><option value="ขวด">ขวด</option>
-        <option value="หลอด">หลอด</option><option value="ซอง">ซอง</option>
-        <option value="เครื่อง">เครื่อง</option><option value="สาย">สาย</option>
-        <option value="ถุง">ถุง</option><option value="ห่อ">ห่อ</option>
-      </select>
-    </div>
-  </div>
-  <div class="row" style="margin-top:8px;">
+
+  <div class="row" style="margin-top:12px;">
     <div class="field"><label>วันที่จ่าย</label>
       <input type="hidden" id="matSupplyDate">
       <button type="button" id="matSupplyDateBtn" class="btn btn-secondary" style="width:100%;text-align:left;">🗓 <span id="matSupplyDateText">เลือกวันที่</span></button>
     </div>
-    <div class="field"><label>หมายเหตุ</label><input type="text" id="matSupplyNote" placeholder="เช่น สนับสนุนตามโครงการ"></div>
+    <div class="field"><label>หมายเหตุ (สำหรับทุกรายการในครั้งนี้)</label>
+      <input type="text" id="matSupplyNote" placeholder="เช่น สนับสนุนตามโครงการ LTC">
+    </div>
   </div>
-  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('matSupplyModal')">ยกเลิก</button><button class="btn btn-primary" id="matSupplySaveBtn">✅ บันทึกการจ่าย</button></div>
+
+  <div style="margin-top:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <label style="font-weight:700;font-size:13.5px;">📦 รายการวัสดุที่จ่าย</label>
+      <button type="button" class="btn btn-secondary btn-sm" id="matAddRowBtn">➕ เพิ่มรายการ</button>
+    </div>
+    <div id="matItemRows" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+  <div class="modal-actions">
+    <button class="btn btn-ghost" onclick="closeModal('matSupplyModal')">ยกเลิก</button>
+    <button class="btn btn-primary" id="matSupplySaveBtn">✅ บันทึกการจ่ายทั้งหมด</button>
+  </div>
 </div></div>
 
 <div class="modal-overlay" id="equipmentModal"><div class="modal-box" style="max-width:560px;">
@@ -3542,11 +3541,13 @@ document.getElementById('openMatSupplyModalBtn').addEventListener('click', ()=>{
   const todayIso = new Date().toISOString().slice(0,10);
   document.getElementById('matSupplyDate').value = todayIso;
   document.getElementById('matSupplyDateText').textContent = formatThaiDate(todayIso);
-  document.getElementById('matSupplyQty').value = '1';
   document.getElementById('matSupplyNote').value = '';
   document.getElementById('matExtName').value = '';
   document.getElementById('matExtPhone').value = '';
   setMatBorrowerType('ltc');
+  /* รีเซ็ต rows แล้วเพิ่ม row เริ่มต้น 1 แถว */
+  document.getElementById('matItemRows').innerHTML = '';
+  matAddRow();
   openModal('matSupplyModal');
 });
 /* แหล่งงบประมาณ: แสดงช่องพิมพ์เมื่อเลือก "อื่นๆ" */
@@ -6403,18 +6404,20 @@ function deleteRepairRecord(repairId){
    Schema: { elderlyId, elderlyName, itemType, quantity, unit, note, dispatchDate, createdAt }
 ============================================================= */
 function populateMatSupplySelects(){
-  /* ผู้รับวัสดุ */
+  /* ผู้รับวัสดุ (ดึงรายชื่อผู้สูงอายุจาก STATE) */
   const esel = document.getElementById('matSupplyElderly');
   if(!esel) return;
   const prevE = esel.value;
   esel.innerHTML = '<option value="">-- เลือกผู้สูงอายุ --</option>' + Object.entries(STATE.elderly||{}).map(([id,e])=>`<option value="${id}">${e.name}</option>`).join('');
   if(prevE) esel.value = prevE;
-  /* รายการวัสดุ */
-  const msel = document.getElementById('matSupplyItem');
-  if(!msel) return;
+  /* อัปเดต dropdown รายการวัสดุในทุก row ที่มีอยู่ (ถ้ามี) */
   const matInvItems = Object.values(STATE.inventory||{}).filter(inv=>inv.category==='material').map(inv=>inv.itemType);
   const allMat = [...new Set([...matInvItems, ...EQUIPMENT_MATERIAL_ITEMS])].sort();
-  msel.innerHTML = '<option value="">-- เลือกรายการ --</option>' + allMat.map(i=>`<option value="${i}">${i}</option>`).join('');
+  document.querySelectorAll('#matItemRows .mat-item-type').forEach(sel=>{
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">-- เลือกรายการ --</option>' + allMat.map(i=>`<option value="${i}">${i}</option>`).join('');
+    if(prev) sel.value = prev;
+  });
 }
 document.getElementById('matSupplyDateBtn').addEventListener('click', ()=>{
   openThaiDatePicker('matSupplyDate','matSupplyDateText','เลือกวันที่จ่ายวัสดุ');
@@ -6429,16 +6432,66 @@ function setMatBorrowerType(type){
 }
 document.getElementById('matBorrowerLtcBtn').addEventListener('click', ()=>setMatBorrowerType('ltc'));
 document.getElementById('matBorrowerExtBtn').addEventListener('click', ()=>setMatBorrowerType('external'));
+/* =============================================================
+   ฟังก์ชันสร้าง row รายการวัสดุ (แบบ dynamic เพิ่มได้เรื่อยๆ)
+============================================================= */
+let matRowCounter = 0;
+const MAT_UNIT_OPTS = ["ชิ้น","อัน","กล่อง","ถัง","ตัว","หลัง","ม้วน","แผ่น","ชุด","แพ็ค","ลัง","ขวด","หลอด","ซอง","เครื่อง","สาย","ถุง","ห่อ"]
+  .map(u=>`<option value="${u}">${u}</option>`).join('');
+function createMatItemRow(matItems){
+  const rowId = 'matrow_'+(++matRowCounter);
+  const div = document.createElement('div');
+  div.className = 'mat-item-row';
+  div.dataset.rowId = rowId;
+  div.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#FAFCFF;position:relative;';
+  const itemOpts = `<option value="">-- เลือกรายการ --</option>` +
+    matItems.map(i=>`<option value="${i}">${i}</option>`).join('');
+  div.innerHTML = `
+    <button type="button" class="mat-row-remove" onclick="this.closest('.mat-item-row').remove()" title="ลบรายการนี้"
+      style="position:absolute;top:6px;right:8px;border:none;background:none;font-size:16px;cursor:pointer;color:#aaa;line-height:1;">✕</button>
+    <div class="row" style="gap:8px;flex-wrap:wrap;">
+      <div class="field" style="flex:2;min-width:160px;">
+        <label style="font-size:12px;">รายการวัสดุ *</label>
+        <select class="mat-item-type" style="width:100%;">${itemOpts}</select>
+      </div>
+      <div class="field" style="flex:0 0 80px;min-width:70px;">
+        <label style="font-size:12px;">จำนวน *</label>
+        <input type="number" class="mat-item-qty" min="1" value="1" style="width:100%;">
+      </div>
+      <div class="field" style="flex:0 0 100px;min-width:90px;">
+        <label style="font-size:12px;">หน่วย</label>
+        <select class="mat-item-unit" style="width:100%;">${MAT_UNIT_OPTS}</select>
+      </div>
+    </div>`;
+  return div;
+}
+function matAddRow(){
+  const matInvItems = Object.values(STATE.inventory||{}).filter(inv=>inv.category==='material').map(inv=>inv.itemType);
+  const allMat = [...new Set([...matInvItems, ...EQUIPMENT_MATERIAL_ITEMS])].sort();
+  document.getElementById('matItemRows').appendChild(createMatItemRow(allMat));
+}
+document.getElementById('matAddRowBtn').addEventListener('click', matAddRow);
+
 document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
-  const itemType = document.getElementById('matSupplyItem').value;
-  const qty = parseInt(document.getElementById('matSupplyQty').value,10);
-  const unit = document.getElementById('matSupplyUnit').value;
+
+  /* รวบรวมรายการวัสดุจาก rows ทั้งหมด */
+  const rowEls = Array.from(document.querySelectorAll('#matItemRows .mat-item-row'));
+  const items = [];
+  for(const row of rowEls){
+    const itemType = row.querySelector('.mat-item-type').value;
+    const qty = parseInt(row.querySelector('.mat-item-qty').value, 10);
+    const unit = row.querySelector('.mat-item-unit').value;
+    if(!itemType){ toast('กรุณาเลือกรายการวัสดุให้ครบทุกแถว','error'); return; }
+    if(isNaN(qty)||qty<1){ toast('กรุณาระบุจำนวน (อย่างน้อย 1) ให้ครบทุกแถว','error'); return; }
+    items.push({ itemType, qty, unit });
+  }
+  if(items.length === 0){ toast('กรุณาเพิ่มรายการวัสดุอย่างน้อย 1 รายการ','error'); return; }
+
   const note = document.getElementById('matSupplyNote').value.trim();
   const dispatchDate = document.getElementById('matSupplyDate').value;
-  if(!itemType){ toast('กรุณาเลือกรายการวัสดุ','error'); return; }
-  if(isNaN(qty)||qty<1){ toast('กรุณาระบุจำนวน (อย่างน้อย 1)','error'); return; }
   if(!dispatchDate){ toast('กรุณาระบุวันที่จ่าย','error'); return; }
+
   let elderlyId = '', elderlyName = '', extName = '', extPhone = '';
   if(matBorrowerType === 'ltc'){
     elderlyId = document.getElementById('matSupplyElderly').value;
@@ -6450,25 +6503,49 @@ document.getElementById('matSupplySaveBtn').addEventListener('click', ()=>{
     if(!extName){ toast('กรุณาระบุชื่อผู้รับวัสดุ','error'); return; }
     elderlyName = extName;
   }
-  /* ตัดยอดวัสดุออกจากคลัง */
-  const invEntry = Object.entries(STATE.inventory||{}).find(([,inv])=>inv.category==='material' && inv.itemType===itemType);
+
+  /* สร้าง updates สำหรับทุกรายการ พร้อมตัดยอดคลังแต่ละชนิด */
   const updates = {};
-  const id = 'MS'+Date.now();
-  updates['materialSupply/'+id] = { elderlyId, elderlyName, extName, extPhone, borrowerType: matBorrowerType, itemType, quantity:qty, unit, note, dispatchDate, createdAt:Date.now() };
-  if(invEntry){
-    const [invId, invData] = invEntry;
-    updates['inventory/'+invId+'/quantity'] = Math.max((parseInt(invData.quantity,10)||0)-qty, 0);
-    updates['inventory/'+invId+'/updatedAt'] = Date.now();
-  }
+  const ts = Date.now();
+  items.forEach((it, i)=>{
+    const id = `MS${ts}_${i}`;
+    updates['materialSupply/'+id] = {
+      elderlyId, elderlyName, extName, extPhone,
+      borrowerType: matBorrowerType,
+      itemType: it.itemType, quantity: it.qty, unit: it.unit,
+      note, dispatchDate, createdAt: ts + i
+    };
+    /* ตัดยอดจากคลัง */
+    const invEntry = Object.entries(STATE.inventory||{})
+      .find(([,inv])=>inv.category==='material' && inv.itemType===it.itemType);
+    if(invEntry){
+      const [invId, invData] = invEntry;
+      /* ต้องระวัง: ถ้ามีหลาย items ตัดยอดชนิดเดียวกัน ต้องคำนวณสะสม */
+      const prevQty = typeof updates['inventory/'+invId+'/quantity'] !== 'undefined'
+        ? updates['inventory/'+invId+'/quantity']
+        : (parseInt(invData.quantity,10)||0);
+      updates['inventory/'+invId+'/quantity'] = Math.max(prevQty - it.qty, 0);
+      updates['inventory/'+invId+'/updatedAt'] = ts;
+    }
+  });
+
+  const saveBtn = document.getElementById('matSupplySaveBtn');
+  saveBtn.disabled = true;
   db.ref().update(updates).then(()=>{
-    toast(`จ่ายวัสดุ "${itemType}" จำนวน ${qty} ${unit} สำเร็จ`,'success');
-    document.getElementById('matSupplyQty').value='1';
+    const names = items.map(it=>`${it.itemType} (${it.qty} ${it.unit})`).join(', ');
+    toast(`บันทึกการจ่ายวัสดุ ${items.length} รายการสำเร็จ — ${names}`,'success');
+    /* รีเซ็ตฟอร์ม */
     document.getElementById('matSupplyNote').value='';
     document.getElementById('matSupplyDate').value='';
     document.getElementById('matSupplyDateText').textContent='เลือกวันที่';
     document.getElementById('matExtName').value='';
     document.getElementById('matExtPhone').value='';
+    document.getElementById('matItemRows').innerHTML='';
+    saveBtn.disabled = false;
     closeModal('matSupplyModal');
+  }).catch(err=>{
+    toast('เกิดข้อผิดพลาด: '+err.message,'error');
+    saveBtn.disabled = false;
   });
 });
 function renderMaterialSupplyTable(){
