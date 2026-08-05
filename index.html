@@ -513,6 +513,31 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <div class="stat-grid" id="statTotal"></div>
   </div>
 
+  <!-- =================== Equipment Dashboard Section =================== -->
+  <div class="card" id="eqDashCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <h3 style="margin:0;">🏥 ครุภัณฑ์การแพทย์ — สถานะพร้อมใช้งาน</h3>
+      <p class="muted" style="margin:0;font-size:12px;">อัปเดตอัตโนมัติตาม Firebase — ยอดคงเหลือหลังหักรายการที่ยืมออก</p>
+    </div>
+    <div id="eqDashGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+      <h4 style="margin:0 0 10px;font-size:13.5px;color:var(--primary-dark);">📊 สถิติการยืมอุปกรณ์ประจำเดือน — ผู้ได้รับการสนับสนุน</h4>
+      <div id="eqMonthStatGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px;"></div>
+      <div id="eqMonthBorrowerList" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="card" id="matDashCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <h3 style="margin:0;">💊 วัสดุการแพทย์ — สถิติการจ่าย</h3>
+      <p class="muted" style="margin:0;font-size:12px;">รายการจ่ายวัสดุตัดขาดจากคลัง สะสมรายเดือน</p>
+    </div>
+    <div id="matDashSummaryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
+    <h4 style="margin:0 0 10px;font-size:13.5px;color:#2E7D32;">📋 สรุปรายการวัสดุที่จ่ายในเดือนนี้</h4>
+    <div id="matDashItemGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;"></div>
+  </div>
+  <!-- =================== End Equipment Dashboard Section =================== -->
+
   <div class="card" id="myCgSummaryCard" style="display:none;">
     <h3>👤 สรุปสำหรับฉัน (CG)</h3>
     <div class="stat-grid" id="myCgStatGrid"></div>
@@ -2979,6 +3004,168 @@ function renderDashboard(){
     `;
   } else {
     attentionCard.style.display = 'none';
+  }
+  /* อัปเดตแดชบอร์ดครุภัณฑ์และวัสดุการแพทย์ในหน้าภาพรวมด้วย */
+  renderEqDashboardHome();
+  renderMatDashboardHome();
+}
+
+/* =============================================================
+   แดชบอร์ดครุภัณฑ์การแพทย์ในหน้าภาพรวม
+   แสดง: รายการอุปกรณ์ที่พร้อมใช้งาน (แบบ card grid)
+         สถิติผู้ได้รับการสนับสนุนการยืมในเดือนปัจจุบัน
+============================================================= */
+function renderEqDashboardHome(){
+  const eqCard = document.getElementById('eqDashCard');
+  const grid   = document.getElementById('eqDashGrid');
+  const mGrid  = document.getElementById('eqMonthStatGrid');
+  const mList  = document.getElementById('eqMonthBorrowerList');
+  if(!eqCard || !grid || !mGrid || !mList) return;
+
+  /* ---- 1) Grid รายการครุภัณฑ์พร้อมใช้งาน ---- */
+  const inv = STATE.inventory || {};
+  const durableEntries = Object.values(inv).filter(d=>d.category==='durable');
+  if(durableEntries.length === 0){
+    grid.innerHTML = '<p class="muted">ยังไม่มีข้อมูลครุภัณฑ์ในคลัง</p>';
+  } else {
+    grid.innerHTML = durableEntries.map(d=>{
+      const total   = computeInventoryTotal(d);
+      const remain  = computeInventoryRemaining(d);
+      const borrowed = total - remain;
+      const pct = total ? Math.round(remain/total*100) : 0;
+      const statusColor = remain === 0 ? '#D8503A' : remain < total ? '#B8860B' : '#2E7D32';
+      const statusLabel = remain === 0 ? 'หมด' : remain < total ? `ว่าง ${remain}/${total}` : `ว่าง ${remain}/${total}`;
+      return `
+      <div onclick="showEqStatusDetail('green')" style="background:#fff;border:1.5px solid ${remain>0?'#C8E6C9':'#FFCDD2'};border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .12s,box-shadow .12s;box-shadow:0 2px 6px rgba(0,0,0,.07);"
+        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 5px 14px rgba(0,0,0,.14)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 2px 6px rgba(0,0,0,.07)'">
+        <div style="font-size:26px;margin-bottom:4px;">${getItemEmoji(d.itemType)}</div>
+        <div style="font-size:11.5px;font-weight:700;color:#1B2E3B;line-height:1.3;margin-bottom:6px;">${d.itemType}</div>
+        <div style="font-size:22px;font-weight:900;color:${statusColor};line-height:1;">${remain}</div>
+        <div style="font-size:10.5px;color:#6b7d8a;margin-top:2px;">/ ${total} ${d.unit||'ชิ้น'}</div>
+        ${borrowed > 0 ? `<div style="font-size:10px;background:#FFF8E1;color:#8A6100;border-radius:20px;padding:2px 8px;margin-top:5px;display:inline-block;">🔄 ยืมออก ${borrowed}</div>` : ''}
+        <div style="margin-top:6px;background:#EEF2F5;border-radius:6px;height:5px;">
+          <div style="background:${statusColor};border-radius:6px;height:5px;width:${pct}%;transition:width .4s;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- 2) สถิติการยืมในเดือนปัจจุบัน ---- */
+  const now = new Date();
+  const curMonth = now.getMonth() + 1;
+  const curYearCE = now.getFullYear();
+  const curYearBE = beYear(curYearCE);
+  const monthLabel = `${TH_MONTHS_FULL[curMonth-1]} ${curYearBE}`;
+  /* รายการที่ยืมออกในเดือนนี้ (dateReceived ตรงกับเดือน/ปีปัจจุบัน) */
+  const eqAll = Object.entries(STATE.equipment || {});
+  const monthLoaned = eqAll.filter(([,e])=>{
+    if(!e.dateReceived) return false;
+    const [ey, em] = e.dateReceived.split('-').map(Number);
+    return ey === curYearCE && em === curMonth;
+  });
+  const monthReturned = eqAll.filter(([,e])=>{
+    if(!e.dateReturned) return false;
+    const [ey, em] = e.dateReturned.split('-').map(Number);
+    return ey === curYearCE && em === curMonth;
+  });
+  const uniqueBorrowers = new Set(monthLoaned.map(([,e])=>e.elderlyId||e.extName||'ภายนอก'));
+  const ltcCount = monthLoaned.filter(([,e])=>(e.borrowerType||'ltc')==='ltc').length;
+  const extCount = monthLoaned.filter(([,e])=>e.borrowerType==='external').length;
+  const stillOut  = eqAll.filter(([,e])=>!e.dateReturned).length;
+
+  mGrid.innerHTML = `
+    <div class="stat stat-info"><b>${monthLoaned.length}</b><span>รายการยืมใหม่ (${monthLabel})</span></div>
+    <div class="stat stat-success"><b>${uniqueBorrowers.size}</b><span>ผู้ได้รับการสนับสนุน</span></div>
+    <div class="stat stat-purple"><b>${ltcCount}</b><span>ยืม (ผู้สูงอายุ LTC)</span></div>
+    <div class="stat stat-warning"><b>${extCount}</b><span>ยืม (บุคคลภายนอก)</span></div>
+    <div class="stat stat-danger"><b>${stillOut}</b><span>ยังไม่คืน (สะสม)</span></div>
+    <div class="stat stat-teal"><b>${monthReturned.length}</b><span>ส่งคืนในเดือนนี้</span></div>
+  `;
+
+  /* รายชื่อผู้ยืมในเดือนนี้ */
+  if(monthLoaned.length === 0){
+    mList.innerHTML = '<p class="muted">ยังไม่มีรายการยืมในเดือนนี้</p>';
+  } else {
+    const rows = monthLoaned.slice(0,8).map(([id,e])=>{
+      const name = (e.borrowerType||'ltc')==='ltc' ? (e.elderlyName||'-') : (e.extName||e.elderlyName||'-');
+      const tag  = (e.borrowerType||'ltc')==='ltc'
+        ? `<span class="badge normal" style="font-size:10px;">LTC</span>`
+        : `<span class="badge obt" style="font-size:10px;">ภายนอก</span>`;
+      const ret  = e.dateReturned ? `<span class="status-tag approved" style="font-size:11px;">✅ คืนแล้ว</span>` : `<span class="status-tag disabled" style="font-size:11px;">⏳ ยังไม่คืน</span>`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fff;">
+        <span style="font-size:15px;">${getItemEmoji(e.itemType||'')}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;">${name} ${tag}</span>
+        <span style="font-size:12px;color:#6b7d8a;">${e.itemType||'-'} ${e.itemCode?`(${e.itemCode})`:''}</span>
+        ${ret}
+      </div>`;
+    }).join('');
+    const more = monthLoaned.length > 8 ? `<p class="muted" style="text-align:center;margin-top:4px;">+ อีก ${monthLoaned.length-8} รายการ — ดูเพิ่มเติมในเมนูจัดการอุปกรณ์</p>` : '';
+    mList.innerHTML = rows + more;
+  }
+}
+
+/* =============================================================
+   แดชบอร์ดวัสดุการแพทย์ในหน้าภาพรวม
+============================================================= */
+function renderMatDashboardHome(){
+  const card  = document.getElementById('matDashCard');
+  const sGrid = document.getElementById('matDashSummaryGrid');
+  const iGrid = document.getElementById('matDashItemGrid');
+  if(!card||!sGrid||!iGrid) return;
+
+  const now = new Date();
+  const curMonth = now.getMonth() + 1;
+  const curYearCE = now.getFullYear();
+  const monthLabel = `${TH_MONTHS_FULL[curMonth-1]} ${beYear(curYearCE)}`;
+  const matAll = Object.entries(STATE.materialSupply || {});
+
+  /* สถิติเดือนนี้ */
+  const thisMonth = matAll.filter(([,ms])=>{
+    if(!ms.dispatchDate) return false;
+    const [y,m] = ms.dispatchDate.split('-').map(Number);
+    return y === curYearCE && m === curMonth;
+  });
+  const totalThisMonth = thisMonth.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
+  const uniqueRecipients = new Set(thisMonth.map(([,ms])=>ms.elderlyId||ms.extName||'ext'));
+  const ltcRecip = thisMonth.filter(([,ms])=>(ms.borrowerType||'ltc')==='ltc').length;
+  const extRecip = thisMonth.filter(([,ms])=>ms.borrowerType==='external').length;
+  /* ยอดสะสมปีนี้ */
+  const thisYear = matAll.filter(([,ms])=>{
+    if(!ms.dispatchDate) return false;
+    const [y] = ms.dispatchDate.split('-').map(Number);
+    return y === curYearCE;
+  });
+  const totalThisYear = thisYear.reduce((s,[,ms])=>s+(parseInt(ms.quantity,10)||0),0);
+
+  sGrid.innerHTML = `
+    <div class="stat stat-success"><b>${thisMonth.length}</b><span>รายการจ่าย (${monthLabel})</span></div>
+    <div class="stat stat-info"><b>${uniqueRecipients.size}</b><span>ผู้รับวัสดุ</span></div>
+    <div class="stat stat-purple"><b>${totalThisMonth}</b><span>ชิ้น/หน่วยจ่ายออก</span></div>
+    <div class="stat stat-teal"><b>${ltcRecip}</b><span>รายการ LTC</span></div>
+    <div class="stat stat-warning"><b>${extRecip}</b><span>รายการภายนอก</span></div>
+    <div class="stat stat-info"><b>${totalThisYear}</b><span>จ่ายสะสมปีนี้ (หน่วย)</span></div>
+  `;
+
+  /* สรุปรายการวัสดุที่จ่ายในเดือนนี้ (groupBy itemType) */
+  if(thisMonth.length === 0){
+    iGrid.innerHTML = '<p class="muted">ยังไม่มีรายการจ่ายวัสดุในเดือนนี้</p>';
+  } else {
+    const byItem = {};
+    thisMonth.forEach(([,ms])=>{
+      if(!byItem[ms.itemType]) byItem[ms.itemType] = { qty:0, unit:ms.unit||'', count:0 };
+      byItem[ms.itemType].qty   += parseInt(ms.quantity,10)||0;
+      byItem[ms.itemType].count += 1;
+    });
+    iGrid.innerHTML = Object.entries(byItem).sort((a,b)=>b[1].qty-a[1].qty).map(([item,d])=>`
+      <div style="background:#fff;border:1.5px solid #C8E6C9;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;flex-shrink:0;">${getItemEmoji(item)}</span>
+        <div style="min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item}</div>
+          <div style="font-size:13px;font-weight:800;color:#2E7D32;margin-top:2px;">${d.qty} <span style="font-size:11px;font-weight:600;color:#6b7d8a;">${d.unit}</span></div>
+          <div style="font-size:10.5px;color:#6b7d8a;">${d.count} รายการ</div>
+        </div>
+      </div>`).join('');
   }
 }
 
@@ -5854,6 +6041,7 @@ db.ref('inventory').on('value', snap=>{
   renderInventoryTable();
   renderEqStatusDashboard();
   renderRepairDisposalPickers();
+  renderEqDashboardHome();
 });
 db.ref('repairRegistry').on('value', snap=>{
   STATE.repairRegistry = snap.val() || {};
@@ -5866,6 +6054,7 @@ db.ref('disposalRegistry').on('value', snap=>{
 db.ref('materialSupply').on('value', snap=>{
   STATE.materialSupply = snap.val() || {};
   renderMaterialSupplyTable();
+  renderMatDashboardHome();
 });
 
 /* ยอดคงเหลือครุภัณฑ์ (durable): ใช้จำนวนเลขครุภัณฑ์ที่ว่างอยู่ (ตัดตามจำนวนที่ถูกยืมจริง)
