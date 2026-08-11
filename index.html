@@ -1701,6 +1701,59 @@ document.getElementById('loginLogo').src = LOGO_BASE64;
 document.getElementById('registerLogo').src = LOGO_BASE64;
 const db = firebase.database();
 
+/* ===============================================================
+   ตรวจสอบสถานะการเชื่อมต่อ Firebase Realtime Database แบบ real-time
+   แสดง banner เตือนเมื่อขาดการเชื่อมต่อ และแจ้งกลับเมื่อเชื่อมต่อได้อีกครั้ง
+=============================================================== */
+let _wasOffline = false;
+db.ref('.info/connected').on('value', snap=>{
+  const isConnected = snap.val() === true;
+  let banner = document.getElementById('_fbBanner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = '_fbBanner';
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:5000;padding:10px 20px;font-size:13.5px;font-weight:700;text-align:center;transition:transform .3s;transform:translateY(100%);';
+    document.body.appendChild(banner);
+  }
+  if(!isConnected){
+    _wasOffline = true;
+    banner.style.background = '#D8503A';
+    banner.style.color = '#fff';
+    banner.textContent = '⚠️ ขาดการเชื่อมต่อกับฐานข้อมูล Firebase — ข้อมูลจะอัปเดตอัตโนมัติเมื่อเชื่อมต่อกลับมาได้';
+    banner.style.transform = 'translateY(0)';
+  } else {
+    if(_wasOffline){
+      banner.style.background = '#2E7D32';
+      banner.style.color = '#fff';
+      banner.textContent = '✅ เชื่อมต่อฐานข้อมูลสำเร็จ — ข้อมูลพร้อมใช้งาน';
+      banner.style.transform = 'translateY(0)';
+      setTimeout(()=>{ banner.style.transform = 'translateY(100%)'; }, 3000);
+    }
+  }
+});
+
+/* ===== ฟังก์ชันวินิจฉัยปัญหาการเชื่อมต่อ (เรียกจาก console: diagnoseFB()) ===== */
+function diagnoseFB(){
+  console.group('🔍 NSN LTC — Firebase Diagnostic');
+  console.log('Project ID:', 'cm-cg-70f3f');
+  console.log('DB URL:', 'https://cm-cg-70f3f-default-rtdb.asia-southeast1.firebasedatabase.app');
+  console.log('Online:', navigator.onLine);
+  db.ref('.info/serverTimeOffset').once('value').then(s=>{
+    console.log('✅ DB reachable — server time offset:', s.val(), 'ms');
+  }).catch(e=>{
+    console.error('❌ DB unreachable:', e.code, e.message);
+    console.warn('วิธีแก้: ตรวจสอบ Firebase Security Rules ที่ Firebase Console → Realtime Database → Rules');
+    console.warn('Rules ที่แนะนำสำหรับทดสอบ: { "rules": { ".read": true, ".write": true } }');
+  });
+  db.ref('users').once('value').then(s=>{
+    const n = Object.keys(s.val()||{}).length;
+    console.log('✅ /users readable — found', n, 'users');
+  }).catch(e=>{
+    console.error('❌ /users read DENIED:', e.code, e.message);
+  });
+  console.groupEnd();
+}
+
 /* =============================================================
    HELPERS
 ============================================================= */
@@ -2309,6 +2362,11 @@ document.getElementById('loginBtn').addEventListener('click', ()=>{
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
   if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
+  if(Object.keys(STATE.users).length === 0){
+    errEl.textContent = '⚠️ ระบบยังโหลดข้อมูลผู้ใช้จากฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วรีเฟรชหน้าใหม่';
+    errEl.style.color = '#D8503A';
+    return;
+  }
   const entry = Object.entries(STATE.users).find(([id,u])=>u.username===username);
   if(!entry){ errEl.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ'; return; }
   const [uid, u] = entry;
