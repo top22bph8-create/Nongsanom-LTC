@@ -36,6 +36,112 @@ header.app-header p{margin:3px 0 0;font-size:12px;opacity:.92;}
   header.app-header h1{font-size:11.5px;}
   header.app-header img.app-logo{width:34px;height:34px;}
 }
+
+/* ============================================================
+   MOBILE RESPONSIVE — ≤ 640px
+============================================================ */
+@media(max-width:640px){
+  /* Layout */
+  main{padding:8px;}
+  .card{padding:12px;margin-bottom:10px;}
+
+  /* Tabs — scroll horizontally, shrink text */
+  nav.tabs{top:56px;}
+  nav.tabs button{padding:10px 8px;font-size:11.5px;min-width:72px;}
+
+  /* Row → stack vertically on mobile */
+  .row{flex-direction:column;gap:8px;}
+  .field{min-width:0;width:100%;}
+
+  /* Action bar (เมนูจัดการอุปกรณ์) → stack */
+  .eq-actionbar{flex-direction:column;gap:8px;}
+  .eq-action-btn{min-width:0;width:100%;padding:14px 16px;font-size:14px;}
+  .eq-action-btn .eq-action-ico{font-size:22px;}
+
+  /* Modals */
+  .modal-box{padding:14px;max-height:92vh;}
+  .modal-overlay{padding:8px;}
+
+  /* Tables — horizontal scroll wrapper */
+  div[style*="overflow-x:auto"],.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .inv-table{font-size:11px;}
+  .inv-table th,.inv-table td{padding:6px 5px;}
+
+  /* Stat grid → 2 columns on mobile */
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .stat{padding:10px 8px;}
+  .stat b{font-size:18px;}
+  .stat span{font-size:10.5px;}
+
+  /* Equipment dashboard grid → 2 columns */
+  #eqDashGrid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  #eqMonthStatGrid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  #matDashSummaryGrid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  #matDashItemGrid{grid-template-columns:repeat(1,1fr)!important;gap:6px!important;}
+
+  /* Status bar cards → 2 per row */
+  #eqStatusDashboard>div{flex-direction:column;}
+  #eqStatusDashboard button{min-width:0!important;padding:12px 14px!important;}
+
+  /* Visit record checkboxes */
+  .checkbox-group{grid-template-columns:1fr!important;}
+
+  /* Buttons in modal-actions */
+  .modal-actions{flex-direction:column;gap:8px;}
+  .modal-actions .btn{width:100%;justify-content:center;}
+
+  /* Typography */
+  h3{font-size:14.5px;}
+  h4{font-size:13px;}
+  label{font-size:12px;}
+  input,select,textarea{font-size:14px!important;} /* ป้องกัน iOS zoom-in เมื่อ focus */
+
+  /* Elderly/CG table buttons — wrap nicely */
+  td .row{flex-direction:row;flex-wrap:wrap;gap:4px;}
+  td .btn{padding:4px 8px;font-size:11px;}
+
+  /* Drill down cards */
+  .drill-summary-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .adl-infographic{font-size:12px;}
+
+  /* Login box */
+  .login-box{max-width:100%!important;border-radius:12px!important;}
+  .login-body{padding:16px!important;}
+  .brand-name{font-size:20px!important;}
+
+  /* Thai date picker */
+  #thaiDateModal .modal-box{padding:10px;}
+  .day{padding:4px 2px;font-size:12px;}
+  .day b{font-size:13px;}
+  .day-sub{font-size:9px;}
+  .dow{font-size:11px;padding:4px 0;}
+  .calendar-grid{gap:3px!important;}
+
+  /* Toast messages */
+  #toastWrap{bottom:50px!important;left:8px!important;right:8px!important;}
+  .toast{max-width:100%!important;font-size:13px!important;}
+
+  /* Connection banner */
+  #_fbBanner{font-size:12px!important;padding:8px 12px!important;}
+
+  /* Support items list chips */
+  #recSupportList{flex-direction:column;}
+
+  /* Material supply rows */
+  .mat-item-row .row{flex-direction:row!important;gap:6px;}
+  .mat-item-row .field:first-child{flex:2;}
+  .mat-item-row .field:not(:first-child){flex:1;}
+}
+
+/* ≤ 400px — very small phones */
+@media(max-width:400px){
+  nav.tabs button{padding:9px 6px;font-size:10.5px;min-width:62px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  #eqDashGrid{grid-template-columns:repeat(2,1fr)!important;}
+  .eq-action-btn{font-size:13px;}
+  .card{padding:10px;}
+  main{padding:6px;}
+}
 .adl-dot{display:inline-block;width:15px;height:15px;border-radius:50%;margin-right:6px;vertical-align:middle;flex-shrink:0;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 3px rgba(0,0,0,.25);}
 .adl-dot.adl-normal{background:#2E7D32;}
 .adl-dot.adl-social{background:#185FA5;}
@@ -84,7 +190,7 @@ main{max-width:920px;margin:0 auto;padding:14px;}
 .field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;}
 .field label{font-size:12px;color:var(--muted);font-weight:600;}
 select,input[type=text],input[type=number],input[type=tel],input[type=file],input[type=date],input[type=password],textarea{
-  font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;
+  font-family:inherit;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;min-height:42px;
 }
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,113,186,.12);}
 .ms-dropdown{position:relative;}
@@ -122,7 +228,7 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary)
 .plan-day-btn:hover{border-color:var(--primary);}
 .plan-day-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700;}
 textarea{resize:vertical;min-height:60px;}
-.btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:filter .15s,transform .1s,box-shadow .15s;}
+.btn{border:none;border-radius:8px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:filter .15s,transform .1s,box-shadow .15s;min-height:42px;}
 .btn:hover{filter:brightness(1.06);box-shadow:0 3px 10px rgba(21,113,186,.18);}
 .btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--primary);color:#fff;}
@@ -191,7 +297,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;}
 .calendar-grid .day.selected .day-sub{opacity:.92;}
 .calendar-grid .day.selected{background:var(--primary);color:#fff;font-weight:700;}
 .calendar-grid .day.empty{visibility:hidden;}
-.checkbox-group{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+.checkbox-group{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;margin-top:4px;}
 .checkbox-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:400;cursor:pointer;padding:6px 8px;border-radius:6px;transition:background .15s;}
 .checkbox-item:hover{background:#F4FBFF;}
 .checkbox-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;}
