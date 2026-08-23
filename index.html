@@ -1202,7 +1202,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
   <div class="card">
     <h3>⚙️ ตั้งค่าผู้รับรองรายงาน</h3>
-    <p class="muted">เพิ่มรายชื่อผู้ที่สามารถลงนามรับรองผลงานได้หลายคน แล้วเลือกว่าใครเป็น "ผู้รับรองปัจจุบัน" ที่จะแสดงในช่องลงชื่อท้ายรายงาน PDF สรุปการเยี่ยมบ้านผู้สูงอายุของ CG แต่ละคน — เปลี่ยนแปลงได้ตลอดเวลา มีผลกับรายงานที่สร้างครั้งถัดไปทันที</p>
+    <p class="muted">เพิ่มรายชื่อผู้ที่สามารถลงนามรับรองผลงานได้หลายคน แล้วเลือกว่าใครเป็น "ผู้รับรองปัจจุบัน" ที่จะแสดงในช่องลงชื่อท้ายรายงาน PDF — เปลี่ยนแปลงได้ตลอดเวลา</p>
     <div class="row">
       <div class="field"><label>ชื่อผู้รับรองรายงาน</label><input type="text" id="reportCertifierName" placeholder="เช่น นางศศิธร ภิญญะพงษ์"></div>
       <div class="field"><label>ตำแหน่ง</label><input type="text" id="reportCertifierPosition" placeholder="เช่น พยาบาลวิชาชีพชำนาญการ"></div>
@@ -1210,6 +1210,45 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     </div>
     <table style="margin-top:12px;"><thead><tr><th>ชื่อ</th><th>ตำแหน่ง</th><th>สถานะ</th><th></th></tr></thead>
     <tbody id="reportCertifierTable"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h3>🛡️ สำรองข้อมูลและเครื่องมือระบบ (Admin only)</h3>
+    <p class="muted">ฟังก์ชันสำรองข้อมูล วินิจฉัยระบบ และเครื่องมือสำหรับผู้ดูแลระบบ — กดปุ่มสำรองข้อมูลเพื่อดาวน์โหลดไฟล์ JSON ทุก Collection จาก Firebase ไว้ในเครื่องของคุณ</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px;">
+      <!-- Full backup -->
+      <div style="background:linear-gradient(135deg,#0F5590,#43C1F1);border-radius:14px;padding:16px;color:#fff;">
+        <div style="font-size:22px;margin-bottom:6px;">💾</div>
+        <div style="font-weight:800;font-size:14px;">สำรองข้อมูลทั้งระบบ</div>
+        <div style="font-size:11.5px;opacity:.9;margin:4px 0 10px;">ดาวน์โหลด JSON ทุก Collection</div>
+        <button class="btn" id="backupFullBtn" style="background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.4);width:100%;justify-content:center;font-size:13px;">⬇️ สำรองข้อมูล (Full)</button>
+      </div>
+      <!-- Elderly + visits only -->
+      <div style="background:linear-gradient(135deg,#2E7D32,#4CAF50);border-radius:14px;padding:16px;color:#fff;">
+        <div style="font-size:22px;margin-bottom:6px;">👴</div>
+        <div style="font-weight:800;font-size:14px;">สำรองข้อมูลผู้สูงอายุ</div>
+        <div style="font-size:11.5px;opacity:.9;margin:4px 0 10px;">ผู้สูงอายุ + การเยี่ยม + CG</div>
+        <button class="btn" id="backupElderlyBtn" style="background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.4);width:100%;justify-content:center;font-size:13px;">⬇️ สำรองข้อมูลผู้ดูแล</button>
+      </div>
+      <!-- Equipment only -->
+      <div style="background:linear-gradient(135deg,#B8860B,#F0A93B);border-radius:14px;padding:16px;color:#fff;">
+        <div style="font-size:22px;margin-bottom:6px;">🛏</div>
+        <div style="font-weight:800;font-size:14px;">สำรองข้อมูลอุปกรณ์</div>
+        <div style="font-size:11.5px;opacity:.9;margin:4px 0 10px;">คลัง + ยืม-คืน + วัสดุ + ซ่อม</div>
+        <button class="btn" id="backupEquipmentBtn" style="background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.4);width:100%;justify-content:center;font-size:13px;">⬇️ สำรองข้อมูลอุปกรณ์</button>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">🔍 วินิจฉัยระบบ</h4>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+      <button class="btn btn-secondary btn-sm" id="diagConnBtn">🌐 ตรวจสอบการเชื่อมต่อ Firebase</button>
+      <button class="btn btn-secondary btn-sm" id="diagDataBtn">📊 สถิติข้อมูลในระบบ</button>
+      <button class="btn btn-secondary btn-sm" id="diagClearCacheBtn">🗑 ล้าง localStorage</button>
+    </div>
+    <div id="diagResult" style="display:none;background:#F4F8FF;border:1px solid #D0E4F7;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.9;"></div>
+
+    <div class="upload-progress" id="backupProgress" style="margin-top:8px;"></div>
   </div>
 </section>
 
@@ -8594,6 +8633,112 @@ document.getElementById('generateEquipmentPdfBtn').addEventListener('click', asy
     root.innerHTML = '';
     btn.disabled = false;
   }
+});
+
+/* =============================================================
+   ระบบสำรองข้อมูล (Admin Backup & Diagnostics)
+   ดาวน์โหลด snapshot Firebase เป็นไฟล์ JSON
+============================================================= */
+async function runBackup(collections, filename){
+  const prog = document.getElementById('backupProgress');
+  const btn = document.getElementById('backupFullBtn');
+  prog.textContent = `⏳ กำลังดึงข้อมูล ${collections.length} collections...`;
+  try{
+    const snapshot = { exportedAt: new Date().toISOString(), facility: FACILITY_NAME, collections:{} };
+    for(const col of collections){
+      try{
+        const s = await db.ref(col).once('value');
+        snapshot.collections[col] = s.val() || {};
+      }catch(e){ snapshot.collections[col] = {_error: e.message}; }
+    }
+    const json = JSON.stringify(snapshot, null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    const totalRecords = collections.reduce((sum,col)=>{
+      const d = snapshot.collections[col];
+      return sum + (d && typeof d === 'object' ? Object.keys(d).length : 0);
+    }, 0);
+    prog.textContent = `✅ สำรองข้อมูลสำเร็จ — ${totalRecords} รายการ จาก ${collections.length} collections | ไฟล์: ${filename}`;
+    toast(`สำรองข้อมูลสำเร็จ (${totalRecords} รายการ)`,'success');
+  }catch(err){
+    prog.textContent = `❌ เกิดข้อผิดพลาด: ${err.message}`;
+    toast('สำรองข้อมูลไม่สำเร็จ: '+err.message,'error');
+  }
+}
+const ALL_COLLECTIONS = ['cgs','elderly','elderlyHistory','visits','visitHistory','visitPlans',
+  'users','inventory','equipment','materialSupply','repairRegistry','disposalRegistry',
+  'cgTransferHistory','systemSettings','systemFlags'];
+const ELDERLY_COLLECTIONS = ['cgs','elderly','elderlyHistory','visits','visitHistory','visitPlans','cgTransferHistory'];
+const EQUIPMENT_COLLECTIONS = ['inventory','equipment','materialSupply','repairRegistry','disposalRegistry'];
+
+document.getElementById('backupFullBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  runBackup(ALL_COLLECTIONS, `NSN_LTC_BACKUP_FULL_${date}.json`);
+});
+document.getElementById('backupElderlyBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  runBackup(ELDERLY_COLLECTIONS, `NSN_LTC_BACKUP_ELDERLY_${date}.json`);
+});
+document.getElementById('backupEquipmentBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  runBackup(EQUIPMENT_COLLECTIONS, `NSN_LTC_BACKUP_EQUIPMENT_${date}.json`);
+});
+
+document.getElementById('diagConnBtn').addEventListener('click', async ()=>{
+  const res = document.getElementById('diagResult');
+  res.style.display='block';
+  res.innerHTML='⏳ กำลังตรวจสอบการเชื่อมต่อ...';
+  try{
+    const t0 = Date.now();
+    const off = await db.ref('.info/serverTimeOffset').once('value');
+    const ping = Date.now()-t0;
+    res.innerHTML=`✅ <b>เชื่อมต่อ Firebase สำเร็จ</b><br>
+      📡 Project: cm-cg-70f3f | Region: asia-southeast1<br>
+      ⚡ Ping: ${ping}ms | Server offset: ${off.val()}ms<br>
+      🌐 Browser online: ${navigator.onLine ? 'ใช่' : 'ไม่ใช่'}`;
+  }catch(e){
+    res.innerHTML=`❌ <b>เชื่อมต่อไม่ได้:</b> ${e.code} — ${e.message}<br>
+      💡 ตรวจสอบ Firebase Rules ที่ Console → Realtime Database → Rules`;
+  }
+});
+
+document.getElementById('diagDataBtn').addEventListener('click', async ()=>{
+  const res = document.getElementById('diagResult');
+  res.style.display='block';
+  res.innerHTML='⏳ กำลังนับข้อมูล...';
+  const counts = {
+    'ผู้สูงอายุ (active)': Object.values(STATE.elderly||{}).filter(e=>e.status!=='discharged').length,
+    'ผู้สูงอายุ (ทั้งหมด)': Object.keys(STATE.elderly||{}).length,
+    'CG': Object.keys(STATE.cgs||{}).length,
+    'การเยี่ยม (บันทึกแล้ว)': Object.keys(STATE.visits||{}).length,
+    'ผู้ใช้งาน': Object.keys(STATE.users||{}).length,
+    'ครุภัณฑ์/วัสดุในคลัง': Object.keys(STATE.inventory||{}).length,
+    'รายการยืม-คืน': Object.keys(STATE.equipment||{}).length,
+    'จ่ายวัสดุ': Object.keys(STATE.materialSupply||{}).length,
+    'ส่งซ่อม (pending)': Object.values(STATE.repairRegistry||{}).filter(r=>r.status==='pending').length,
+    'รอจำหน่าย': Object.values(STATE.disposalRegistry||{}).filter(d=>d.status==='waiting').length,
+  };
+  const now = new Date();
+  const nowBE = `${now.getDate()} ${TH_MONTHS_FULL[now.getMonth()]} ${beYear(now.getFullYear())}`;
+  res.innerHTML = `<b>📊 สถิติข้อมูลในระบบ ณ วันที่ ${nowBE}</b><br><br>` +
+    Object.entries(counts).map(([k,v])=>`<b>${v}</b> ${k}`).join('<br>');
+});
+
+document.getElementById('diagClearCacheBtn').addEventListener('click', ()=>{
+  showConfirm('ล้าง localStorage?',
+    'จะลบข้อมูลที่บันทึกชั่วคราวในเบราว์เซอร์ (ไม่กระทบข้อมูลในฐานข้อมูล Firebase)',
+    ()=>{
+      localStorage.clear();
+      toast('ล้าง localStorage สำเร็จ','success');
+      document.getElementById('diagResult').innerHTML='✅ ล้าง localStorage เรียบร้อย';
+      document.getElementById('diagResult').style.display='block';
+    });
 });
 
 /* init */
