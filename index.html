@@ -6170,7 +6170,7 @@ const EQUIPMENT_DURABLE_ITEMS = [
   "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
 ];
 const EQUIPMENT_MATERIAL_ITEMS = [
-  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ M","ผ้าอ้อมสำเร็จรูป ไซส์ L","ผ้าอ้อมสำเร็จรูป ไซส์ XL","แผ่นรองซับ",
   "สายออกซิเจน","สายออกซิเจน canular","สายยางให้อาหาร (NG tube)",
   "เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
   "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา",
@@ -6191,7 +6191,10 @@ const ITEM_EMOJI = {
   "สามล้อโยก":"🚲",               /* สามล้อ */
   "ที่นอนลมป้องกันแผลกดทับ":"🌀",  /* ที่นอนลม */
   /* วัสดุการแพทย์ */
-  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* ผ้าอ้อม */
+  "ผ้าอ้อมสำเร็จรูป ไซส์ M":"🧷",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ L":"🧷",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ XL":"🧷",
+  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* compat สำหรับข้อมูลเดิม */
   "แผ่นรองซับ":"🟦",              /* แผ่น */
   "สายออกซิเจน":"〰️",             /* สาย */
   "สายออกซิเจน canular":"〰️",     /* สาย */
@@ -6657,6 +6660,14 @@ function createMatItemRow(matItems){
         <label style="font-size:12px;">รายการวัสดุ *</label>
         <select class="mat-item-type" style="width:100%;">${itemOpts}</select>
       </div>
+      <div class="field mat-size-wrap" style="flex:0 0 120px;min-width:100px;display:none;">
+        <label style="font-size:12px;">ไซส์</label>
+        <select class="mat-item-size" style="width:100%;">
+          <option value="M">M (กลาง)</option>
+          <option value="L">L (ใหญ่)</option>
+          <option value="XL">XL (ใหญ่พิเศษ)</option>
+        </select>
+      </div>
       <div class="field" style="flex:0 0 80px;min-width:70px;">
         <label style="font-size:12px;">จำนวน *</label>
         <input type="number" class="mat-item-qty" min="1" value="1" style="width:100%;">
@@ -6666,6 +6677,28 @@ function createMatItemRow(matItems){
         <select class="mat-item-unit" style="width:100%;">${MAT_UNIT_OPTS}</select>
       </div>
     </div>`;
+  /* แสดง/ซ่อน ช่องไซส์ตามรายการที่เลือก */
+  const typeSel = div.querySelector('.mat-item-type');
+  const sizeWrap = div.querySelector('.mat-size-wrap');
+  const sizeSel  = div.querySelector('.mat-item-size');
+  const DIAPER_BASE = 'ผ้าอ้อมสำเร็จรูป';
+  typeSel.addEventListener('change', function(){
+    const val = this.value;
+    const isDiaper = val === DIAPER_BASE || val.startsWith(DIAPER_BASE+' ไซส์');
+    sizeWrap.style.display = isDiaper ? '' : 'none';
+    /* sync ไซส์ไปที่ value ของ type select ถ้าเป็นผ้าอ้อมที่ไม่ระบุไซส์ */
+    if(isDiaper && val === DIAPER_BASE){
+      this.value = `${DIAPER_BASE} ไซส์ ${sizeSel.value}`;
+    }
+  });
+  sizeSel.addEventListener('change', function(){
+    /* เมื่อเปลี่ยนไซส์ ให้อัปเดต value ของ type select ด้วย */
+    const curType = typeSel.value;
+    if(curType.startsWith(DIAPER_BASE)){
+      typeSel.value = `${DIAPER_BASE} ไซส์ ${this.value}`;
+    }
+  });
+  /* ถ้า matItems มีแต่ผ้าอ้อมที่ระบุไซส์แล้ว ให้แสดงช่องไซส์ทันที */
   return div;
 }
 function matAddRow(){
