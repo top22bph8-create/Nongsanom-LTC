@@ -1250,6 +1250,40 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
     <div class="upload-progress" id="backupProgress" style="margin-top:8px;"></div>
   </div>
+
+  <div class="card">
+    <h3>♻️ นำเข้า/กู้คืนข้อมูลจากไฟล์สำรอง (Admin only)</h3>
+    <p class="muted">ใช้สำหรับกู้คืนข้อมูลจากไฟล์ JSON ที่เคยสำรองไว้ (ไฟล์ที่ได้จากปุ่ม "สำรองข้อมูล" ด้านบน) — เลือกได้ว่าจะ<b>เขียนทับทั้งหมด</b>หรือ<b>ผสานกับข้อมูลปัจจุบัน</b> ระบบจะตรวจสอบไฟล์และแสดงสรุปให้ยืนยันก่อนดำเนินการเสมอ</p>
+
+    <div style="background:#FFF3E0;border:1px solid #FFB300;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#8A6100;">
+      ⚠️ <b>คำเตือน:</b> การนำเข้าข้อมูลแบบ "เขียนทับทั้งหมด" จะลบข้อมูลปัจจุบันของ Collection นั้นทิ้งทั้งหมดแล้วแทนที่ด้วยข้อมูลจากไฟล์สำรอง ไม่สามารถย้อนกลับได้ — แนะนำให้สำรองข้อมูลปัจจุบันไว้ก่อนเสมอ
+    </div>
+
+    <div class="field">
+      <label>เลือกไฟล์สำรองข้อมูล (.json)</label>
+      <input type="file" id="restoreFileInput" accept="application/json,.json">
+    </div>
+
+    <div id="restorePreview" style="display:none;margin-top:14px;">
+      <div style="background:#F1F8E9;border:1px solid #C8E6C9;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+        <div id="restoreFileInfo" style="font-size:13px;line-height:1.8;"></div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-weight:700;font-size:13px;">เลือก Collection ที่ต้องการนำเข้า</label>
+        <div id="restoreCollectionList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>วิธีการนำเข้า</label>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button type="button" class="btn eq-txn-toggle active" id="restoreModeMergeBtn" style="flex:1;font-size:13px;">🔀 ผสานกับข้อมูลเดิม</button>
+          <button type="button" class="btn eq-txn-toggle" id="restoreModeOverwriteBtn" style="flex:1;font-size:13px;">🗑 เขียนทับทั้งหมด</button>
+        </div>
+        <p class="muted" style="font-size:11.5px;margin-top:6px;" id="restoreModeHint">โหมดผสาน: ข้อมูลที่มี ID ตรงกันจะถูกอัปเดตใหม่ตามไฟล์ ข้อมูลอื่นที่มีอยู่แล้วในระบบจะไม่ถูกลบ</p>
+      </div>
+      <button class="btn btn-primary" id="restoreConfirmBtn" style="margin-top:12px;">📥 เริ่มนำเข้าข้อมูล</button>
+    </div>
+    <div class="upload-progress" id="restoreProgress" style="margin-top:8px;"></div>
+  </div>
 </section>
 
 </main>
@@ -1815,7 +1849,7 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
 
 <div class="modal-overlay" id="confirmModal"><div class="modal-box">
   <h3 id="confirmTitle">ยืนยันการทำรายการ</h3>
-  <p id="confirmMessage"></p>
+  <p id="confirmMessage" style="white-space:pre-line;"></p>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('confirmModal')">ยกเลิก</button><button class="btn btn-danger" id="confirmOkBtn">ยืนยัน</button></div>
 </div></div>
 
@@ -1891,8 +1925,18 @@ function diagnoseFB(){
     console.warn('Rules ที่แนะนำสำหรับทดสอบ: { "rules": { ".read": true, ".write": true } }');
   });
   db.ref('users').once('value').then(s=>{
-    const n = Object.keys(s.val()||{}).length;
+    const users = s.val()||{};
+    const n = Object.keys(users).length;
     console.log('✅ /users readable — found', n, 'users');
+    const adminEntries = Object.entries(users).filter(([,u])=>u.username==='1470900013871');
+    if(adminEntries.length === 0){
+      console.warn('⚠️ ไม่พบบัญชี Admin (username 1470900013871) — รีเฟรชหน้าเว็บเพื่อให้ระบบสร้างบัญชีใหม่อัตโนมัติ');
+    } else {
+      adminEntries.forEach(([uid,u])=>{
+        console.log(`✅ พบบัญชี Admin — uid: ${uid} | role: ${u.role} | password ปัจจุบันในระบบ: "${u.password}"`);
+      });
+      if(adminEntries.length > 1) console.warn('⚠️ พบบัญชี Admin ซ้ำซ้อนมากกว่า 1 บัญชี — ควรตรวจสอบและลบบัญชีที่ไม่ใช้');
+    }
   }).catch(e=>{
     console.error('❌ /users read DENIED:', e.code, e.message);
   });
@@ -2267,14 +2311,27 @@ db.ref('systemSettings/activeCertifierId').on('value', snap=>{
   renderReportCertifierTable();
 });
 
-/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
-   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
+/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติ
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
+   ตรวจสอบทุกครั้งที่โหลดข้อมูล ไม่ใช่แค่ตอนฐานข้อมูลว่างเปล่า — เพื่อป้องกันกรณีบัญชี Admin
+   หายไปด้วยเหตุใดก็ตาม (เช่น ถูกลบโดยไม่ตั้งใจ) แล้วไม่มีทางกลับเข้าระบบได้อีก */
+const ADMIN_SEED_USERNAME = '1470900013871';
+const ADMIN_SEED_PASSWORD = '05449';
 db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
-  if(Object.keys(STATE.users).length === 0){
-    db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
+  const adminEntries = Object.entries(STATE.users).filter(([,u])=>u.username===ADMIN_SEED_USERNAME);
+  if(adminEntries.length === 0){
+    /* ไม่พบบัญชี Admin เริ่มต้นเลย ไม่ว่าจะเป็นเพราะฐานข้อมูลว่างเปล่า หรือบัญชีถูกลบไปก่อนหน้านี้ — สร้างใหม่ให้ทันที */
+    db.ref('users/U_ADMIN_SEED').set({
+      username: ADMIN_SEED_USERNAME, password: ADMIN_SEED_PASSWORD,
+      displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)',
+      idCard: ADMIN_SEED_USERNAME, address:'', phone:'', role:'admin', cgCode:'',
+      permissions: permsFromRoleTabs('admin'), createdAt: Date.now()
     });
+    toast('ระบบตรวจพบว่าไม่มีบัญชี Admin — สร้างบัญชีเริ่มต้นให้อัตโนมัติแล้ว (Username: '+ADMIN_SEED_USERNAME+')','success');
+  } else if(adminEntries.length > 1){
+    /* กรณีพบบัญชีซ้ำซ้อนหลายบัญชีที่ใช้ username เดียวกัน (เช่น เกิดจากการสมัครพร้อมกันในหลายแท็บ) แจ้งเตือนให้ผู้ดูแลระบบตรวจสอบ */
+    console.warn('พบบัญชีผู้ใช้ที่มี username ซ้ำกัน ('+ADMIN_SEED_USERNAME+'):', adminEntries.map(([id])=>id));
   }
   /* ลบบัญชีเก่าที่เคยสร้างไว้อัตโนมัติจากฟังก์ชันที่ถูกยกเลิกไปแล้ว ให้เหลือเฉพาะบัญชี Admin เริ่มต้น
      กับบัญชีที่มาจาก "เมนูลงทะเบียนใช้งาน" เท่านั้น:
@@ -2505,7 +2562,7 @@ let CURRENT_USER = null;
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const errEl = document.getElementById('loginError');
   const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value;
+  const password = document.getElementById('loginPassword').value.trim();
   if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
   if(Object.keys(STATE.users).length === 0){
     errEl.textContent = '⚠️ ระบบยังโหลดข้อมูลผู้ใช้จากฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วรีเฟรชหน้าใหม่';
@@ -2515,7 +2572,7 @@ document.getElementById('loginBtn').addEventListener('click', ()=>{
   const entry = Object.entries(STATE.users).find(([id,u])=>u.username===username);
   if(!entry){ errEl.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ'; return; }
   const [uid, u] = entry;
-  if(u.password !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
+  if(String(u.password).trim() !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
   loginAsUser(uid, u);
 });
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
@@ -6170,7 +6227,7 @@ const EQUIPMENT_DURABLE_ITEMS = [
   "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
 ];
 const EQUIPMENT_MATERIAL_ITEMS = [
-  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ M","ผ้าอ้อมสำเร็จรูป ไซส์ L","ผ้าอ้อมสำเร็จรูป ไซส์ XL","แผ่นรองซับ",
   "สายออกซิเจน","สายออกซิเจน canular","สายยางให้อาหาร (NG tube)",
   "เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
   "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา",
@@ -6191,7 +6248,10 @@ const ITEM_EMOJI = {
   "สามล้อโยก":"🚲",               /* สามล้อ */
   "ที่นอนลมป้องกันแผลกดทับ":"🌀",  /* ที่นอนลม */
   /* วัสดุการแพทย์ */
-  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* ผ้าอ้อม */
+  "ผ้าอ้อมสำเร็จรูป ไซส์ M":"🧷",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ L":"🧷",
+  "ผ้าอ้อมสำเร็จรูป ไซส์ XL":"🧷",
+  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* compat สำหรับข้อมูลเดิม */
   "แผ่นรองซับ":"🟦",              /* แผ่น */
   "สายออกซิเจน":"〰️",             /* สาย */
   "สายออกซิเจน canular":"〰️",     /* สาย */
@@ -6657,6 +6717,14 @@ function createMatItemRow(matItems){
         <label style="font-size:12px;">รายการวัสดุ *</label>
         <select class="mat-item-type" style="width:100%;">${itemOpts}</select>
       </div>
+      <div class="field mat-size-wrap" style="flex:0 0 120px;min-width:100px;display:none;">
+        <label style="font-size:12px;">ไซส์</label>
+        <select class="mat-item-size" style="width:100%;">
+          <option value="M">M (กลาง)</option>
+          <option value="L">L (ใหญ่)</option>
+          <option value="XL">XL (ใหญ่พิเศษ)</option>
+        </select>
+      </div>
       <div class="field" style="flex:0 0 80px;min-width:70px;">
         <label style="font-size:12px;">จำนวน *</label>
         <input type="number" class="mat-item-qty" min="1" value="1" style="width:100%;">
@@ -6666,6 +6734,28 @@ function createMatItemRow(matItems){
         <select class="mat-item-unit" style="width:100%;">${MAT_UNIT_OPTS}</select>
       </div>
     </div>`;
+  /* แสดง/ซ่อน ช่องไซส์ตามรายการที่เลือก */
+  const typeSel = div.querySelector('.mat-item-type');
+  const sizeWrap = div.querySelector('.mat-size-wrap');
+  const sizeSel  = div.querySelector('.mat-item-size');
+  const DIAPER_BASE = 'ผ้าอ้อมสำเร็จรูป';
+  typeSel.addEventListener('change', function(){
+    const val = this.value;
+    const isDiaper = val === DIAPER_BASE || val.startsWith(DIAPER_BASE+' ไซส์');
+    sizeWrap.style.display = isDiaper ? '' : 'none';
+    /* sync ไซส์ไปที่ value ของ type select ถ้าเป็นผ้าอ้อมที่ไม่ระบุไซส์ */
+    if(isDiaper && val === DIAPER_BASE){
+      this.value = `${DIAPER_BASE} ไซส์ ${sizeSel.value}`;
+    }
+  });
+  sizeSel.addEventListener('change', function(){
+    /* เมื่อเปลี่ยนไซส์ ให้อัปเดต value ของ type select ด้วย */
+    const curType = typeSel.value;
+    if(curType.startsWith(DIAPER_BASE)){
+      typeSel.value = `${DIAPER_BASE} ไซส์ ${this.value}`;
+    }
+  });
+  /* ถ้า matItems มีแต่ผ้าอ้อมที่ระบุไซส์แล้ว ให้แสดงช่องไซส์ทันที */
   return div;
 }
 function matAddRow(){
@@ -8689,6 +8779,131 @@ document.getElementById('backupEquipmentBtn').addEventListener('click', ()=>{
   const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
   runBackup(EQUIPMENT_COLLECTIONS, `NSN_LTC_BACKUP_EQUIPMENT_${date}.json`);
 });
+
+/* =============================================================
+   ระบบนำเข้า/กู้คืนข้อมูลจากไฟล์สำรอง (Restore from Backup JSON)
+   รองรับไฟล์ที่สร้างจากฟังก์ชัน runBackup() ด้านบน
+   รูปแบบไฟล์: { exportedAt, facility, collections: { <collectionName>: {...} } }
+============================================================= */
+const COLLECTION_LABELS_TH = {
+  cgs:'ผู้ดูแล (CG)', elderly:'ผู้สูงอายุ', elderlyHistory:'ประวัติผู้สูงอายุ',
+  visits:'การเยี่ยมบ้าน', visitHistory:'ประวัติการเยี่ยม', visitPlans:'แผนการเยี่ยม',
+  users:'ผู้ใช้งาน', inventory:'คลังครุภัณฑ์/วัสดุ', equipment:'รายการยืม-คืนครุภัณฑ์',
+  materialSupply:'การจ่ายวัสดุการแพทย์', repairRegistry:'ทะเบียนส่งซ่อม', disposalRegistry:'ทะเบียนรอจำหน่าย',
+  cgTransferHistory:'ประวัติการย้าย CG', systemSettings:'ตั้งค่าระบบ', systemFlags:'ค่าสถานะระบบ'
+};
+let restoreParsedData = null;
+let restoreMode = 'merge'; /* 'merge' หรือ 'overwrite' */
+
+document.getElementById('restoreFileInput').addEventListener('change', function(){
+  const file = this.files[0];
+  const preview = document.getElementById('restorePreview');
+  const infoEl = document.getElementById('restoreFileInfo');
+  const listEl = document.getElementById('restoreCollectionList');
+  if(!file){ preview.style.display = 'none'; restoreParsedData = null; return; }
+
+  const reader = new FileReader();
+  reader.onload = e=>{
+    let data;
+    try{
+      data = JSON.parse(e.target.result);
+    }catch(err){
+      toast('ไฟล์ไม่ใช่ JSON ที่ถูกต้อง: '+err.message,'error');
+      preview.style.display = 'none';
+      this.value = '';
+      return;
+    }
+    if(!data.collections || typeof data.collections !== 'object'){
+      toast('ไฟล์นี้ไม่ใช่ไฟล์สำรองข้อมูลของระบบ NSN SMART LTC (ไม่พบโครงสร้าง "collections")','error');
+      preview.style.display = 'none';
+      this.value = '';
+      return;
+    }
+    restoreParsedData = data;
+    const exportedDate = data.exportedAt ? formatThaiDate(data.exportedAt.slice(0,10)) : 'ไม่ทราบวันที่';
+    const facilityName = data.facility || 'ไม่ระบุ';
+    infoEl.innerHTML = `📄 <b>ไฟล์:</b> ${file.name}<br>
+      🏥 <b>หน่วยงานต้นฉบับ:</b> ${facilityName}<br>
+      📅 <b>วันที่สำรอง:</b> ${exportedDate}<br>
+      📦 <b>จำนวน Collection ในไฟล์:</b> ${Object.keys(data.collections).length}`;
+
+    listEl.innerHTML = Object.entries(data.collections).map(([col,records])=>{
+      const count = records && typeof records === 'object' ? Object.keys(records).length : 0;
+      const label = COLLECTION_LABELS_TH[col] || col;
+      return `<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <input type="checkbox" class="restore-col-check" value="${col}" checked style="width:16px;height:16px;flex-shrink:0;">
+        <span style="flex:1;"><b>${label}</b> <span class="muted">(${col})</span></span>
+        <span style="font-weight:700;color:${count>0?'#2E7D32':'#999'};">${count} รายการ</span>
+      </label>`;
+    }).join('');
+
+    preview.style.display = 'block';
+  };
+  reader.readAsText(file);
+});
+
+function setRestoreMode(mode){
+  restoreMode = mode;
+  document.getElementById('restoreModeMergeBtn').classList.toggle('active', mode==='merge');
+  document.getElementById('restoreModeOverwriteBtn').classList.toggle('active', mode==='overwrite');
+  const hint = document.getElementById('restoreModeHint');
+  hint.textContent = mode==='merge'
+    ? 'โหมดผสาน: ข้อมูลที่มี ID ตรงกันจะถูกอัปเดตใหม่ตามไฟล์ ข้อมูลอื่นที่มีอยู่แล้วในระบบจะไม่ถูกลบ'
+    : '⚠️ โหมดเขียนทับ: ข้อมูลปัจจุบันของ Collection ที่เลือกจะถูกลบทิ้งทั้งหมด แล้วแทนที่ด้วยข้อมูลจากไฟล์นี้เท่านั้น';
+}
+document.getElementById('restoreModeMergeBtn').addEventListener('click', ()=>setRestoreMode('merge'));
+document.getElementById('restoreModeOverwriteBtn').addEventListener('click', ()=>setRestoreMode('overwrite'));
+
+document.getElementById('restoreConfirmBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  if(!restoreParsedData){ toast('กรุณาเลือกไฟล์สำรองข้อมูลก่อน','error'); return; }
+  const selectedCols = Array.from(document.querySelectorAll('.restore-col-check:checked')).map(el=>el.value);
+  if(selectedCols.length === 0){ toast('กรุณาเลือกอย่างน้อย 1 Collection ที่ต้องการนำเข้า','error'); return; }
+
+  const modeLabel = restoreMode === 'overwrite' ? 'เขียนทับทั้งหมด (ลบข้อมูลเดิมทิ้ง)' : 'ผสานกับข้อมูลเดิม';
+  const colLabels = selectedCols.map(c=>COLLECTION_LABELS_TH[c]||c).join(', ');
+  showConfirm(
+    `ยืนยันการนำเข้าข้อมูล — โหมด: ${modeLabel}?`,
+    `Collection ที่จะนำเข้า: ${colLabels}\n\nการดำเนินการนี้จะเขียนข้อมูลลงฐานข้อมูลจริงทันที และไม่สามารถย้อนกลับได้ กรุณาตรวจสอบให้แน่ใจก่อนกดยืนยัน`,
+    ()=> runRestore(selectedCols)
+  );
+});
+
+async function runRestore(selectedCols){
+  const prog = document.getElementById('restoreProgress');
+  const btn = document.getElementById('restoreConfirmBtn');
+  btn.disabled = true;
+  prog.textContent = `⏳ กำลังนำเข้าข้อมูล ${selectedCols.length} collections (โหมด: ${restoreMode === 'overwrite' ? 'เขียนทับ' : 'ผสาน'})...`;
+  try{
+    let totalImported = 0;
+    for(const col of selectedCols){
+      const records = restoreParsedData.collections[col] || {};
+      const count = Object.keys(records).length;
+      if(restoreMode === 'overwrite'){
+        /* เขียนทับทั้ง collection ด้วยข้อมูลจากไฟล์ */
+        await db.ref(col).set(records);
+      } else {
+        /* ผสาน: update() จะเขียนทับเฉพาะ key ที่ตรงกัน ไม่ลบ key อื่นที่มีอยู่เดิม */
+        if(count > 0){
+          await db.ref(col).update(records);
+        }
+      }
+      totalImported += count;
+      prog.textContent = `⏳ นำเข้าแล้ว: ${COLLECTION_LABELS_TH[col]||col} (${count} รายการ)...`;
+    }
+    prog.textContent = `✅ นำเข้าข้อมูลสำเร็จทั้งหมด — รวม ${totalImported} รายการ จาก ${selectedCols.length} collections`;
+    toast(`นำเข้าข้อมูลสำเร็จ (${totalImported} รายการ)`,'success');
+    /* รีเซ็ตฟอร์ม */
+    document.getElementById('restoreFileInput').value = '';
+    document.getElementById('restorePreview').style.display = 'none';
+    restoreParsedData = null;
+  }catch(err){
+    prog.textContent = `❌ เกิดข้อผิดพลาดระหว่างนำเข้า: ${err.message}`;
+    toast('นำเข้าข้อมูลไม่สำเร็จ: '+err.message,'error');
+  }finally{
+    btn.disabled = false;
+  }
+}
 
 document.getElementById('diagConnBtn').addEventListener('click', async ()=>{
   const res = document.getElementById('diagResult');
