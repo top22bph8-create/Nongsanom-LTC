@@ -1216,6 +1216,10 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
     <h3>🛡️ สำรองข้อมูลและเครื่องมือระบบ (Admin only)</h3>
     <p class="muted">ฟังก์ชันสำรองข้อมูล วินิจฉัยระบบ และเครื่องมือสำหรับผู้ดูแลระบบ — กดปุ่มสำรองข้อมูลเพื่อดาวน์โหลดไฟล์ JSON ทุก Collection จาก Firebase ไว้ในเครื่องของคุณ</p>
 
+    <div style="background:#E8F5E9;border:1px solid #A5D6A7;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#1B5E20;">
+      ✅ <b>สำรองข้อมูลอัตโนมัติเปิดใช้งานอยู่</b> — ระบบจะสำรองข้อมูลทั้งหมด (Full Backup) และตรวจสอบความสมบูรณ์ของระบบให้อัตโนมัติทุกครั้งที่ Admin เข้าสู่ระบบ (สูงสุดวันละ 1 ครั้งต่อบัญชี เพื่อไม่ให้ดาวน์โหลดไฟล์ซ้ำซ้อน)
+    </div>
+
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px;">
       <!-- Full backup -->
       <div style="background:linear-gradient(135deg,#0F5590,#43C1F1);border-radius:14px;padding:16px;color:#fff;">
@@ -1239,6 +1243,17 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
         <button class="btn" id="backupEquipmentBtn" style="background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.4);width:100%;justify-content:center;font-size:13px;">⬇️ สำรองข้อมูลอุปกรณ์</button>
       </div>
     </div>
+
+    <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">📜 ประวัติการสำรองข้อมูลอัตโนมัติ (10 ครั้งล่าสุด)</h4>
+    <div style="overflow-x:auto;margin-bottom:16px;">
+    <table class="inv-table" style="min-width:520px;"><thead><tr><th>วันที่-เวลา</th><th>ผู้ใช้งาน</th><th>ประเภท</th><th>จำนวนรายการ</th><th>ผลลัพธ์</th></tr></thead>
+    <tbody id="backupLogTable"><tr><td colspan="5" class="muted">ยังไม่มีประวัติ</td></tr></tbody></table>
+    </div>
+
+    <h4 style="margin:16px 0 8px;font-size:13.5px;color:#5A2D82;">🔧 ตรวจสอบและซ่อมแซมความสมบูรณ์ของระบบ</h4>
+    <p class="muted" style="font-size:12px;">ตรวจสอบข้อมูลที่ไม่สอดคล้องกัน (เช่น ยอดคงคลังไม่ตรงกับเลขครุภัณฑ์จริง, ข้อมูลอ้างอิงที่ขาดหาย) และซ่อมแซมส่วนที่แก้ไขได้อัตโนมัติ ส่วนที่ต้องตรวจสอบเพิ่มเติมจะแจ้งเตือนให้ทราบ</p>
+    <button class="btn btn-secondary btn-sm" id="runIntegrityCheckBtn" style="margin-bottom:10px;">🔍 ตรวจสอบระบบตอนนี้</button>
+    <div id="integrityResult" style="display:none;background:#F3E5F5;border:1px solid #E1BEE7;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.9;"></div>
 
     <h4 style="margin:16px 0 8px;font-size:13.5px;color:var(--primary-dark);">🔍 วินิจฉัยระบบ</h4>
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:10px;">
@@ -2247,7 +2262,7 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
 /* =============================================================
    STATE
 ============================================================= */
-const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, repairRegistry:{}, disposalRegistry:{}, materialSupply:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
+const STATE = { cgs:{}, elderly:{}, visits:{}, equipment:{}, inventory:{}, repairRegistry:{}, disposalRegistry:{}, materialSupply:{}, users:{}, visitPlans:{}, cgTransferHistory:{}, reportCertifiers:{}, activeCertifierId:'', backupLog:{}, selectedDates:[], drillLevel:1, drillCg:null, drillElderly:null, groupCountMembers:{'1':[],'2':[],'3':[],'4':[]} };
 const VILLAGES = [
   {moo:'2', name:'บ้านโพนสว่าง'},
   {moo:'3', name:'บ้านดอนเชียงบาล'},
@@ -2598,6 +2613,13 @@ function loginAsUser(uid, u){
   applyAccessControl(u);
   if(u.role === 'unassigned' || !u.role){
     toast('บัญชีของคุณยังไม่ได้รับการกำหนดบทบาท กรุณารอผู้ดูแลระบบดำเนินการก่อนจึงจะใช้งานฟังก์ชันอื่นได้','error');
+  }
+  /* Admin เข้าสู่ระบบ: สำรองข้อมูลทั้งระบบอัตโนมัติ (สูงสุด 1 ครั้ง/วัน) และตรวจสอบ+ซ่อมแซมความสมบูรณ์ของระบบเงียบๆ เบื้องหลัง */
+  if(u.role === 'admin'){
+    setTimeout(()=>{
+      runAutoBackupForAdmin(uid);
+      runSystemIntegrityCheck(true);
+    }, 1500); /* หน่วงเวลาเล็กน้อยให้ข้อมูลจาก Firebase โหลดครบก่อนเริ่มตรวจสอบ */
   }
 }
 
@@ -8729,10 +8751,11 @@ document.getElementById('generateEquipmentPdfBtn').addEventListener('click', asy
    ระบบสำรองข้อมูล (Admin Backup & Diagnostics)
    ดาวน์โหลด snapshot Firebase เป็นไฟล์ JSON
 ============================================================= */
-async function runBackup(collections, filename){
+async function runBackup(collections, filename, opts){
+  opts = opts || {};
   const prog = document.getElementById('backupProgress');
-  const btn = document.getElementById('backupFullBtn');
-  prog.textContent = `⏳ กำลังดึงข้อมูล ${collections.length} collections...`;
+  const isAuto = !!opts.auto;
+  if(!isAuto && prog) prog.textContent = `⏳ กำลังดึงข้อมูล ${collections.length} collections...`;
   try{
     const snapshot = { exportedAt: new Date().toISOString(), facility: FACILITY_NAME, collections:{} };
     for(const col of collections){
@@ -8751,11 +8774,30 @@ async function runBackup(collections, filename){
       const d = snapshot.collections[col];
       return sum + (d && typeof d === 'object' ? Object.keys(d).length : 0);
     }, 0);
-    prog.textContent = `✅ สำรองข้อมูลสำเร็จ — ${totalRecords} รายการ จาก ${collections.length} collections | ไฟล์: ${filename}`;
-    toast(`สำรองข้อมูลสำเร็จ (${totalRecords} รายการ)`,'success');
+    if(!isAuto && prog){
+      prog.textContent = `✅ สำรองข้อมูลสำเร็จ — ${totalRecords} รายการ จาก ${collections.length} collections | ไฟล์: ${filename}`;
+      toast(`สำรองข้อมูลสำเร็จ (${totalRecords} รายการ)`,'success');
+    }
+    /* บันทึกประวัติการสำรองข้อมูลลง Firebase เพื่อให้ Admin ตรวจสอบย้อนหลังได้ */
+    const logId = 'BK'+Date.now();
+    db.ref('systemFlags/backupLog/'+logId).set({
+      timestamp: Date.now(), by: CURRENT_USER ? CURRENT_USER.displayName : 'ไม่ทราบ',
+      type: isAuto ? 'อัตโนมัติ (เข้าสู่ระบบ)' : 'สั่งเอง (Manual)',
+      filename, totalRecords, collectionCount: collections.length, success: true
+    });
+    return { success:true, totalRecords };
   }catch(err){
-    prog.textContent = `❌ เกิดข้อผิดพลาด: ${err.message}`;
-    toast('สำรองข้อมูลไม่สำเร็จ: '+err.message,'error');
+    if(!isAuto && prog){
+      prog.textContent = `❌ เกิดข้อผิดพลาด: ${err.message}`;
+      toast('สำรองข้อมูลไม่สำเร็จ: '+err.message,'error');
+    }
+    const logId = 'BK'+Date.now();
+    db.ref('systemFlags/backupLog/'+logId).set({
+      timestamp: Date.now(), by: CURRENT_USER ? CURRENT_USER.displayName : 'ไม่ทราบ',
+      type: isAuto ? 'อัตโนมัติ (เข้าสู่ระบบ)' : 'สั่งเอง (Manual)',
+      filename, totalRecords:0, collectionCount: collections.length, success:false, error: err.message
+    });
+    return { success:false, error: err.message };
   }
 }
 const ALL_COLLECTIONS = ['cgs','elderly','elderlyHistory','visits','visitHistory','visitPlans',
@@ -8778,6 +8820,155 @@ document.getElementById('backupEquipmentBtn').addEventListener('click', ()=>{
   if(blockIfReadOnly()) return;
   const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
   runBackup(EQUIPMENT_COLLECTIONS, `NSN_LTC_BACKUP_EQUIPMENT_${date}.json`);
+});
+
+/* =============================================================
+   ประวัติการสำรองข้อมูล (Backup Log) — เก็บที่ /systemFlags/backupLog
+============================================================= */
+db.ref('systemFlags/backupLog').on('value', snap=>{
+  STATE.backupLog = snap.val() || {};
+  renderBackupLogTable();
+});
+function renderBackupLogTable(){
+  const tbody = document.getElementById('backupLogTable');
+  if(!tbody) return;
+  const entries = Object.entries(STATE.backupLog||{}).sort(([,a],[,b])=>(b.timestamp||0)-(a.timestamp||0)).slice(0,10);
+  if(!entries.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted">ยังไม่มีประวัติ</td></tr>'; return; }
+  tbody.innerHTML = entries.map(([,log])=>{
+    const dt = log.timestamp ? new Date(log.timestamp) : null;
+    const dtStr = dt ? `${formatThaiDate(dt.toISOString().slice(0,10))} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '-';
+    const resultTag = log.success
+      ? `<span class="status-tag approved">✅ สำเร็จ</span>`
+      : `<span class="status-tag disabled">❌ ล้มเหลว</span>`;
+    return `<tr>
+      <td style="white-space:nowrap;">${dtStr}</td>
+      <td>${log.by||'-'}</td>
+      <td>${log.type||'-'}</td>
+      <td style="text-align:center;">${log.totalRecords??'-'}</td>
+      <td>${resultTag}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =============================================================
+   สำรองข้อมูลอัตโนมัติเมื่อ Admin เข้าสู่ระบบ
+   จำกัดสูงสุด 1 ครั้ง/วัน/บัญชี เพื่อไม่ให้ดาวน์โหลดไฟล์ซ้ำซ้อนทุกครั้งที่รีเฟรชหน้า
+============================================================= */
+function runAutoBackupForAdmin(uid){
+  const todayKey = new Date().toISOString().slice(0,10);
+  const storageKey = 'nsn_ltc_autobackup_'+uid;
+  const lastDate = localStorage.getItem(storageKey);
+  if(lastDate === todayKey) return; /* สำรองไปแล้ววันนี้ ไม่ต้องทำซ้ำ */
+  const date = todayKey.replace(/-/g,'');
+  toast('🔄 กำลังสำรองข้อมูลอัตโนมัติสำหรับ Admin...','success');
+  runBackup(ALL_COLLECTIONS, `NSN_LTC_AUTOBACKUP_${date}.json`, {auto:true}).then(result=>{
+    if(result.success){
+      localStorage.setItem(storageKey, todayKey);
+      toast(`✅ สำรองข้อมูลอัตโนมัติสำเร็จ (${result.totalRecords} รายการ)`,'success');
+    } else {
+      toast('⚠️ สำรองข้อมูลอัตโนมัติไม่สำเร็จ: '+result.error,'error');
+    }
+  });
+}
+
+/* =============================================================
+   ตรวจสอบและซ่อมแซมความสมบูรณ์ของระบบ (System Integrity Check & Auto-Repair)
+   ตรวจสอบ:
+   1. ครุภัณฑ์ (durable): quantity ไม่ตรงกับ assetCodes.length -> ซ่อมอัตโนมัติ
+   2. ครุภัณฑ์ (durable): เลขครุภัณฑ์ซ้ำกันในรายการเดียวกัน -> แจ้งเตือน (ไม่ลบอัตโนมัติ)
+   3. ผู้สูงอายุอ้างอิง CG ที่ไม่มีอยู่จริง -> แจ้งเตือน
+   4. รายการยืม-คืนอ้างอิงผู้สูงอายุที่ไม่มีอยู่จริง (เฉพาะ LTC) -> แจ้งเตือน
+   5. บัญชี Admin หลัก (username 1470900013871) หายไป -> ซ่อมอัตโนมัติ (สร้างใหม่)
+   6. ผู้ใช้งาน username ซ้ำกัน -> แจ้งเตือน
+============================================================= */
+async function runSystemIntegrityCheck(silent){
+  const resEl = document.getElementById('integrityResult');
+  const fixed = [];
+  const warnings = [];
+
+  /* 1+2: ตรวจสอบครุภัณฑ์ */
+  const invEntries = Object.entries(STATE.inventory||{});
+  for(const [id, inv] of invEntries){
+    if(inv.category === 'durable'){
+      const codes = inv.assetCodes || [];
+      const correctTotal = codes.length;
+      const currentQty = parseInt(inv.quantity,10) || 0;
+      if(correctTotal > 0 && correctTotal !== currentQty){
+        await db.ref('inventory/'+id+'/quantity').set(correctTotal);
+        fixed.push(`ซ่อมยอดคงคลัง "${inv.itemType}" จาก ${currentQty} เป็น ${correctTotal} (ตามจำนวนเลขครุภัณฑ์จริง)`);
+      }
+      const dupCodes = codes.filter((c,i)=>codes.indexOf(c) !== i);
+      if(dupCodes.length > 0){
+        warnings.push(`⚠️ "${inv.itemType}" มีเลขครุภัณฑ์ซ้ำกัน: ${[...new Set(dupCodes)].join(', ')} — กรุณาตรวจสอบด้วยตนเองในเมนูจัดการอุปกรณ์`);
+      }
+    }
+  }
+
+  /* 3: ผู้สูงอายุอ้างอิง CG ที่ไม่มีอยู่จริง */
+  Object.entries(STATE.elderly||{}).forEach(([id,e])=>{
+    if(e.cgCode && !STATE.cgs[e.cgCode]){
+      warnings.push(`⚠️ ผู้สูงอายุ "${e.name}" อ้างอิงถึง CG รหัส "${e.cgCode}" ซึ่งไม่มีอยู่ในระบบแล้ว — กรุณาตรวจสอบและกำหนด CG ใหม่`);
+    }
+  });
+
+  /* 4: รายการยืม-คืนอ้างอิงผู้สูงอายุ LTC ที่ไม่มีอยู่จริง */
+  Object.entries(STATE.equipment||{}).forEach(([id,e])=>{
+    if((e.borrowerType||'ltc')==='ltc' && e.elderlyId && !STATE.elderly[e.elderlyId]){
+      warnings.push(`⚠️ รายการยืม-คืน "${e.itemType}" อ้างอิงถึงผู้สูงอายุที่ไม่มีอยู่ในระบบแล้ว (ID: ${e.elderlyId})`);
+    }
+  });
+
+  /* 5: บัญชี Admin หลักหายไป */
+  const adminEntries = Object.entries(STATE.users||{}).filter(([,u])=>u.username===ADMIN_SEED_USERNAME);
+  if(adminEntries.length === 0){
+    await db.ref('users/U_ADMIN_SEED').set({
+      username: ADMIN_SEED_USERNAME, password: ADMIN_SEED_PASSWORD,
+      displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)',
+      idCard: ADMIN_SEED_USERNAME, address:'', phone:'', role:'admin', cgCode:'',
+      permissions: permsFromRoleTabs('admin'), createdAt: Date.now()
+    });
+    fixed.push('สร้างบัญชี Admin หลักใหม่ (บัญชีเดิมหายไปจากระบบ)');
+  }
+
+  /* 6: username ซ้ำกัน */
+  const usernameCounts = {};
+  Object.values(STATE.users||{}).forEach(u=>{ usernameCounts[u.username] = (usernameCounts[u.username]||0)+1; });
+  Object.entries(usernameCounts).filter(([,c])=>c>1).forEach(([uname,c])=>{
+    warnings.push(`⚠️ พบผู้ใช้งาน username "${uname}" ซ้ำกัน ${c} บัญชี — กรุณาตรวจสอบในเมนูจัดการผู้ใช้งาน`);
+  });
+
+  const summary = [];
+  if(fixed.length === 0 && warnings.length === 0){
+    summary.push('✅ ตรวจสอบระบบเรียบร้อย ไม่พบความเสียหายหรือข้อมูลผิดปกติ');
+  } else {
+    if(fixed.length){
+      summary.push(`<b style="color:#2E7D32;">🔧 ซ่อมแซมอัตโนมัติ (${fixed.length} รายการ):</b>`);
+      fixed.forEach(f=>summary.push('&nbsp;&nbsp;✅ '+f));
+    }
+    if(warnings.length){
+      summary.push(`<b style="color:#B8860B;">⚠️ พบสิ่งที่ควรตรวจสอบ (${warnings.length} รายการ):</b>`);
+      warnings.forEach(w=>summary.push('&nbsp;&nbsp;'+w));
+    }
+  }
+
+  if(!silent && resEl){
+    resEl.style.display = 'block';
+    resEl.innerHTML = summary.join('<br>');
+  }
+  if(fixed.length > 0){
+    toast(`ตรวจสอบระบบเสร็จสิ้น — ซ่อมแซมอัตโนมัติ ${fixed.length} รายการ`,'success');
+  } else if(silent && warnings.length === 0){
+    /* ไม่ต้อง toast อะไรถ้าไม่มีปัญหาและเป็นการตรวจสอบอัตโนมัติแบบเงียบ */
+  } else if(!silent){
+    toast(warnings.length ? `ตรวจสอบระบบเสร็จสิ้น — พบ ${warnings.length} รายการที่ควรตรวจสอบ` : 'ตรวจสอบระบบเสร็จสิ้น — ไม่พบปัญหา','success');
+  }
+  return { fixed, warnings };
+}
+document.getElementById('runIntegrityCheckBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  document.getElementById('integrityResult').style.display = 'block';
+  document.getElementById('integrityResult').innerHTML = '⏳ กำลังตรวจสอบระบบ...';
+  runSystemIntegrityCheck(false);
 });
 
 /* =============================================================
