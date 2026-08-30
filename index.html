@@ -1891,8 +1891,18 @@ function diagnoseFB(){
     console.warn('Rules ที่แนะนำสำหรับทดสอบ: { "rules": { ".read": true, ".write": true } }');
   });
   db.ref('users').once('value').then(s=>{
-    const n = Object.keys(s.val()||{}).length;
+    const users = s.val()||{};
+    const n = Object.keys(users).length;
     console.log('✅ /users readable — found', n, 'users');
+    const adminEntries = Object.entries(users).filter(([,u])=>u.username==='1470900013871');
+    if(adminEntries.length === 0){
+      console.warn('⚠️ ไม่พบบัญชี Admin (username 1470900013871) — รีเฟรชหน้าเว็บเพื่อให้ระบบสร้างบัญชีใหม่อัตโนมัติ');
+    } else {
+      adminEntries.forEach(([uid,u])=>{
+        console.log(`✅ พบบัญชี Admin — uid: ${uid} | role: ${u.role} | password ปัจจุบันในระบบ: "${u.password}"`);
+      });
+      if(adminEntries.length > 1) console.warn('⚠️ พบบัญชี Admin ซ้ำซ้อนมากกว่า 1 บัญชี — ควรตรวจสอบและลบบัญชีที่ไม่ใช้');
+    }
   }).catch(e=>{
     console.error('❌ /users read DENIED:', e.code, e.message);
   });
@@ -2267,14 +2277,27 @@ db.ref('systemSettings/activeCertifierId').on('value', snap=>{
   renderReportCertifierTable();
 });
 
-/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
-   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
+/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติ
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
+   ตรวจสอบทุกครั้งที่โหลดข้อมูล ไม่ใช่แค่ตอนฐานข้อมูลว่างเปล่า — เพื่อป้องกันกรณีบัญชี Admin
+   หายไปด้วยเหตุใดก็ตาม (เช่น ถูกลบโดยไม่ตั้งใจ) แล้วไม่มีทางกลับเข้าระบบได้อีก */
+const ADMIN_SEED_USERNAME = '1470900013871';
+const ADMIN_SEED_PASSWORD = '05449';
 db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
-  if(Object.keys(STATE.users).length === 0){
-    db.ref('users').set({
-      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
+  const adminEntries = Object.entries(STATE.users).filter(([,u])=>u.username===ADMIN_SEED_USERNAME);
+  if(adminEntries.length === 0){
+    /* ไม่พบบัญชี Admin เริ่มต้นเลย ไม่ว่าจะเป็นเพราะฐานข้อมูลว่างเปล่า หรือบัญชีถูกลบไปก่อนหน้านี้ — สร้างใหม่ให้ทันที */
+    db.ref('users/U_ADMIN_SEED').set({
+      username: ADMIN_SEED_USERNAME, password: ADMIN_SEED_PASSWORD,
+      displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)',
+      idCard: ADMIN_SEED_USERNAME, address:'', phone:'', role:'admin', cgCode:'',
+      permissions: permsFromRoleTabs('admin'), createdAt: Date.now()
     });
+    toast('ระบบตรวจพบว่าไม่มีบัญชี Admin — สร้างบัญชีเริ่มต้นให้อัตโนมัติแล้ว (Username: '+ADMIN_SEED_USERNAME+')','success');
+  } else if(adminEntries.length > 1){
+    /* กรณีพบบัญชีซ้ำซ้อนหลายบัญชีที่ใช้ username เดียวกัน (เช่น เกิดจากการสมัครพร้อมกันในหลายแท็บ) แจ้งเตือนให้ผู้ดูแลระบบตรวจสอบ */
+    console.warn('พบบัญชีผู้ใช้ที่มี username ซ้ำกัน ('+ADMIN_SEED_USERNAME+'):', adminEntries.map(([id])=>id));
   }
   /* ลบบัญชีเก่าที่เคยสร้างไว้อัตโนมัติจากฟังก์ชันที่ถูกยกเลิกไปแล้ว ให้เหลือเฉพาะบัญชี Admin เริ่มต้น
      กับบัญชีที่มาจาก "เมนูลงทะเบียนใช้งาน" เท่านั้น:
@@ -2505,7 +2528,7 @@ let CURRENT_USER = null;
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const errEl = document.getElementById('loginError');
   const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value;
+  const password = document.getElementById('loginPassword').value.trim();
   if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
   if(Object.keys(STATE.users).length === 0){
     errEl.textContent = '⚠️ ระบบยังโหลดข้อมูลผู้ใช้จากฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วรีเฟรชหน้าใหม่';
@@ -2515,7 +2538,7 @@ document.getElementById('loginBtn').addEventListener('click', ()=>{
   const entry = Object.entries(STATE.users).find(([id,u])=>u.username===username);
   if(!entry){ errEl.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ'; return; }
   const [uid, u] = entry;
-  if(u.password !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
+  if(String(u.password).trim() !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
   loginAsUser(uid, u);
 });
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
