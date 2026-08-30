@@ -1891,18 +1891,8 @@ function diagnoseFB(){
     console.warn('Rules ที่แนะนำสำหรับทดสอบ: { "rules": { ".read": true, ".write": true } }');
   });
   db.ref('users').once('value').then(s=>{
-    const users = s.val()||{};
-    const n = Object.keys(users).length;
+    const n = Object.keys(s.val()||{}).length;
     console.log('✅ /users readable — found', n, 'users');
-    const adminEntries = Object.entries(users).filter(([,u])=>u.username==='1470900013871');
-    if(adminEntries.length === 0){
-      console.warn('⚠️ ไม่พบบัญชี Admin (username 1470900013871) — รีเฟรชหน้าเว็บเพื่อให้ระบบสร้างบัญชีใหม่อัตโนมัติ');
-    } else {
-      adminEntries.forEach(([uid,u])=>{
-        console.log(`✅ พบบัญชี Admin — uid: ${uid} | role: ${u.role} | password ปัจจุบันในระบบ: "${u.password}"`);
-      });
-      if(adminEntries.length > 1) console.warn('⚠️ พบบัญชี Admin ซ้ำซ้อนมากกว่า 1 บัญชี — ควรตรวจสอบและลบบัญชีที่ไม่ใช้');
-    }
   }).catch(e=>{
     console.error('❌ /users read DENIED:', e.code, e.message);
   });
@@ -2277,27 +2267,14 @@ db.ref('systemSettings/activeCertifierId').on('value', snap=>{
   renderReportCertifierTable();
 });
 
-/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติ
-   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก)
-   ตรวจสอบทุกครั้งที่โหลดข้อมูล ไม่ใช่แค่ตอนฐานข้อมูลว่างเปล่า — เพื่อป้องกันกรณีบัญชี Admin
-   หายไปด้วยเหตุใดก็ตาม (เช่น ถูกลบโดยไม่ตั้งใจ) แล้วไม่มีทางกลับเข้าระบบได้อีก */
-const ADMIN_SEED_USERNAME = '1470900013871';
-const ADMIN_SEED_PASSWORD = '05449';
+/* บัญชีผู้ใช้งาน: สร้างบัญชี Admin เริ่มต้นให้อัตโนมัติเมื่อยังไม่มีผู้ใช้งานในระบบเลย
+   (username: 1470900013871 / password: 05449 / นายพงศกร แป่มจำนัก) */
 db.ref('users').on('value', snap=>{
   STATE.users = snap.val() || {};
-  const adminEntries = Object.entries(STATE.users).filter(([,u])=>u.username===ADMIN_SEED_USERNAME);
-  if(adminEntries.length === 0){
-    /* ไม่พบบัญชี Admin เริ่มต้นเลย ไม่ว่าจะเป็นเพราะฐานข้อมูลว่างเปล่า หรือบัญชีถูกลบไปก่อนหน้านี้ — สร้างใหม่ให้ทันที */
-    db.ref('users/U_ADMIN_SEED').set({
-      username: ADMIN_SEED_USERNAME, password: ADMIN_SEED_PASSWORD,
-      displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)',
-      idCard: ADMIN_SEED_USERNAME, address:'', phone:'', role:'admin', cgCode:'',
-      permissions: permsFromRoleTabs('admin'), createdAt: Date.now()
+  if(Object.keys(STATE.users).length === 0){
+    db.ref('users').set({
+      U_ADMIN_SEED: { username:'1470900013871', password:'05449', displayName:'นายพงศกร แป่มจำนัก (ผู้อำนวยการโรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหนองสนม)', idCard:'1470900013871', address:'', phone:'', role:'admin', cgCode:'', permissions: permsFromRoleTabs('admin'), createdAt: Date.now() }
     });
-    toast('ระบบตรวจพบว่าไม่มีบัญชี Admin — สร้างบัญชีเริ่มต้นให้อัตโนมัติแล้ว (Username: '+ADMIN_SEED_USERNAME+')','success');
-  } else if(adminEntries.length > 1){
-    /* กรณีพบบัญชีซ้ำซ้อนหลายบัญชีที่ใช้ username เดียวกัน (เช่น เกิดจากการสมัครพร้อมกันในหลายแท็บ) แจ้งเตือนให้ผู้ดูแลระบบตรวจสอบ */
-    console.warn('พบบัญชีผู้ใช้ที่มี username ซ้ำกัน ('+ADMIN_SEED_USERNAME+'):', adminEntries.map(([id])=>id));
   }
   /* ลบบัญชีเก่าที่เคยสร้างไว้อัตโนมัติจากฟังก์ชันที่ถูกยกเลิกไปแล้ว ให้เหลือเฉพาะบัญชี Admin เริ่มต้น
      กับบัญชีที่มาจาก "เมนูลงทะเบียนใช้งาน" เท่านั้น:
@@ -2528,7 +2505,7 @@ let CURRENT_USER = null;
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const errEl = document.getElementById('loginError');
   const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value.trim();
+  const password = document.getElementById('loginPassword').value;
   if(!username || !password){ errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'; return; }
   if(Object.keys(STATE.users).length === 0){
     errEl.textContent = '⚠️ ระบบยังโหลดข้อมูลผู้ใช้จากฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วรีเฟรชหน้าใหม่';
@@ -2538,7 +2515,7 @@ document.getElementById('loginBtn').addEventListener('click', ()=>{
   const entry = Object.entries(STATE.users).find(([id,u])=>u.username===username);
   if(!entry){ errEl.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ'; return; }
   const [uid, u] = entry;
-  if(String(u.password).trim() !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
+  if(u.password !== password){ errEl.textContent = 'รหัสผ่านไม่ถูกต้อง'; return; }
   loginAsUser(uid, u);
 });
 document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
@@ -6193,7 +6170,7 @@ const EQUIPMENT_DURABLE_ITEMS = [
   "เกย์ปรับออกซิเจน","รถเข็นนั่ง","สามล้อโยก","ที่นอนลมป้องกันแผลกดทับ"
 ];
 const EQUIPMENT_MATERIAL_ITEMS = [
-  "ผ้าอ้อมสำเร็จรูป ไซส์ M","ผ้าอ้อมสำเร็จรูป ไซส์ L","ผ้าอ้อมสำเร็จรูป ไซส์ XL","แผ่นรองซับ",
+  "ผ้าอ้อมสำเร็จรูป","แผ่นรองซับ",
   "สายออกซิเจน","สายออกซิเจน canular","สายยางให้อาหาร (NG tube)",
   "เครื่องเจาะน้ำตาลปลายนิ้ว","เครื่องวัดความดันโลหิต",
   "ไม้เท้าค้ำยันแบบเหน็บรักแร้","ไม้เท้า 4 ขา","ไม้เท้า 2 ขา","ไม้เท้าค้ำยัน 1 ขา",
@@ -6214,10 +6191,7 @@ const ITEM_EMOJI = {
   "สามล้อโยก":"🚲",               /* สามล้อ */
   "ที่นอนลมป้องกันแผลกดทับ":"🌀",  /* ที่นอนลม */
   /* วัสดุการแพทย์ */
-  "ผ้าอ้อมสำเร็จรูป ไซส์ M":"🧷",
-  "ผ้าอ้อมสำเร็จรูป ไซส์ L":"🧷",
-  "ผ้าอ้อมสำเร็จรูป ไซส์ XL":"🧷",
-  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* compat สำหรับข้อมูลเดิม */
+  "ผ้าอ้อมสำเร็จรูป":"🧷",        /* ผ้าอ้อม */
   "แผ่นรองซับ":"🟦",              /* แผ่น */
   "สายออกซิเจน":"〰️",             /* สาย */
   "สายออกซิเจน canular":"〰️",     /* สาย */
@@ -6683,14 +6657,6 @@ function createMatItemRow(matItems){
         <label style="font-size:12px;">รายการวัสดุ *</label>
         <select class="mat-item-type" style="width:100%;">${itemOpts}</select>
       </div>
-      <div class="field mat-size-wrap" style="flex:0 0 120px;min-width:100px;display:none;">
-        <label style="font-size:12px;">ไซส์</label>
-        <select class="mat-item-size" style="width:100%;">
-          <option value="M">M (กลาง)</option>
-          <option value="L">L (ใหญ่)</option>
-          <option value="XL">XL (ใหญ่พิเศษ)</option>
-        </select>
-      </div>
       <div class="field" style="flex:0 0 80px;min-width:70px;">
         <label style="font-size:12px;">จำนวน *</label>
         <input type="number" class="mat-item-qty" min="1" value="1" style="width:100%;">
@@ -6700,28 +6666,6 @@ function createMatItemRow(matItems){
         <select class="mat-item-unit" style="width:100%;">${MAT_UNIT_OPTS}</select>
       </div>
     </div>`;
-  /* แสดง/ซ่อน ช่องไซส์ตามรายการที่เลือก */
-  const typeSel = div.querySelector('.mat-item-type');
-  const sizeWrap = div.querySelector('.mat-size-wrap');
-  const sizeSel  = div.querySelector('.mat-item-size');
-  const DIAPER_BASE = 'ผ้าอ้อมสำเร็จรูป';
-  typeSel.addEventListener('change', function(){
-    const val = this.value;
-    const isDiaper = val === DIAPER_BASE || val.startsWith(DIAPER_BASE+' ไซส์');
-    sizeWrap.style.display = isDiaper ? '' : 'none';
-    /* sync ไซส์ไปที่ value ของ type select ถ้าเป็นผ้าอ้อมที่ไม่ระบุไซส์ */
-    if(isDiaper && val === DIAPER_BASE){
-      this.value = `${DIAPER_BASE} ไซส์ ${sizeSel.value}`;
-    }
-  });
-  sizeSel.addEventListener('change', function(){
-    /* เมื่อเปลี่ยนไซส์ ให้อัปเดต value ของ type select ด้วย */
-    const curType = typeSel.value;
-    if(curType.startsWith(DIAPER_BASE)){
-      typeSel.value = `${DIAPER_BASE} ไซส์ ${this.value}`;
-    }
-  });
-  /* ถ้า matItems มีแต่ผ้าอ้อมที่ระบุไซส์แล้ว ให้แสดงช่องไซส์ทันที */
   return div;
 }
 function matAddRow(){
