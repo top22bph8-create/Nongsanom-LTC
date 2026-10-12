@@ -1759,6 +1759,18 @@ header.app-header .app-header-user .btn:hover{background:rgba(255,255,255,.3);}
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('equipmentReturnModal')">ยกเลิก</button><button class="btn btn-primary" id="eqReturnSaveBtn">ยืนยันรับคืน</button></div>
 </div></div>
 
+<div class="modal-overlay" id="inventoryConvertModal" style="z-index:550;"><div class="modal-box" style="max-width:460px;">
+  <h3>🔄 เปลี่ยนประเภทรายการ</h3>
+  <input type="hidden" id="invConvId">
+  <div id="invConvInfo" style="padding:10px;border-radius:10px;background:#fff8e1;font-size:13.5px;line-height:1.7;"></div>
+  <div class="field" id="invConvCodesWrap" style="display:none;margin-top:10px;">
+    <label>เลขครุภัณฑ์ (พิมพ์ 1 เลขต่อ 1 บรรทัด)</label>
+    <textarea id="invConvCodes" rows="6" placeholder="เช่น&#10;6515-001-0001&#10;6515-001-0002"></textarea>
+    <p class="muted" style="font-size:11.5px;">จำนวนครุภัณฑ์จะเท่ากับจำนวนเลขที่กรอก</p>
+  </div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('inventoryConvertModal')">ยกเลิก</button><button class="btn btn-primary" id="invConvSaveBtn">ยืนยันเปลี่ยนประเภท</button></div>
+</div></div>
+
 <div class="modal-overlay" id="inventoryEditModal"><div class="modal-box" style="max-width:480px;">
   <h3>✏️ แก้ไขรายการคงคลัง</h3>
   <p class="muted">ใช้แก้ไขกรณีบันทึกข้อมูลผิดพลาด — การแก้ไขนี้เขียนทับข้อมูลเดิมโดยตรง</p>
@@ -2253,7 +2265,8 @@ function fillMonthYearSelects(monthSel, yearSel, opts){
   const now = new Date();
   const curYear = beYear(now.getFullYear());
   let yearsHtml = '';
-  for(let y=curYear-1; y<=curYear+1; y++){ yearsHtml += `<option value="${y}">${y}</option>`; }
+  const backYears = (opts && opts.back) ? opts.back : 1;
+  for(let y=curYear+1; y>=curYear-backYears; y--){ yearsHtml += `<option value="${y}">${y}</option>`; }
   yearSel.innerHTML = yearsHtml;
   monthSel.value = now.getMonth()+1;
   yearSel.value = curYear;
@@ -3754,11 +3767,14 @@ function openThaiDatePicker(hiddenInputId, displayTextId, title, onSelect){
   document.getElementById('thaiDateModalTitle').textContent = title || 'เลือกวันที่';
   const monthSel = document.getElementById('thaiDateMonthSel');
   const yearSel = document.getElementById('thaiDateYearSel');
-  fillMonthYearSelects(monthSel, yearSel);
+  fillMonthYearSelects(monthSel, yearSel, {back:12});
   const currentVal = document.getElementById(hiddenInputId).value;
   if(currentVal){
     const [cy,cm] = currentVal.split('-').map(Number);
     monthSel.value = cm;
+    if(!Array.from(yearSel.options).some(o=>+o.value===beYear(cy))){
+      yearSel.insertAdjacentHTML('beforeend',`<option value="${beYear(cy)}">${beYear(cy)}</option>`);
+    }
     yearSel.value = beYear(cy);
   }
   renderThaiDateGrid();
@@ -6512,6 +6528,7 @@ function renderInventoryTable(){
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" onclick="openInventoryDetail('${id}')" title="ดูรายละเอียด">👁 ดู</button>
         <button class="btn btn-ghost btn-sm" onclick="openInventoryEdit('${id}')" title="แก้ไขรายการ">✏️ แก้ไข</button>
+        <button class="btn btn-sm" style="background:#fff3cd;color:#8a5a00;border:1px solid #f0c36d;" onclick="openInvConvert('${id}')" title="เปลี่ยนประเภท วัสดุ ⇄ ครุภัณฑ์">🔄 เปลี่ยนประเภท</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInventory('${id}')">🗑</button>
       </td>
     </tr>`;}).join('');
@@ -7275,6 +7292,48 @@ document.getElementById('invEditSaveBtn').addEventListener('click', ()=>{
   }).then(()=>{
     toast('แก้ไขรายการคงคลังสำเร็จ','success');
     closeModal('inventoryEditModal');
+  });
+});
+
+/* ---- เปลี่ยนประเภทรายการ วัสดุ ⇄ ครุภัณฑ์ ---- */
+function openInvConvert(id){
+  const inv = STATE.inventory[id]; if(!inv) return;
+  const toDurable = inv.category==='material';
+  document.getElementById('invConvId').value = id;
+  const wrap = document.getElementById('invConvCodesWrap');
+  const info = document.getElementById('invConvInfo');
+  if(toDurable){
+    info.innerHTML = `<b>${inv.itemType}</b><br>วัสดุการแพทย์ ➜ <b>ครุภัณฑ์การแพทย์</b><br>คงเหลือเดิม ${inv.quantity||0} ${inv.unit||''} — ต้องระบุเลขครุภัณฑ์ของแต่ละชิ้น`;
+    wrap.style.display='block';
+    document.getElementById('invConvCodes').value='';
+  } else {
+    const total=(inv.assetCodes||[]).length, avail=(inv.availableAssetCodes||inv.assetCodes||[]).length;
+    if(avail<total){ toast(`มีครุภัณฑ์ถูกยืม/ส่งซ่อมอยู่ ${total-avail} ชิ้น ต้องรับคืนก่อนจึงเปลี่ยนประเภทได้`,'error'); return; }
+    info.innerHTML = `<b>${inv.itemType}</b><br>ครุภัณฑ์การแพทย์ ➜ <b>วัสดุการแพทย์</b><br>จะเหลือเป็นจำนวน ${total} ${inv.unit||''} และเลขครุภัณฑ์จะถูกลบออก (เป็นแบบตัดจ่าย ไม่มีการยืม-คืน)`;
+    wrap.style.display='none';
+  }
+  openModal('inventoryConvertModal');
+}
+document.getElementById('invConvSaveBtn').addEventListener('click', ()=>{
+  if(blockIfReadOnly()) return;
+  const id=document.getElementById('invConvId').value, inv=STATE.inventory[id]; if(!inv) return;
+  const toDurable = inv.category==='material';
+  const dup = Object.entries(STATE.inventory).find(([k,v])=>k!==id && v.itemType===inv.itemType && v.category===(toDurable?'durable':'material'));
+  if(dup){ toast('มีรายการชื่อเดียวกันในประเภทปลายทางแล้ว กรุณาแก้ชื่อก่อน','error'); return; }
+  let upd;
+  if(toDurable){
+    const codes=[...new Set(document.getElementById('invConvCodes').value.split('\n').map(x=>x.trim()).filter(Boolean))];
+    if(!codes.length){ toast('กรุณากรอกเลขครุภัณฑ์อย่างน้อย 1 เลข','error'); return; }
+    const cd={}; codes.forEach(c=>{ cd[c]={dateReceived:inv.dateReceived||''}; });
+    upd={category:'durable',assetCodes:codes,availableAssetCodes:codes,codeDetails:cd,quantity:codes.length};
+  } else {
+    const total=(inv.assetCodes||[]).length;
+    if((inv.availableAssetCodes||inv.assetCodes||[]).length<total){ toast('มีครุภัณฑ์ถูกยืมอยู่ ไม่สามารถเปลี่ยนได้','error'); return; }
+    upd={category:'material',assetCodes:null,availableAssetCodes:null,codeDetails:null,quantity:total};
+  }
+  upd.updatedAt=Date.now();
+  db.ref('inventory/'+id).update(upd).then(()=>{
+    toast('เปลี่ยนประเภทสำเร็จ','success'); closeModal('inventoryConvertModal');
   });
 });
 
